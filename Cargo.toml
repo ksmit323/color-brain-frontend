@@ -8,6 +8,10 @@ edition = "2021"
 
 [dependencies]
 dioxus = { version = "0.7.1", features = ["router"] }
+# `default-features = false` keeps reqwest off native-tls so it compiles to wasm (browser fetch
+# handles TLS). `json` gives us `.json()` for serde (de)serialization.
+reqwest = { version = "0.12", default-features = false, features = ["json"] }
+serde = { version = "1", features = ["derive"] }
 
 [features]
 default = ["web"]
