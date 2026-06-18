@@ -108,7 +108,7 @@ pub fn Home() -> Element {
             }
         };
         *submit_state.write() = SubmitState::Loading;
-        let _task = spawn(async move {
+        spawn(async move {
             match post_recommendation(&req).await {
                 Ok(rec) => *submit_state.write() = SubmitState::Done(Box::new(rec)),
                 Err(err) => *submit_state.write() = SubmitState::Error(err),
