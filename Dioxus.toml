@@ -19,3 +19,11 @@ script = []
 # Javascript code file
 # serve: [dev-server] only
 script = []
+
+# Dev-only reverse proxy: forward same-origin API requests to the local Python backend so the
+# browser app avoids CORS. The app calls relative paths (/health, /first-attempt/...).
+[[web.proxy]]
+backend = "http://127.0.0.1:8000/health"
+
+[[web.proxy]]
+backend = "http://127.0.0.1:8000/first-attempt"
