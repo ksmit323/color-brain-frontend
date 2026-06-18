@@ -1,6 +1,9 @@
 use dioxus::prelude::*;
 
-use crate::api::{get_metadata, post_recommendation, RecommendRequest, Recommendation};
+use crate::api::{get_health, get_metadata, post_recommendation, RecommendRequest, Recommendation};
+use crate::components::{
+    EvidencePanel, FormFields, RecipeTable, ResultPanel, StatusIndicator, TargetForm,
+};
 
 /// State of a recommendation submit. `Done` is boxed because [`Recommendation`] is large and the
 /// state is cloned on each render.
@@ -69,19 +72,23 @@ fn build_request(
 /// backend's recommendation.
 #[component]
 pub fn Home() -> Element {
-    // Metadata loads once on mount.
+    // Health drives the connection indicator; metadata loads the form options and summary. Both
+    // run once on mount.
+    let health = use_resource(move || async move { get_health().await });
     let metadata = use_resource(move || async move { get_metadata().await });
 
     // Form fields are kept as strings for free-form numeric entry and parsed on submit.
-    let mut target_l = use_signal(String::new);
-    let mut target_a = use_signal(String::new);
-    let mut target_b = use_signal(String::new);
-    let mut substrate = use_signal(String::new);
-    let mut dye_prog = use_signal(String::new);
-    let mut yarn_weight = use_signal(String::new);
-    let mut water_volume = use_signal(String::new);
-    let mut liquor_ratio = use_signal(String::new);
-    let mut cycle_time = use_signal(String::new);
+    let fields = FormFields {
+        target_l: use_signal(String::new),
+        target_a: use_signal(String::new),
+        target_b: use_signal(String::new),
+        substrate: use_signal(String::new),
+        dye_prog: use_signal(String::new),
+        yarn_weight: use_signal(String::new),
+        water_volume: use_signal(String::new),
+        liquor_ratio: use_signal(String::new),
+        cycle_time: use_signal(String::new),
+    };
 
     let mut submit_state = use_signal(|| SubmitState::Idle);
 
@@ -91,15 +98,15 @@ pub fn Home() -> Element {
         // Read every signal into owned values before spawning the async work; clippy.toml forbids
         // holding signal borrows across `.await`.
         let req = match build_request(
-            &target_l(),
-            &target_a(),
-            &target_b(),
-            &substrate(),
-            &dye_prog(),
-            &yarn_weight(),
-            &water_volume(),
-            &liquor_ratio(),
-            &cycle_time(),
+            &fields.target_l.read(),
+            &fields.target_a.read(),
+            &fields.target_b.read(),
+            &fields.substrate.read(),
+            &fields.dye_prog.read(),
+            &fields.yarn_weight.read(),
+            &fields.water_volume.read(),
+            &fields.liquor_ratio.read(),
+            &fields.cycle_time.read(),
         ) {
             Ok(req) => req,
             Err(msg) => {
@@ -116,64 +123,100 @@ pub fn Home() -> Element {
         });
     };
 
+    // Connection state for the indicator: None while in flight, then reachable / unreachable.
+    let online = match health() {
+        None => None,
+        Some(Ok(_)) => Some(true),
+        Some(Err(_)) => Some(false),
+    };
+
+    // Recipe column order comes from metadata so the recipe table stays stable across requests.
+    let recipe_columns = match metadata() {
+        Some(Ok(ref m)) => m.recipe_columns.clone(),
+        _ => Vec::new(),
+    };
+
     rsx! {
-        h1 { "Color Brain — First Attempt" }
-
-        {match metadata() {
-            None => rsx! { p { "Loading metadata…" } },
-            Some(Err(err)) => rsx! { p { "Failed to load metadata: {err}" } },
-            Some(Ok(meta)) => rsx! {
-                form { onsubmit: on_submit,
-                    fieldset {
-                        legend { "Target color (Lab)" }
-                        label { "L " input { value: target_l, oninput: move |e| target_l.set(e.value()) } }
-                        label { " a " input { value: target_a, oninput: move |e| target_a.set(e.value()) } }
-                        label { " b " input { value: target_b, oninput: move |e| target_b.set(e.value()) } }
-                    }
-                    fieldset {
-                        legend { "Program" }
-                        label {
-                            "Substrate "
-                            select {
-                                value: substrate,
-                                onchange: move |e| substrate.set(e.value()),
-                                option { value: "", "— select —" }
-                                for s in &meta.known_substrates {
-                                    option { value: "{s}", "{s}" }
-                                }
-                            }
-                        }
-                        label {
-                            " Dye program "
-                            select {
-                                value: dye_prog,
-                                onchange: move |e| dye_prog.set(e.value()),
-                                option { value: "", "— select —" }
-                                for p in &meta.known_dye_programs {
-                                    option { value: "{p}", "{p}" }
-                                }
-                            }
-                        }
-                    }
-                    fieldset {
-                        legend { "Process variables (optional)" }
-                        label { "Yarn weight " input { value: yarn_weight, oninput: move |e| yarn_weight.set(e.value()) } }
-                        label { " Water volume " input { value: water_volume, oninput: move |e| water_volume.set(e.value()) } }
-                        label { " Liquor ratio " input { value: liquor_ratio, oninput: move |e| liquor_ratio.set(e.value()) } }
-                        label { " Cycle time " input { value: cycle_time, oninput: move |e| cycle_time.set(e.value()) } }
-                    }
-                    button { "Recommend" }
+        div { class: "app",
+            header { class: "appbar",
+                div { class: "brand",
+                    span { class: "brand__mark", "COLOR" b { "BRAIN" } }
+                    span { class: "brand__sub", "First-attempt recipe recommender" }
                 }
-            },
-        }}
+                StatusIndicator { online }
+            }
 
-        {match submit_state() {
-            SubmitState::Idle => rsx! {},
-            SubmitState::Loading => rsx! { p { "Getting recommendation…" } },
-            SubmitState::Error(err) => rsx! { p { "Error: {err}" } },
-            SubmitState::Done(rec) => rsx! {
-                pre { {format!("{rec:#?}")} }
-            },
-        }}
+            {match metadata() {
+                Some(Ok(meta)) => rsx! {
+                    div { class: "metastrip",
+                        span { class: "metastrip__item", "Model " span { class: "metastrip__num", "{meta.status}" } }
+                        if let Some(rows) = meta.history_rows {
+                            span { class: "metastrip__item", span { class: "metastrip__num", "{rows}" } " batches" }
+                        }
+                        span { class: "metastrip__item", span { class: "metastrip__num", "{meta.known_substrates.len()}" } " substrates" }
+                        span { class: "metastrip__item", span { class: "metastrip__num", "{meta.known_dye_programs.len()}" } " programs" }
+                        span { class: "metastrip__item", span { class: "metastrip__num", "{meta.recipe_columns.len()}" } " dyes" }
+                    }
+                },
+                Some(Err(_)) => rsx! {
+                    div { class: "metastrip metastrip--muted", "Model metadata unavailable" }
+                },
+                None => rsx! {
+                    div { class: "metastrip metastrip--muted", "Loading model metadata…" }
+                },
+            }}
+
+            main { class: "bench",
+                section { class: "panel panel--form",
+                    h2 { class: "panel__title", "Target job" }
+                    {match metadata() {
+                        None => rsx! { p { class: "inline-msg", "Loading metadata…" } },
+                        Some(Err(err)) => rsx! {
+                            div { class: "inline-msg inline-msg--error",
+                                "Could not load model metadata."
+                                div { class: "inline-msg__mono", "{err}" }
+                            }
+                        },
+                        Some(Ok(meta)) => rsx! {
+                            TargetForm {
+                                fields,
+                                substrates: meta.known_substrates.clone(),
+                                dye_programs: meta.known_dye_programs.clone(),
+                                on_submit,
+                            }
+                        },
+                    }}
+                }
+
+                div { class: "results",
+                    {match submit_state() {
+                        SubmitState::Idle => rsx! {
+                            div { class: "placeholder", "Enter a target colour and submit to see a recommendation." }
+                        },
+                        SubmitState::Loading => rsx! {
+                            div { class: "inline-msg", "Computing recommendation…" }
+                        },
+                        SubmitState::Error(err) => rsx! {
+                            div { class: "inline-msg inline-msg--error",
+                                "Recommendation failed."
+                                div { class: "inline-msg__mono", "{err}" }
+                            }
+                        },
+                        SubmitState::Done(rec) => {
+                            let recommend = rec.recommendation_action == "recommend";
+                            rsx! {
+                                ResultPanel { rec: (*rec).clone() }
+                                div { class: "result-grid",
+                                    if recommend {
+                                        RecipeTable { columns: recipe_columns.clone(), recipe: rec.recipe.clone() }
+                                    }
+                                    EvidencePanel { rec: (*rec).clone() }
+                                }
+                            }
+                        }
+                    }}
+                }
+            }
+        }
     }
 }
