@@ -52,17 +52,18 @@ match existing style, and verify each step concretely.
 - **Routing:** the starter already has a `Routable` router — keep it, but reduce to a single
   `Home {}` route. Remove the `#[layout(Navbar)]` and the `Blog` route (blog demo is what we
   replace). No new routing is added.
-- **HTTP client:** **`reqwest`** (`features = ["json"]`) — works on wasm via browser fetch, async,
-  serde JSON, already in the lockfile, idiomatic in Dioxus examples. Fallback if wasm build
-  complains: `default-features = false, features = ["json"]`, or `gloo-net`.
+- **HTTP client:** **`gloo-net`** (`default-features = false, features = ["http","json"]`) — uses
+  the browser fetch API, so it accepts the same-origin relative paths the dx proxy design depends
+  on. (reqwest was tried first but rejects relative URLs at parse time on wasm — a runtime failure
+  `dx build` doesn't catch; switched during M2.)
 - **Cadence:** implement + verify one milestone, report, then wait for go-ahead.
 
 ## Milestones
 
 ### M1 — API client + types _(pause after)_
 
-- `Cargo.toml`: add `reqwest = { version = "0.12", features = ["json"] }`,
-  `serde = { version = "1", features = ["derive"] }`. (serde_json comes via reqwest's json.)
+- `Cargo.toml`: add `gloo-net = { version = "0.6", default-features = false, features = ["http","json"] }`,
+  `serde = { version = "1", features = ["derive"] }`. (serde_json comes via gloo-net's json.)
 - New `src/api.rs` (single module; types + client together to stay minimal):
   - Types deserialize **only the fields we use** (serde ignores the rest, so `residual_model`,
     `calibration`, `feature_columns` need no modelling). Use `Option<T>` for nullable fields
