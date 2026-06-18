@@ -12,8 +12,9 @@ use serde::{Deserialize, Serialize};
 /// by the dx dev proxy). Set to an absolute URL to bypass the proxy.
 const BASE: &str = "";
 
-/// `GET /health` response.
-#[derive(Debug, Deserialize)]
+/// `GET /health` response. (Used by the status indicator in M3.)
+#[allow(dead_code)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Health {
     pub status: String,
 }
@@ -23,7 +24,8 @@ pub struct Health {
 /// Only the fields the UI needs are modelled; serde ignores the rest (`feature_columns`,
 /// `residual_model`, `calibration`, ...). The `Vec` fields default to empty so a response that
 /// omits one degrades gracefully instead of failing to parse.
-#[derive(Debug, Deserialize)]
+#[allow(dead_code)] // dropdowns use known_substrates/known_dye_programs now; the rest render in M3
+#[derive(Debug, Clone, Deserialize)]
 pub struct Metadata {
     pub status: String,
     /// Total rows of dyeing history the model trained on. Optional because not every deployment
@@ -72,8 +74,9 @@ pub struct RecommendRequest {
 /// `recommendation_action` is `"recommend"` or `"abstain"` and is the one field the UI branches
 /// on, so it is required. Every other field is optional: the backend may omit or null fields
 /// (notably when it abstains), and for numeric values `Option` keeps "absent" distinct from a
-/// legitimate zero such as `target_a = 0.0`.
-#[derive(Debug, Deserialize)]
+/// legitimate zero such as `target_a = 0.0`. (Fields are rendered in the result panel in M3.)
+#[allow(dead_code)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Recommendation {
     pub recommendation_action: String,
     #[serde(default)]
@@ -101,7 +104,8 @@ pub struct Recommendation {
     pub recipe: HashMap<String, f64>,
 }
 
-/// Fetch `GET /health`.
+/// Fetch `GET /health`. (Used by the status indicator in M3.)
+#[allow(dead_code)]
 pub async fn get_health() -> Result<Health, String> {
     let response = reqwest::get(format!("{BASE}/health"))
         .await
