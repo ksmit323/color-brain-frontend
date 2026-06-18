@@ -1,0 +1,672 @@
+/*
+ * Color Brain — first-attempt recipe recommender.
+ *
+ * The page is styled as a colour-matching booth: a deliberately neutral graphite surround (real
+ * viewing booths use a neutral grey so the surround does not bias colour judgement) with the one
+ * saturated element being the data itself — the target Lab sample chip. Numeric readouts use a
+ * monospace face, like an instrument display.
+ */
+
+:root {
+    /* Booth surfaces, from cabinet interior outward to raised controls. */
+    --booth-0: #14161a;
+    --booth-1: #1b1e24;
+    --booth-2: #23272f;
+    --booth-3: #2c313a;
+    --line: #353b45;
+    --line-soft: #272c34;
+
+    /* Ink. */
+    --ink: #e8eaee;
+    --ink-dim: #a4abb6;
+    --ink-faint: #6d7682;
+
+    /* The single interactive accent — an instrument blue, used only for actions and focus. */
+    --accent: #6ea8fe;
+    --accent-press: #5b97f0;
+
+    /* Confidence tiers. Abstain is a calm slate, never red: abstention is a valid outcome. */
+    --tier-high: #46c79a;
+    --tier-med: #e0b13e;
+    --tier-abstain: #8b94a1;
+    --danger: #e06c75;
+
+    --radius: 10px;
+    --radius-sm: 6px;
+    --shadow: 0 10px 28px -16px rgba(0, 0, 0, 0.7);
+
+    --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+    --font-body: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background-color: var(--booth-0);
+    /* A faint vignette gives the booth depth without competing with the sample chip. */
+    background-image: radial-gradient(1200px 600px at 70% -10%, #1a1d23 0%, var(--booth-0) 60%);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ---- App shell -------------------------------------------------------------------------- */
+
+.app {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 28px 28px 64px;
+}
+
+.appbar {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--line-soft);
+}
+
+.brand__mark {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 22px;
+    letter-spacing: 0.14em;
+    line-height: 1;
+}
+
+.brand__mark b {
+    color: var(--accent);
+    font-weight: 700;
+}
+
+.brand__sub {
+    display: block;
+    margin-top: 6px;
+    color: var(--ink-faint);
+    font-size: 12.5px;
+    letter-spacing: 0.02em;
+}
+
+/* ---- Connection status ------------------------------------------------------------------ */
+
+.status {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--booth-1);
+    font-size: 12.5px;
+    color: var(--ink-dim);
+    white-space: nowrap;
+}
+
+.status__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--ink-faint);
+}
+
+.status__dot--online {
+    background: var(--tier-high);
+    box-shadow: 0 0 0 3px rgba(70, 199, 154, 0.18);
+}
+
+.status__dot--offline {
+    background: var(--danger);
+    box-shadow: 0 0 0 3px rgba(224, 108, 117, 0.18);
+}
+
+.status__dot--connecting {
+    background: var(--tier-med);
+    animation: pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    50% {
+        opacity: 0.3;
+    }
+}
+
+/* ---- Metadata strip --------------------------------------------------------------------- */
+
+.metastrip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 22px;
+    padding: 14px 2px 0;
+    color: var(--ink-dim);
+    font-size: 12.5px;
+}
+
+.metastrip__item {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 7px;
+}
+
+.metastrip__num {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    color: var(--ink);
+}
+
+.metastrip--muted {
+    color: var(--ink-faint);
+    font-style: italic;
+}
+
+/* ---- Bench layout ----------------------------------------------------------------------- */
+
+.bench {
+    display: grid;
+    grid-template-columns: minmax(320px, 5fr) 7fr;
+    gap: 22px;
+    margin-top: 22px;
+}
+
+.panel {
+    background: var(--booth-1);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius);
+    padding: 22px;
+    box-shadow: var(--shadow);
+}
+
+.panel__title {
+    margin: 0 0 16px;
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+}
+
+/* ---- Form ------------------------------------------------------------------------------- */
+
+.form__section {
+    margin-bottom: 20px;
+}
+
+.form__legend {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-size: 13px;
+    color: var(--ink);
+}
+
+.form__legend .unit {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: var(--ink-faint);
+}
+
+.lab-inputs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.proc-inputs {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.field__label {
+    font-size: 11.5px;
+    color: var(--ink-faint);
+    letter-spacing: 0.02em;
+}
+
+.field__input,
+.select {
+    width: 100%;
+    padding: 9px 11px;
+    background: var(--booth-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    color: var(--ink);
+    font-family: var(--font-mono);
+    font-size: 14px;
+}
+
+.select {
+    font-family: var(--font-body);
+    cursor: pointer;
+}
+
+.field__input::placeholder {
+    color: var(--ink-faint);
+}
+
+.field__input:focus-visible,
+.select:focus-visible {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(110, 168, 254, 0.22);
+}
+
+/* Native disclosure for the optional process variables. */
+.disclosure {
+    border-top: 1px solid var(--line-soft);
+    padding-top: 14px;
+}
+
+.disclosure > summary {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    cursor: pointer;
+    list-style: none;
+    font-size: 13px;
+    color: var(--ink-dim);
+}
+
+.disclosure > summary::-webkit-details-marker {
+    display: none;
+}
+
+.disclosure > summary::before {
+    content: "+";
+    font-family: var(--font-mono);
+    color: var(--ink-faint);
+}
+
+.disclosure[open] > summary::before {
+    content: "\2212"; /* minus sign */
+}
+
+.disclosure > summary .field__label {
+    margin-left: auto;
+}
+
+.btn {
+    width: 100%;
+    margin-top: 22px;
+    padding: 12px 16px;
+    background: var(--accent);
+    color: #0c1320;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.05s ease;
+}
+
+.btn:hover {
+    background: var(--accent-press);
+}
+
+.btn:active {
+    transform: translateY(1px);
+}
+
+.btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(110, 168, 254, 0.4);
+}
+
+/* ---- Results: placeholder & inline states ----------------------------------------------- */
+
+.results {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    min-height: 100%;
+}
+
+.placeholder {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 280px;
+    padding: 32px;
+    border: 1px dashed var(--line);
+    border-radius: var(--radius);
+    color: var(--ink-faint);
+    text-align: center;
+    font-size: 14px;
+}
+
+.inline-msg {
+    padding: 14px 16px;
+    border-radius: var(--radius-sm);
+    background: var(--booth-1);
+    border: 1px solid var(--line-soft);
+    color: var(--ink-dim);
+    font-size: 13.5px;
+}
+
+.inline-msg--error {
+    border-color: rgba(224, 108, 117, 0.4);
+    color: #f0b3b8;
+}
+
+.inline-msg__mono {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--ink-faint);
+}
+
+/* ---- Verdict ---------------------------------------------------------------------------- */
+
+.verdict {
+    border-radius: var(--radius);
+    border: 1px solid var(--line-soft);
+    background: var(--booth-1);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    animation: settle 0.28s ease both;
+}
+
+/* A 3px tier rail along the top reads the outcome before any text does. */
+.verdict--high {
+    border-top: 3px solid var(--tier-high);
+}
+.verdict--med {
+    border-top: 3px solid var(--tier-med);
+}
+.verdict--abstain {
+    border-top: 3px solid var(--tier-abstain);
+}
+
+.verdict__head {
+    display: flex;
+    gap: 22px;
+    padding: 22px;
+    align-items: center;
+}
+
+/* The Lab sample chip — the page's signature element. */
+.chip {
+    flex-shrink: 0;
+    text-align: center;
+}
+
+.chip__sample {
+    width: 92px;
+    height: 92px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25), inset 0 -10px 22px -12px rgba(0, 0, 0, 0.5);
+}
+
+.chip__read {
+    display: flex;
+    justify-content: center;
+    gap: 9px;
+    margin-top: 9px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-dim);
+}
+
+.chip__read b {
+    color: var(--ink-faint);
+    font-weight: 400;
+}
+
+.verdict__summary {
+    flex: 1;
+    min-width: 0;
+}
+
+.verdict__action {
+    display: block;
+    font-family: var(--font-display);
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+}
+
+.tier-chip {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.tier-chip--high {
+    color: var(--tier-high);
+    background: rgba(70, 199, 154, 0.12);
+}
+.tier-chip--med {
+    color: var(--tier-med);
+    background: rgba(224, 177, 62, 0.12);
+}
+.tier-chip--abstain {
+    color: var(--tier-abstain);
+    background: rgba(139, 148, 161, 0.14);
+}
+
+.readout {
+    margin-left: auto;
+    text-align: right;
+}
+
+.readout__value {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 30px;
+    font-weight: 500;
+    line-height: 1;
+    color: var(--ink);
+}
+
+.readout__label {
+    font-size: 11px;
+    color: var(--ink-faint);
+    letter-spacing: 0.02em;
+}
+
+/* ---- Confidence meter with calibration gate ticks --------------------------------------- */
+
+.meter {
+    padding: 0 22px 20px;
+}
+
+.meter__track {
+    position: relative;
+    height: 8px;
+    border-radius: 999px;
+    background: var(--booth-3);
+    overflow: visible;
+}
+
+.meter__fill {
+    height: 100%;
+    border-radius: 999px;
+}
+
+.meter__fill--high {
+    background: var(--tier-high);
+}
+.meter__fill--med {
+    background: var(--tier-med);
+}
+.meter__fill--abstain {
+    background: var(--tier-abstain);
+}
+
+/* Vertical ticks marking the calibrated t_med / t_high gates. */
+.meter__tick {
+    position: absolute;
+    top: -3px;
+    width: 2px;
+    height: 14px;
+    background: var(--ink);
+    opacity: 0.5;
+    transform: translateX(-1px);
+}
+
+.meter__legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 16px;
+    margin-top: 12px;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    color: var(--ink-faint);
+}
+
+.meter__legend b {
+    color: var(--ink-dim);
+    font-weight: 500;
+}
+
+.abstain-note {
+    margin: 0;
+    padding: 16px 22px 22px;
+    border-top: 1px solid var(--line-soft);
+    color: var(--ink-dim);
+    font-size: 14px;
+}
+
+.abstain-note__reason {
+    color: var(--ink-faint);
+    font-family: var(--font-mono);
+    font-size: 12px;
+}
+
+/* ---- Result grid: recipe + evidence ----------------------------------------------------- */
+
+.result-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+}
+
+/* ---- Recipe table ----------------------------------------------------------------------- */
+
+.recipe__row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--line-soft);
+}
+
+.recipe__row:last-child {
+    border-bottom: none;
+}
+
+.recipe__dye {
+    font-size: 13.5px;
+    color: var(--ink);
+}
+
+.recipe__amount {
+    font-family: var(--font-mono);
+    font-size: 13.5px;
+    color: var(--ink);
+}
+
+/* ---- Evidence --------------------------------------------------------------------------- */
+
+.evidence__dl {
+    margin: 0;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 9px 14px;
+}
+
+.evidence__dl dt {
+    color: var(--ink-faint);
+    font-size: 12.5px;
+}
+
+.evidence__dl dd {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--ink);
+    text-align: right;
+}
+
+.evidence__delta {
+    color: var(--accent);
+}
+
+.evidence__empty {
+    color: var(--ink-faint);
+    font-size: 13.5px;
+}
+
+@keyframes settle {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+}
+
+/* ---- Responsive ------------------------------------------------------------------------- */
+
+@media (max-width: 900px) {
+    .bench {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 560px) {
+    .app {
+        padding: 20px 16px 48px;
+    }
+
+    .verdict__head {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 14px;
+    }
+
+    .verdict__action {
+        font-size: 23px;
+    }
+
+    .readout {
+        margin-left: 0;
+        text-align: left;
+    }
+
+    .result-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .verdict,
+    .status__dot--connecting,
+    .btn {
+        animation: none;
+        transition: none;
+    }
+}
