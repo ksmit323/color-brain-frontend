@@ -1,32 +1,36 @@
 //! Types and a small async client for the Color Brain `first_attempt` backend.
 //!
-//! The app reaches the backend through the dx dev proxy (see `Dioxus.toml`), so requests use
-//! same-origin relative paths. Set [`BASE`] to an absolute URL (e.g. `http://127.0.0.1:8000`) to
-//! call the backend directly and bypass the proxy.
+//! Requests use same-origin relative paths (`/health`, `/first-attempt/...`). gloo-net sends them
+//! through the browser fetch API, which resolves relative URLs against the document origin; the dx
+//! dev proxy (see `Dioxus.toml`) then forwards them to the backend at `http://127.0.0.1:8000`. Set
+//! [`BASE`] to an absolute URL to call the backend directly and bypass the proxy.
 
 use std::collections::HashMap;
 
+use gloo_net::http::Request;
 use serde::{Deserialize, Serialize};
 
-/// Base URL for backend requests. Empty means same-origin (forwarded to `http://127.0.0.1:8000`
-/// by the dx dev proxy). Set to an absolute URL to bypass the proxy.
+/// Base URL for backend requests. Empty means same-origin relative paths (forwarded to
+/// `http://127.0.0.1:8000` by the dx dev proxy). Set to an absolute URL to bypass the proxy.
 const BASE: &str = "";
 
 /// `GET /health` response. (Used by the status indicator in M3.)
 #[allow(dead_code)]
 #[derive(Debug, Clone, Deserialize)]
 pub struct Health {
+    #[serde(default)]
     pub status: String,
 }
 
 /// `GET /first-attempt/metadata` response.
 ///
 /// Only the fields the UI needs are modelled; serde ignores the rest (`feature_columns`,
-/// `residual_model`, `calibration`, ...). The `Vec` fields default to empty so a response that
-/// omits one degrades gracefully instead of failing to parse.
+/// `residual_model`, `calibration`, ...). Every modelled field defaults on absence so a response
+/// that omits one degrades gracefully instead of failing to parse.
 #[allow(dead_code)] // dropdowns use known_substrates/known_dye_programs now; the rest render in M3
 #[derive(Debug, Clone, Deserialize)]
 pub struct Metadata {
+    #[serde(default)]
     pub status: String,
     /// Total rows of dyeing history the model trained on. Optional because not every deployment
     /// reports it.
@@ -107,33 +111,38 @@ pub struct Recommendation {
 /// Fetch `GET /health`. (Used by the status indicator in M3.)
 #[allow(dead_code)]
 pub async fn get_health() -> Result<Health, String> {
-    let response = reqwest::get(format!("{BASE}/health"))
+    let resp = Request::get(&format!("{BASE}/health"))
+        .send()
         .await
         .map_err(|e| e.to_string())?;
-    let response = response.error_for_status().map_err(|e| e.to_string())?;
-    response.json::<Health>().await.map_err(|e| e.to_string())
+    if !resp.ok() {
+        return Err(format!("HTTP {}", resp.status()));
+    }
+    resp.json::<Health>().await.map_err(|e| e.to_string())
 }
 
 /// Fetch `GET /first-attempt/metadata`.
 pub async fn get_metadata() -> Result<Metadata, String> {
-    let response = reqwest::get(format!("{BASE}/first-attempt/metadata"))
+    let resp = Request::get(&format!("{BASE}/first-attempt/metadata"))
+        .send()
         .await
         .map_err(|e| e.to_string())?;
-    let response = response.error_for_status().map_err(|e| e.to_string())?;
-    response.json::<Metadata>().await.map_err(|e| e.to_string())
+    if !resp.ok() {
+        return Err(format!("HTTP {}", resp.status()));
+    }
+    resp.json::<Metadata>().await.map_err(|e| e.to_string())
 }
 
 /// Post a recommendation request to `POST /first-attempt/recommend`.
 pub async fn post_recommendation(req: &RecommendRequest) -> Result<Recommendation, String> {
-    let response = reqwest::Client::new()
-        .post(format!("{BASE}/first-attempt/recommend"))
+    let request = Request::post(&format!("{BASE}/first-attempt/recommend"))
         .json(req)
-        .send()
-        .await
         .map_err(|e| e.to_string())?;
-    let response = response.error_for_status().map_err(|e| e.to_string())?;
-    response
-        .json::<Recommendation>()
+    let resp = request.send().await.map_err(|e| e.to_string())?;
+    if !resp.ok() {
+        return Err(format!("HTTP {}", resp.status()));
+    }
+    resp.json::<Recommendation>()
         .await
         .map_err(|e| e.to_string())
 }
