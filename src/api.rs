@@ -14,10 +14,11 @@ use serde::{Deserialize, Serialize};
 /// `http://127.0.0.1:8000` by the dx dev proxy). Set to an absolute URL to bypass the proxy.
 const BASE: &str = "";
 
-/// `GET /health` response. (Used by the status indicator in M3.)
-#[allow(dead_code)]
+/// `GET /health` response. Drives the connection indicator in the app bar.
 #[derive(Debug, Clone, Deserialize)]
 pub struct Health {
+    // Deserialized for completeness; the indicator only cares whether the request succeeded.
+    #[allow(dead_code)]
     #[serde(default)]
     pub status: String,
 }
@@ -27,7 +28,7 @@ pub struct Health {
 /// Only the fields the UI needs are modelled; serde ignores the rest (`feature_columns`,
 /// `residual_model`, `calibration`, ...). Every modelled field defaults on absence so a response
 /// that omits one degrades gracefully instead of failing to parse.
-#[allow(dead_code)] // dropdowns use known_substrates/known_dye_programs now; the rest render in M3
+#[allow(dead_code)] // required/optional_input_fields are reserved for M4 input validation
 #[derive(Debug, Clone, Deserialize)]
 pub struct Metadata {
     #[serde(default)]
@@ -80,7 +81,7 @@ pub struct RecommendRequest {
 /// (notably when it abstains), and for numeric values `Option` keeps "absent" distinct from a
 /// legitimate zero such as `target_a = 0.0`. (Fields are rendered in the result panel in M3.)
 #[allow(dead_code)]
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
 pub struct Recommendation {
     pub recommendation_action: String,
     #[serde(default)]
@@ -108,8 +109,7 @@ pub struct Recommendation {
     pub recipe: HashMap<String, f64>,
 }
 
-/// Fetch `GET /health`. (Used by the status indicator in M3.)
-#[allow(dead_code)]
+/// Fetch `GET /health`.
 pub async fn get_health() -> Result<Health, String> {
     let resp = Request::get(&format!("{BASE}/health"))
         .send()
