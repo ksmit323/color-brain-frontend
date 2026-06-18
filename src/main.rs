@@ -22,9 +22,8 @@ enum Route {
 // We can import assets in dioxus with the `asset!` macro. This macro takes a path to an asset relative to the crate root.
 // The macro returns an `Asset` type that will display as the path to the asset in the browser or a local path in desktop bundles.
 const FAVICON: Asset = asset!("/assets/favicon.ico");
-// The asset macro also minifies some assets like CSS and JS to make bundled smaller
-const MAIN_CSS: Asset = asset!("/assets/styling/main.css");
-const TAILWIND_CSS: Asset = asset!("/assets/tailwind.css");
+// The Color Brain stylesheet: design tokens and all component styles.
+const COLOR_BRAIN_CSS: Asset = asset!("/assets/styling/color_brain.css");
 
 fn main() {
     // The `launch` function is the main entry point for a dioxus app. It takes a component and renders it with the platform feature
@@ -43,8 +42,10 @@ fn App() -> Element {
         // In addition to element and text (which we will see later), rsx can contain other components. In this case,
         // we are using the `document::Link` component to add a link to our favicon and main CSS file into the head of our app.
         document::Link { rel: "icon", href: FAVICON }
-        document::Link { rel: "stylesheet", href: MAIN_CSS }
-        document::Link { rel: "stylesheet", href: TAILWIND_CSS }
+        document::Link { rel: "preconnect", href: "https://fonts.googleapis.com" }
+        document::Link { rel: "preconnect", href: "https://fonts.gstatic.com" }
+        document::Link { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" }
+        document::Link { rel: "stylesheet", href: COLOR_BRAIN_CSS }
 
         // The router component renders the route enum we defined above. It will handle synchronization of the URL and render
         // the layouts and components for the active route.
