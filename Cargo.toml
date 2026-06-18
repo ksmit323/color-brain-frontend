@@ -8,9 +8,10 @@ edition = "2021"
 
 [dependencies]
 dioxus = { version = "0.7.1", features = ["router"] }
-# `default-features = false` keeps reqwest off native-tls so it compiles to wasm (browser fetch
-# handles TLS). `json` gives us `.json()` for serde (de)serialization.
-reqwest = { version = "0.12", default-features = false, features = ["json"] }
+# gloo-net issues requests via the browser fetch API, so it accepts same-origin relative paths
+# (resolved against the document origin and forwarded to the backend by the dx dev proxy) — which
+# reqwest cannot do on wasm (it rejects relative URLs at parse time). `http` + `json` only.
+gloo-net = { version = "0.6", default-features = false, features = ["http", "json"] }
 serde = { version = "1", features = ["derive"] }
 
 [features]
