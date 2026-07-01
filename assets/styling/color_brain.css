@@ -1,8 +1,8 @@
 /*
  * Color Brain — first-attempt recipe recommender.
  *
- * The page is styled as a colour-matching booth: a deliberately neutral graphite surround (real
- * viewing booths use a neutral grey so the surround does not bias colour judgement) with the one
+ * The page is styled as a color-matching booth: a deliberately neutral graphite surround (real
+ * viewing booths use a neutral grey so the surround does not bias color judgement) with the one
  * saturated element being the data itself — the target Lab sample chip. Numeric readouts use a
  * monospace face, like an instrument display.
  */
@@ -172,6 +172,14 @@ body {
     grid-template-columns: minmax(320px, 5fr) 7fr;
     gap: 22px;
     margin-top: 22px;
+}
+
+/* The left bench column stacks the target-job form above the replay picker. */
+.bench__col {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    min-width: 0;
 }
 
 .panel {
@@ -620,6 +628,166 @@ body {
 .evidence__empty {
     color: var(--ink-faint);
     font-size: 13.5px;
+}
+
+/* ---- Replay picker ---------------------------------------------------------------------- */
+
+.replay-hint {
+    margin: -6px 0 14px;
+    color: var(--ink-faint);
+    font-size: 12.5px;
+}
+
+.replay-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 320px;
+    overflow-y: auto;
+}
+
+.replay-list__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    padding: 10px 12px;
+    background: var(--booth-2);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius-sm);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 13.5px;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.12s ease, background 0.12s ease;
+}
+
+.replay-list__row:hover {
+    border-color: var(--line);
+}
+
+.replay-list__row--selected {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(110, 168, 254, 0.18);
+}
+
+.replay-list__row:focus-visible {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(110, 168, 254, 0.22);
+}
+
+.replay-list__meta {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.replay-list__id {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--ink);
+}
+
+.replay-list__sub {
+    font-size: 11.5px;
+    color: var(--ink-faint);
+}
+
+/* ---- Win / loss badge (shared by picker rows and the comparison panel) ------------------- */
+
+.win-badge {
+    flex-shrink: 0;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+/* A win is Color Brain landing closer; a loss is the technician doing so. Neither is red — a
+ * technician win is a valid, useful outcome, not an error. */
+.win-badge--win {
+    color: var(--tier-high);
+    background: rgba(70, 199, 154, 0.12);
+}
+
+.win-badge--loss {
+    color: var(--tier-med);
+    background: rgba(224, 177, 62, 0.12);
+}
+
+.win-badge--abstain {
+    color: var(--tier-abstain);
+    background: rgba(139, 148, 161, 0.14);
+}
+
+/* ---- Comparison panel: technician vs Color Brain ---------------------------------------- */
+
+.versus {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 16px;
+}
+
+.versus__side {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 16px;
+    border-radius: var(--radius-sm);
+    background: var(--booth-2);
+    border: 1px solid var(--line-soft);
+}
+
+/* Color Brain's side carries the accent edge — it is the recommendation under scrutiny. */
+.versus__side--brain {
+    border-color: rgba(110, 168, 254, 0.4);
+}
+
+.versus__label {
+    font-size: 11.5px;
+    letter-spacing: 0.02em;
+    color: var(--ink-faint);
+}
+
+.versus__delta {
+    font-family: var(--font-mono);
+    font-size: 30px;
+    font-weight: 500;
+    line-height: 1;
+    color: var(--ink);
+}
+
+.versus__unit {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-faint);
+}
+
+.verdict-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.improvement {
+    font-size: 13px;
+}
+
+.improvement--win {
+    color: var(--tier-high);
+}
+
+.improvement--loss {
+    color: var(--tier-med);
 }
 
 @keyframes settle {

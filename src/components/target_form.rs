@@ -1,4 +1,4 @@
-//! The job-ticket form: target Lab colour, substrate/program, and optional process variables.
+//! The job-ticket form: target Lab color, substrate/program, and optional process variables.
 
 use dioxus::prelude::*;
 
@@ -54,7 +54,7 @@ pub fn TargetForm(
 
             section { class: "form__section",
                 div { class: "form__legend",
-                    span { "Target colour" }
+                    span { "Target color" }
                     span { class: "unit", "CIELAB · D65" }
                 }
                 div { class: "lab-inputs",

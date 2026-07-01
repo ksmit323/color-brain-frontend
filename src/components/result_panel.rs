@@ -5,7 +5,7 @@ use dioxus::prelude::*;
 
 use crate::api::Recommendation;
 
-/// Convert a CIELAB colour (D65 illuminant) to an 8-bit sRGB triple for the on-screen swatch.
+/// Convert a CIELAB color (D65 illuminant) to an 8-bit sRGB triple for the on-screen swatch.
 /// Out-of-gamut results are clamped per channel, which is acceptable for an indicative swatch.
 fn lab_to_rgb(l: f64, a: f64, b: f64) -> (u8, u8, u8) {
     // Lab -> XYZ.

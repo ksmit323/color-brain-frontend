@@ -109,6 +109,97 @@ pub struct Recommendation {
     pub recipe: HashMap<String, f64>,
 }
 
+/// One past dye job in the replay list. It pairs the technician's first-attempt color error with
+/// Color Brain's recommendation outcome, as scored offline on the model's holdout window.
+///
+/// The comparison fields are `Option` because a job with no comparable same-substrate history has
+/// no Color Brain result to compare against (the backend abstains). `recommendation_action` is the
+/// field the UI branches on, so it is required.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+pub struct ReplayJob {
+    pub row_id: String,
+    #[serde(default)]
+    pub substrate: String,
+    #[serde(default)]
+    pub dye_prog: String,
+    pub technician_delta_e: Option<f64>,
+    pub color_brain_delta_e: Option<f64>,
+    pub improvement: Option<f64>,
+    pub win: Option<bool>,
+    pub recommendation_action: String,
+}
+
+/// `GET /first-attempt/history` response.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+pub struct HistoryResponse {
+    #[serde(default)]
+    pub jobs: Vec<ReplayJob>,
+}
+
+/// `GET /first-attempt/replay/{row_id}` response: the full head-to-head for one past job. It is a
+/// deliberate superset of [`Recommendation`] (see [`From<ReplayDetail>`]) so the existing verdict
+/// and evidence panels can be reused for the confidence meter and nearest-batch view.
+#[allow(dead_code)]
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+pub struct ReplayDetail {
+    pub row_id: String,
+    pub technician_delta_e: Option<f64>,
+    pub color_brain_delta_e: Option<f64>,
+    pub improvement: Option<f64>,
+    pub win: Option<bool>,
+    pub p_win: Option<f64>,
+    pub tier: Option<String>,
+    pub confidence_label: Option<String>,
+    pub recommendation_action: String,
+    #[serde(default)]
+    pub abstention_reason: String,
+    pub target_l: Option<f64>,
+    pub target_a: Option<f64>,
+    pub target_b: Option<f64>,
+    pub substrate: Option<String>,
+    pub dye_prog: Option<String>,
+    pub nearest_row_id: Option<String>,
+    pub nearest_dyed_at: Option<String>,
+    pub nearest_substrate: Option<String>,
+    pub nearest_dye_prog: Option<String>,
+    pub nearest_result_cq: Option<String>,
+    #[serde(default)]
+    pub recipe: HashMap<String, f64>,
+}
+
+/// Adapt a replay detail into a [`Recommendation`] so [`ResultPanel`](crate::components::ResultPanel)
+/// and [`EvidencePanel`](crate::components::EvidencePanel) can render the confidence meter and
+/// nearest-batch evidence without duplicating them. `color_brain_delta_e` is the same quantity as
+/// `nearest_delta_e`. Fields absent from the offline export (`same_substrate_history_count`, the
+/// calibration gates) are left `None`, which those panels already tolerate.
+impl From<ReplayDetail> for Recommendation {
+    fn from(detail: ReplayDetail) -> Self {
+        Recommendation {
+            recommendation_action: detail.recommendation_action,
+            abstention_reason: detail.abstention_reason,
+            tier: detail.tier,
+            confidence_label: detail.confidence_label,
+            confidence_score: detail.p_win,
+            p_win: detail.p_win,
+            target_l: detail.target_l,
+            target_a: detail.target_a,
+            target_b: detail.target_b,
+            substrate: detail.substrate,
+            dye_prog: detail.dye_prog,
+            nearest_row_id: detail.nearest_row_id,
+            nearest_dyed_at: detail.nearest_dyed_at,
+            nearest_substrate: detail.nearest_substrate,
+            nearest_dye_prog: detail.nearest_dye_prog,
+            nearest_result_cq: detail.nearest_result_cq,
+            nearest_delta_e: detail.color_brain_delta_e,
+            same_substrate_history_count: None,
+            effective_t_high: None,
+            effective_t_med: None,
+            recipe: detail.recipe,
+        }
+    }
+}
+
 /// Fetch `GET /health`.
 pub async fn get_health() -> Result<Health, String> {
     let resp = Request::get(&format!("{BASE}/health"))
@@ -145,4 +236,29 @@ pub async fn post_recommendation(req: &RecommendRequest) -> Result<Recommendatio
     resp.json::<Recommendation>()
         .await
         .map_err(|e| e.to_string())
+}
+
+/// Fetch `GET /first-attempt/history` — the past jobs available to replay.
+pub async fn get_history() -> Result<HistoryResponse, String> {
+    let resp = Request::get(&format!("{BASE}/first-attempt/history"))
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+    if !resp.ok() {
+        return Err(format!("HTTP {}", resp.status()));
+    }
+    resp.json::<HistoryResponse>().await.map_err(|e| e.to_string())
+}
+
+/// Fetch `GET /first-attempt/replay/{row_id}` — the full technician-vs-Color-Brain comparison for
+/// one past job. `row_id` is used as a path segment; batch ids in this dataset are plain tokens.
+pub async fn get_replay(row_id: &str) -> Result<ReplayDetail, String> {
+    let resp = Request::get(&format!("{BASE}/first-attempt/replay/{row_id}"))
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+    if !resp.ok() {
+        return Err(format!("HTTP {}", resp.status()));
+    }
+    resp.json::<ReplayDetail>().await.map_err(|e| e.to_string())
 }

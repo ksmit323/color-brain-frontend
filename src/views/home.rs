@@ -1,8 +1,12 @@
 use dioxus::prelude::*;
 
-use crate::api::{get_health, get_metadata, post_recommendation, RecommendRequest, Recommendation};
+use crate::api::{
+    get_health, get_history, get_metadata, get_replay, post_recommendation, RecommendRequest,
+    Recommendation, ReplayDetail,
+};
 use crate::components::{
-    EvidencePanel, FormFields, RecipeTable, ResultPanel, StatusIndicator, TargetForm,
+    ComparisonPanel, EvidencePanel, FormFields, HistoryPicker, RecipeTable, ResultPanel,
+    StatusIndicator, TargetForm,
 };
 
 /// State of a recommendation submit. `Done` is boxed because [`Recommendation`] is large and the
@@ -13,6 +17,23 @@ enum SubmitState {
     Loading,
     Done(Box<Recommendation>),
     Error(String),
+}
+
+/// State of a replay fetch, mirroring [`SubmitState`]. `Done` is boxed for the same reason.
+#[derive(Clone)]
+enum ReplayState {
+    Idle,
+    Loading,
+    Done(Box<ReplayDetail>),
+    Error(String),
+}
+
+/// Which result the shared results column is showing. The live form and the replay picker each
+/// drive their own state; the most recent action decides what renders.
+#[derive(Clone, Copy, PartialEq)]
+enum ActiveView {
+    Live,
+    Replay,
 }
 
 /// Build a recommendation request from the form's raw string fields, validating the required
@@ -76,6 +97,7 @@ pub fn Home() -> Element {
     // run once on mount.
     let health = use_resource(move || async move { get_health().await });
     let metadata = use_resource(move || async move { get_metadata().await });
+    let history = use_resource(move || async move { get_history().await });
 
     // Form fields are kept as strings for free-form numeric entry and parsed on submit.
     let fields = FormFields {
@@ -91,10 +113,15 @@ pub fn Home() -> Element {
     };
 
     let mut submit_state = use_signal(|| SubmitState::Idle);
+    let mut replay_state = use_signal(|| ReplayState::Idle);
+    let mut selected_row_id = use_signal(|| Option::<String>::None);
+    let mut active_view = use_signal(|| ActiveView::Live);
 
     let on_submit = move |event: FormEvent| {
         // Stop the browser's default form submission / page reload.
         event.prevent_default();
+        // A live submit takes over the shared results column.
+        *active_view.write() = ActiveView::Live;
         // Read every signal into owned values before spawning the async work; clippy.toml forbids
         // holding signal borrows across `.await`.
         let req = match build_request(
@@ -167,53 +194,126 @@ pub fn Home() -> Element {
             }}
 
             main { class: "bench",
-                section { class: "panel panel--form",
-                    h2 { class: "panel__title", "Target job" }
-                    {match metadata() {
-                        None => rsx! { p { class: "inline-msg", "Loading metadata…" } },
-                        Some(Err(err)) => rsx! {
-                            div { class: "inline-msg inline-msg--error",
-                                "Could not load model metadata."
-                                div { class: "inline-msg__mono", "{err}" }
+                div { class: "bench__col",
+                    section { class: "panel panel--form",
+                        h2 { class: "panel__title", "Target job" }
+                        {match metadata() {
+                            None => rsx! { p { class: "inline-msg", "Loading metadata…" } },
+                            Some(Err(err)) => rsx! {
+                                div { class: "inline-msg inline-msg--error",
+                                    "Could not load model metadata."
+                                    div { class: "inline-msg__mono", "{err}" }
+                                }
+                            },
+                            Some(Ok(meta)) => rsx! {
+                                TargetForm {
+                                    fields,
+                                    substrates: meta.known_substrates.clone(),
+                                    dye_programs: meta.known_dye_programs.clone(),
+                                    on_submit,
+                                }
+                            },
+                        }}
+                    }
+
+                    {match history() {
+                        Some(Ok(resp)) => rsx! {
+                            HistoryPicker {
+                                jobs: resp.jobs.clone(),
+                                selected: selected_row_id(),
+                                on_select: move |row_id: String| {
+                                    // A replay selection takes over the shared results column.
+                                    *active_view.write() = ActiveView::Replay;
+                                    *selected_row_id.write() = Some(row_id.clone());
+                                    *replay_state.write() = ReplayState::Loading;
+                                    spawn(async move {
+                                        match get_replay(&row_id).await {
+                                            Ok(detail) => {
+                                                *replay_state.write() =
+                                                    ReplayState::Done(Box::new(detail))
+                                            }
+                                            Err(err) => {
+                                                *replay_state.write() = ReplayState::Error(err)
+                                            }
+                                        }
+                                    });
+                                },
                             }
                         },
-                        Some(Ok(meta)) => rsx! {
-                            TargetForm {
-                                fields,
-                                substrates: meta.known_substrates.clone(),
-                                dye_programs: meta.known_dye_programs.clone(),
-                                on_submit,
+                        Some(Err(err)) => rsx! {
+                            section { class: "panel",
+                                h2 { class: "panel__title", "Replay a past job" }
+                                div { class: "inline-msg inline-msg--error",
+                                    "Could not load past jobs."
+                                    div { class: "inline-msg__mono", "{err}" }
+                                }
+                            }
+                        },
+                        None => rsx! {
+                            section { class: "panel",
+                                h2 { class: "panel__title", "Replay a past job" }
+                                p { class: "inline-msg", "Loading past jobs…" }
                             }
                         },
                     }}
                 }
 
                 div { class: "results",
-                    {match submit_state() {
-                        SubmitState::Idle => rsx! {
-                            div { class: "placeholder", "Enter a target colour and submit to see a recommendation." }
-                        },
-                        SubmitState::Loading => rsx! {
-                            div { class: "inline-msg", "Computing recommendation…" }
-                        },
-                        SubmitState::Error(err) => rsx! {
-                            div { class: "inline-msg inline-msg--error",
-                                "Recommendation failed."
-                                div { class: "inline-msg__mono", "{err}" }
-                            }
-                        },
-                        SubmitState::Done(rec) => {
-                            let recommend = rec.recommendation_action == "recommend";
-                            rsx! {
-                                ResultPanel { rec: (*rec).clone() }
-                                div { class: "result-grid",
-                                    if recommend {
-                                        RecipeTable { columns: recipe_columns.clone(), recipe: rec.recipe.clone() }
+                    {match active_view() {
+                        ActiveView::Live => match submit_state() {
+                            SubmitState::Idle => rsx! {
+                                div { class: "placeholder", "Enter a target color and submit to see a recommendation." }
+                            },
+                            SubmitState::Loading => rsx! {
+                                div { class: "inline-msg", "Computing recommendation…" }
+                            },
+                            SubmitState::Error(err) => rsx! {
+                                div { class: "inline-msg inline-msg--error",
+                                    "Recommendation failed."
+                                    div { class: "inline-msg__mono", "{err}" }
+                                }
+                            },
+                            SubmitState::Done(rec) => {
+                                let recommend = rec.recommendation_action == "recommend";
+                                rsx! {
+                                    ResultPanel { rec: (*rec).clone() }
+                                    div { class: "result-grid",
+                                        if recommend {
+                                            RecipeTable { columns: recipe_columns.clone(), recipe: rec.recipe.clone() }
+                                        }
+                                        EvidencePanel { rec: (*rec).clone() }
                                     }
-                                    EvidencePanel { rec: (*rec).clone() }
                                 }
                             }
-                        }
+                        },
+                        ActiveView::Replay => match replay_state() {
+                            ReplayState::Idle => rsx! {
+                                div { class: "placeholder", "Pick a past job to see how Color Brain compares." }
+                            },
+                            ReplayState::Loading => rsx! {
+                                div { class: "inline-msg", "Loading comparison…" }
+                            },
+                            ReplayState::Error(err) => rsx! {
+                                div { class: "inline-msg inline-msg--error",
+                                    "Could not load comparison."
+                                    div { class: "inline-msg__mono", "{err}" }
+                                }
+                            },
+                            ReplayState::Done(detail) => {
+                                let recommend = detail.recommendation_action == "recommend";
+                                let rec: Recommendation = (*detail).clone().into();
+                                rsx! {
+                                    ComparisonPanel { detail: (*detail).clone() }
+                                    ResultPanel { rec: rec.clone() }
+                                    div { class: "result-grid",
+                                        if recommend {
+                                            RecipeTable { columns: recipe_columns.clone(), recipe: detail.recipe.clone() }
+                                        }
+                                        EvidencePanel { rec }
+                                    }
+                                }
+                            }
+                        },
                     }}
                 }
             }
