@@ -307,19 +307,14 @@ a {
 }
 
 /* ---- Hero / Color Burst ---------------------------------------------------------------------
-   The hero's signature element: a dense radiating burst built from real production dye colors
-   (see hero.rs for the source Lab values), not a flat decorative gradient — an explosion of the
-   actual, intricate color data the model searches through. Confined to the right side and faded
-   with a scrim so the headline always sits on solid, legible ground. */
+   Copy sits in a deliberate left column (top-weighted, not vertically centered). The color burst
+   owns the right half; a two-stop scrim keeps type on solid ground. */
 
 .hero {
   position: relative;
   overflow: hidden;
   isolation: isolate;
-  min-height: 640px;
-  display: flex;
-  align-items: center;
-  padding: 100px 0;
+  border-bottom: 1px solid var(--line-soft);
 }
 
 .color-burst {
@@ -341,7 +336,16 @@ a {
   position: absolute;
   inset: 0;
   z-index: 1;
-  background: linear-gradient(to right, var(--stage-0) 0%, var(--stage-0) 30%, transparent 62%);
+  background:
+    linear-gradient(
+      90deg,
+      var(--stage-0) 0%,
+      var(--stage-0) 38%,
+      rgba(15, 17, 20, 0.92) 50%,
+      rgba(15, 17, 20, 0.45) 68%,
+      transparent 82%
+    ),
+    linear-gradient(180deg, var(--stage-0) 0%, transparent 28%);
 }
 
 /* A slow, subtle pulse — not a spin — so the burst feels alive without looking mechanical. */
@@ -356,64 +360,100 @@ a {
   }
 }
 
-.hero__content {
+.hero__inner {
   position: relative;
   z-index: 2;
-  max-width: 600px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  align-items: start;
+  padding: clamp(96px, 13vh, 128px) 0 clamp(72px, 9vh, 96px);
+  min-height: clamp(520px, 78vh, 760px);
+}
+
+.hero__copy {
+  max-width: 36rem;
+  padding-top: 4px;
 }
 
 .hero__headline {
-  font-size: clamp(2.6rem, 5vw, 4rem);
+  font-size: clamp(2.35rem, 4.2vw, 3.65rem);
   font-weight: 600;
-  line-height: 1.08;
-  margin-top: 18px;
+  line-height: 1.1;
+  margin-top: 20px;
+  max-width: 14ch;
 }
 
 .hero__subhead {
-  margin-top: 20px;
-  font-size: 18px;
-  line-height: 1.55;
+  margin-top: 22px;
+  font-size: 17px;
+  line-height: 1.6;
   color: var(--ink-dim);
-  max-width: 46ch;
+  max-width: 42ch;
 }
 
-.hero__stats {
+.hero__actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 44px;
-  margin-top: 48px;
+  gap: 12px;
+  margin-top: 32px;
 }
 
-.stat {
+.hero__metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 32px;
+  margin-top: 44px;
+  padding-top: 28px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.hero__metric {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
+  min-width: 9rem;
 }
 
-.stat__value {
+.hero__metric-value {
   font-family: var(--font-mono);
-  font-size: 30px;
+  font-size: clamp(1.5rem, 2.5vw, 1.85rem);
   font-weight: 500;
+  line-height: 1;
   color: var(--ink);
+  letter-spacing: -0.02em;
 }
 
-.stat__label {
-  font-size: 12.5px;
+.hero__metric-label {
+  font-size: 12px;
+  line-height: 1.4;
   color: var(--ink-dim);
-  max-width: 18ch;
+  max-width: 16ch;
+}
+
+@media (max-width: 900px) {
+  .hero__inner {
+    grid-template-columns: 1fr;
+    min-height: 0;
+    padding: 96px 0 72px;
+  }
+
+  .hero__headline {
+    max-width: none;
+  }
 }
 
 @media (max-width: 780px) {
-  .hero {
-    min-height: 0;
-    padding: 90px 0 64px;
-  }
-
-  /* The burst's geometry is tuned for a wide hero with room to the right of the text column;
-     on a narrow screen the text takes the full width, so keep the mobile hero clean instead of
-     fighting to resize/reposition two dozen blobs around it. */
+  /* Burst geometry is tuned for a wide right column — hide on narrow screens. */
   .color-burst {
     display: none;
+  }
+
+  .hero__scrim {
+    background: var(--stage-0);
+  }
+
+  .hero__actions .btn {
+    flex: 1 1 100%;
   }
 }
 
@@ -825,8 +865,8 @@ a {
     padding: 0 18px;
   }
 
-  .hero__stats {
-    gap: 28px;
+  .hero__metrics {
+    gap: 24px;
   }
 
   .hero__subhead {

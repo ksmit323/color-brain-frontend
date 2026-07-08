@@ -104,20 +104,26 @@ pub fn Hero() -> Element {
             }
             div { class: "hero__scrim" }
 
-            div { class: "container hero__content",
-                span { class: "eyebrow", "12,398 real dye jobs" }
-                h1 { class: "hero__headline", "The recipe already exists. We find it." }
-                p { class: "hero__subhead",
-                    "Color Brain matches new colors to proven recipes in your own dye history — and stays quiet when it isn't sure."
-                }
-                div { class: "hero__stats",
-                    div { class: "stat",
-                        span { class: "stat__value", "86.7%" }
-                        span { class: "stat__label", "win rate on recommendations" }
+            div { class: "container hero__inner",
+                div { class: "hero__copy",
+                    span { class: "eyebrow", "12,398 real dye jobs" }
+                    h1 { class: "hero__headline", "The recipe already exists. We find it." }
+                    p { class: "hero__subhead",
+                        "Color Brain matches new colors to proven recipes in your own dye history — and stays quiet when it isn't sure."
                     }
-                    div { class: "stat",
-                        span { class: "stat__value", "2,043" }
-                        span { class: "stat__label", "unseen holdout jobs" }
+                    div { class: "hero__actions",
+                        a { class: "btn btn--primary", href: "#contact", "Request a Pilot" }
+                        a { class: "btn btn--ghost", href: "https://app.colorbrain.co", "Open the App" }
+                    }
+                    div { class: "hero__metrics",
+                        div { class: "hero__metric",
+                            span { class: "hero__metric-value", "86.7%" }
+                            span { class: "hero__metric-label", "win rate on recommendations" }
+                        }
+                        div { class: "hero__metric",
+                            span { class: "hero__metric-value", "2,043" }
+                            span { class: "hero__metric-label", "unseen holdout jobs" }
+                        }
                     }
                 }
             }
