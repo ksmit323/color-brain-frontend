@@ -2,6 +2,8 @@
 
 use dioxus::prelude::*;
 
+const LOGO: Asset = asset!("/assets/cb_logo.svg");
+
 #[component]
 pub fn Footer() -> Element {
     rsx! {
@@ -9,7 +11,14 @@ pub fn Footer() -> Element {
             div { class: "container",
                 div { class: "footer__grid",
                     div {
-                        div { class: "footer__brand", "Color Brain" }
+                        div { class: "footer__brand",
+                            img {
+                                class: "footer__logo",
+                                src: LOGO,
+                                alt: "",
+                            }
+                            span { class: "footer__wordmark", "Color Brain" }
+                        }
                         p { class: "footer__tagline",
                             "Decision support for textile coloration — recommend proven history, abstain when the evidence isn't there."
                         }
@@ -46,7 +55,7 @@ pub fn Footer() -> Element {
                 div { class: "footer__bottom",
                     span { "© 2026 Color Brain" }
                     div { class: "footer__bottom-links",
-                        a { href: "mailto:info@colorbrain.co", "info@colorbrain.co" }
+                        a { href: "mailto:luis@colorbrain.co", "luis@colorbrain.co" }
                         a { href: "https://app.colorbrain.co", "Open the App" }
                     }
                 }
