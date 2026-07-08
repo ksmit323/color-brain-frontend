@@ -1,6 +1,6 @@
 use dioxus::prelude::*;
 
-use components::{Footer, Nav};
+use components::{Footer, Hero, Nav};
 
 /// Shared UI components: nav, footer, and the section components added in L3+.
 mod components;
@@ -27,9 +27,9 @@ fn App() -> Element {
         div { id: "top",
             Nav {}
             main {
-                // L2 shell placeholder — hero, problem, proof, case studies, who-it's-for, and
-                // contact sections land in L3-L6.
-                div { class: "shell-placeholder container", "Landing page shell — sections coming in L3+." }
+                Hero {}
+                // Problem, proof, case studies, who-it's-for, and contact sections land in L4-L6.
+                div { class: "shell-placeholder container", "More sections coming in L4+." }
             }
             Footer {}
         }
