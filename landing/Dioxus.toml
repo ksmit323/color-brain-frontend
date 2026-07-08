@@ -3,7 +3,12 @@
 [web.app]
 
 # HTML title tag content
-title = "Color Brain"
+title = "Color Brain — Dye Recipe Intelligence"
+
+[web.watcher]
+
+# Hash links (e.g. /#contact) should serve the SPA shell, not 404.
+index_on_404 = true
 
 # include `assets` in web platform
 [web.resource]
@@ -11,7 +16,7 @@ title = "Color Brain"
 # Additional CSS style files
 style = []
 
-# Additional JavaScript files
+# reveal.js is loaded via document::Script + asset! in main.rs (bundled with other assets)
 script = []
 
 [web.resource.dev]

@@ -21,6 +21,7 @@ pub fn Footer() -> Element {
                             li { a { href: "#proof", "Proof" } }
                             li { a { href: "#case-studies", "Case Studies" } }
                             li { a { href: "#who-its-for", "Who It's For" } }
+                            li { a { href: "#contact", "Request a Pilot" } }
                             li { a { href: "https://app.colorbrain.co", "Open the App" } }
                         }
                     }
@@ -44,7 +45,10 @@ pub fn Footer() -> Element {
                 }
                 div { class: "footer__bottom",
                     span { "© 2026 Color Brain" }
-                    a { href: "https://app.colorbrain.co", "Open the App" }
+                    div { class: "footer__bottom-links",
+                        a { href: "mailto:info@colorbrain.co", "info@colorbrain.co" }
+                        a { href: "https://app.colorbrain.co", "Open the App" }
+                    }
                 }
             }
         }
