@@ -1,0 +1,304 @@
+/*
+ * Color Brain — colorbrain.co marketing site.
+ *
+ * Same instrument-blue accent and font pairing as the operator app (app.colorbrain.co), but
+ * pushed further: bigger display type, a deeper graphite stage, and real production color data
+ * used as decoration (see the hero's "Archive Wall", built in L3) instead of generic gradients.
+ * The one rule carried over from the app: the surround stays neutral so color is the only
+ * saturated thing on the page.
+ */
+
+:root {
+  /* Stage surfaces, deeper than the app's booth for a more dramatic hero-driven page. */
+  --stage-0: #0f1114;
+  --stage-1: #191c21;
+  --line: #2a2f37;
+  --line-soft: #21252c;
+
+  /* Ink. */
+  --ink: #ecedf2;
+  --ink-dim: #9aa2ae;
+  --ink-faint: #666e7a;
+
+  /* The one accent, identical to the app — the single thread tying both sites together. */
+  --signal: #6ea8fe;
+  --signal-press: #5b97f0;
+
+  /* Confidence-tier colors, reused from the app for the proof/case-study sections. Never red —
+       abstention is calm, not an error. */
+  --tier-high: #46c79a;
+  --tier-abstain: #8b94a1;
+
+  --radius: 12px;
+  --radius-sm: 7px;
+  --shadow: 0 20px 44px -20px rgba(0, 0, 0, 0.8);
+
+  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+
+  --container-w: 1180px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background-color: var(--stage-0);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+p {
+  margin: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* ---- Layout utilities --------------------------------------------------------------------- */
+
+.container {
+  max-width: var(--container-w);
+  margin: 0 auto;
+  padding: 0 28px;
+}
+
+/* Small mono label used above section headings and stat readouts — an instrument-style device
+   that signals "measured," not "hyped." */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.eyebrow::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--signal);
+}
+
+/* ---- Buttons ------------------------------------------------------------------------------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px 22px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+.btn--primary {
+  background: var(--signal);
+  color: #0b1420;
+}
+
+.btn--primary:hover {
+  background: var(--signal-press);
+}
+
+.btn--ghost {
+  background: transparent;
+  border-color: var(--line);
+  color: var(--ink);
+}
+
+.btn--ghost:hover {
+  border-color: var(--signal);
+}
+
+/* ---- Nav ----------------------------------------------------------------------------------- */
+
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: rgba(15, 17, 20, 0.82);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.nav__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 16px 28px;
+}
+
+.nav__brand {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.nav__links {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.nav__links a {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink-dim);
+  transition: color 0.15s ease;
+}
+
+.nav__links a:hover {
+  color: var(--ink);
+}
+
+.nav__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.nav__actions .btn {
+  padding: 10px 18px;
+  font-size: 14px;
+}
+
+@media (max-width: 860px) {
+  .nav__links {
+    display: none;
+  }
+}
+
+/* ---- Footer -------------------------------------------------------------------------------- */
+
+.footer {
+  border-top: 1px solid var(--line-soft);
+  padding: 56px 0 32px;
+}
+
+.footer__grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr;
+  gap: 40px;
+}
+
+.footer__brand {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.footer__tagline {
+  margin-top: 10px;
+  color: var(--ink-dim);
+  font-size: 14px;
+  max-width: 32ch;
+}
+
+.footer__heading {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-bottom: 14px;
+}
+
+.footer__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.footer__list a,
+.footer__list span {
+  font-size: 14px;
+  color: var(--ink-dim);
+}
+
+.footer__list a:hover {
+  color: var(--ink);
+}
+
+.footer__founder-role {
+  display: block;
+  color: var(--ink-faint);
+  font-size: 12px;
+  margin-top: 1px;
+}
+
+.footer__bottom {
+  margin-top: 48px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line-soft);
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--ink-faint);
+}
+
+@media (max-width: 720px) {
+  .footer__grid {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+
+  .footer__bottom {
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+
+/* ---- L2 placeholder — removed once L3+ sections land -------------------------------------- */
+
+.shell-placeholder {
+  padding: 120px 0;
+  text-align: center;
+  color: var(--ink-dim);
+}
