@@ -1,19 +1,23 @@
-name: Deploy frontend
+name: Deploy app
 on:
   push:
     branches: [main]
+    paths: ["app/**", ".github/workflows/deploy.yml"]
   workflow_dispatch:
 permissions:
   id-token: write
   contents: read
 concurrency:
-  group: deploy-frontend
+  group: deploy-app
   cancel-in-progress: true
 env:
   AWS_REGION: ap-southeast-2
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -24,8 +28,8 @@ jobs:
           path: |
             ~/.cargo/registry
             ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+            app/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('app/Cargo.lock') }}
       - run: cargo install dioxus-cli --version 0.7.9 --locked
       - run: dx build --release --platform web
       - name: Resolve output dir
