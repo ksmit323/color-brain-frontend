@@ -231,10 +231,12 @@ const BASE: &str = "";
 
 ## Project Structure
 
+This directory is the `app` project inside the `color-brain-frontend` repo, which also contains
+the independent `landing` project (colorbrain.co marketing site). `AGENTS.md` and
+`CODING_RULES.md` live one level up, at the repo root, and apply to both projects.
+
 ```text
-color-brain-frontend/
-├── AGENTS.md                 # Dioxus 0.7 patterns for AI-assisted development
-├── CODING_RULES.md           # Engineering principles for this repo
+app/
 ├── IMPLEMENTATION_PLAN.md    # Milestone plan (M1–M5)
 ├── Cargo.toml                # Dependencies and platform features
 ├── Dioxus.toml               # App title, assets, dev proxy
@@ -259,8 +261,8 @@ color-brain-frontend/
 
 ## Development Guidelines
 
-- Follow [CODING_RULES.md](./CODING_RULES.md): minimum code, surgical changes, verifiable milestones.
-- Use [AGENTS.md](./AGENTS.md) as the authoritative Dioxus 0.7 reference (`use_signal`, `use_resource`, `#[component]`, `Routable`).
+- Follow [CODING_RULES.md](../CODING_RULES.md): minimum code, surgical changes, verifiable milestones.
+- Use [AGENTS.md](../AGENTS.md) as the authoritative Dioxus 0.7 reference (`use_signal`, `use_resource`, `#[component]`, `Routable`).
 - Read signal values into owned data before `.await`; never hold `.read()` or `.write()` borrows across await points.
 - Model only the API fields the UI needs; rely on `#[serde(default)]` and `skip_serializing_if` for graceful degradation.
 - Do not hard-code substrates or dye programs — always source them from metadata.
