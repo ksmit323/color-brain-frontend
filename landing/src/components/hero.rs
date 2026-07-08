@@ -96,7 +96,7 @@ pub fn Hero() -> Element {
     }
 
     rsx! {
-        section { class: "hero", id: "hero",
+        section { class: "hero reveal is-visible", id: "hero",
             div { class: "color-burst", "aria-hidden": "true",
                 for style in blobs {
                     div { class: "color-burst__blob", style: "{style}" }

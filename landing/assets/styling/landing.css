@@ -38,6 +38,10 @@
   box-sizing: border-box;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   margin: 0;
   background-color: var(--stage-0);
@@ -275,8 +279,18 @@ a {
   border-top: 1px solid var(--line-soft);
   display: flex;
   justify-content: space-between;
+  align-items: center;
   font-size: 13px;
   color: var(--ink-faint);
+}
+
+.footer__bottom-links {
+  display: flex;
+  gap: 20px;
+}
+
+.footer__bottom-links a:hover {
+  color: var(--ink-dim);
 }
 
 @media (max-width: 720px) {
@@ -287,7 +301,8 @@ a {
 
   .footer__bottom {
     flex-direction: column;
-    gap: 8px;
+    align-items: flex-start;
+    gap: 12px;
   }
 }
 
@@ -338,12 +353,6 @@ a {
 
   50% {
     transform: translate(-50%, -50%) scale(1.08);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .color-burst__blob {
-    animation: none;
   }
 }
 
@@ -408,10 +417,480 @@ a {
   }
 }
 
-/* ---- L2 placeholder — removed once L3+ sections land -------------------------------------- */
+/* ---- Shared section layout ---------------------------------------------------------------- */
 
-.shell-placeholder {
-  padding: 120px 0;
-  text-align: center;
+.section {
+  padding: 100px 0;
+}
+
+.section--alt {
+  background: var(--stage-1);
+  border-top: 1px solid var(--line-soft);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.section__title {
+  margin-top: 16px;
+  font-size: clamp(1.9rem, 3.6vw, 2.75rem);
+  font-weight: 600;
+  line-height: 1.12;
+  max-width: 22ch;
+}
+
+.section__lede {
+  margin-top: 18px;
+  font-size: 17px;
+  line-height: 1.6;
   color: var(--ink-dim);
+  max-width: 62ch;
+}
+
+/* Mono readout tiles — instrument-style digits, not gradient hype stats. */
+.readout-grid {
+  display: grid;
+  gap: 32px;
+  margin-top: 52px;
+}
+
+.readout-grid--3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.readout-grid--proof {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.readout {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 24px 0 0;
+  border-top: 1px solid var(--line-soft);
+}
+
+.readout__value {
+  font-family: var(--font-mono);
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  font-weight: 500;
+  line-height: 1;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+}
+
+.readout--accent .readout__value {
+  color: var(--tier-high);
+}
+
+.readout__label {
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--ink-dim);
+  max-width: 24ch;
+}
+
+/* ---- Problem ------------------------------------------------------------------------------- */
+
+.section--problem {
+  padding-top: 88px;
+}
+
+/* ---- How It Works -------------------------------------------------------------------------- */
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+  margin-top: 52px;
+}
+
+.step {
+  padding: 28px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+  background: rgba(15, 17, 20, 0.45);
+}
+
+.step__num {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  color: var(--ink-faint);
+}
+
+.step__title {
+  margin-top: 16px;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.step__body {
+  margin-top: 12px;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--ink-dim);
+}
+
+/* ---- Proof --------------------------------------------------------------------------------- */
+
+.section--proof .readout__value {
+  font-size: clamp(1.75rem, 3.2vw, 2.35rem);
+}
+
+.proof__footnote {
+  margin-top: 40px;
+  padding: 20px 24px;
+  border-left: 2px solid var(--tier-abstain);
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--ink-dim);
+  max-width: 58ch;
+}
+
+/* ---- Case Studies -------------------------------------------------------------------------- */
+
+.section--case-studies {
+  background: var(--stage-1);
+  border-top: 1px solid var(--line-soft);
+}
+
+.case-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24px;
+  margin-top: 52px;
+}
+
+.case-card {
+  padding: 24px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+  background: rgba(15, 17, 20, 0.5);
+}
+
+.case-card__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.case-card__substrate {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.case-card__id {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-faint);
+}
+
+.case-card__win {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--tier-high);
+  background: rgba(70, 199, 154, 0.1);
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.case-card__lab {
+  display: flex;
+  gap: 14px;
+  margin-top: 14px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--ink-dim);
+}
+
+.case-card__lab b {
+  color: var(--ink-faint);
+  font-weight: 400;
+}
+
+.case-card__swatches {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 22px;
+}
+
+.swatch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+/* The swatch chip is the one saturated element per card — real dye color, not UI chrome. */
+.swatch__chip {
+  width: 100%;
+  aspect-ratio: 1;
+  max-width: 108px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.25),
+    inset 0 -10px 22px -12px rgba(0, 0, 0, 0.5);
+}
+
+.swatch__label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-dim);
+}
+
+.swatch__de {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-faint);
+}
+
+.swatch__de--win {
+  color: var(--tier-high);
+  font-weight: 500;
+}
+
+@media (max-width: 900px) {
+  .readout-grid--3,
+  .readout-grid--proof,
+  .steps,
+  .specimens {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .section {
+    padding: 72px 0;
+  }
+
+  .section__title {
+    max-width: none;
+  }
+
+  .case-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---- Who It's For -------------------------------------------------------------------------- */
+
+.specimens {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+  margin-top: 52px;
+}
+
+/* Specimen-label cards — mono role tags, no step numbering. */
+.specimen {
+  padding: 28px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius);
+  background: rgba(15, 17, 20, 0.35);
+}
+
+.specimen__role {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.specimen__tagline {
+  margin-top: 18px;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.specimen__body {
+  margin-top: 12px;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--ink-dim);
+}
+
+/* ---- Contact / final CTA ------------------------------------------------------------------- */
+
+.section--contact {
+  background: var(--stage-1);
+  border-top: 1px solid var(--line-soft);
+}
+
+.contact__intro {
+  max-width: 640px;
+}
+
+.contact__title {
+  margin-top: 16px;
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.contact__lede {
+  margin-top: 18px;
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--ink-dim);
+}
+
+.contact-form {
+  margin-top: 44px;
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.contact-form__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.form-field label {
+  display: block;
+  margin-bottom: 7px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-dim);
+}
+
+.form-field input,
+.form-field textarea {
+  width: 100%;
+  padding: 12px 14px;
+  background: var(--stage-0);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.4;
+  transition: border-color 0.15s ease;
+}
+
+.form-field input::placeholder,
+.form-field textarea::placeholder {
+  color: var(--ink-faint);
+}
+
+.form-field input:focus,
+.form-field textarea:focus {
+  outline: none;
+  border-color: var(--ink-dim);
+}
+
+.contact-form__submit {
+  align-self: flex-start;
+  margin-top: 6px;
+}
+
+/* ---- Scroll reveal ------------------------------------------------------------------------- */
+
+.reveal .container {
+  opacity: 0;
+  transform: translateY(22px);
+  transition:
+    opacity 0.55s ease,
+    transform 0.55s ease;
+}
+
+.reveal.is-visible .container {
+  opacity: 1;
+  transform: none;
+}
+
+/* ---- Responsive polish --------------------------------------------------------------------- */
+
+@media (max-width: 560px) {
+  .container {
+    padding: 0 18px;
+  }
+
+  .hero__stats {
+    gap: 28px;
+  }
+
+  .hero__subhead {
+    font-size: 16px;
+  }
+
+  .section__lede,
+  .contact__lede {
+    font-size: 16px;
+  }
+
+  .contact-form {
+    max-width: none;
+  }
+
+  .contact-form__submit {
+    width: 100%;
+  }
+}
+
+@media (min-width: 561px) and (max-width: 900px) {
+  .readout-grid--proof {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .color-burst__blob {
+    animation: none;
+  }
+
+  .btn,
+  .btn:hover {
+    transform: none;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+  }
+
+  .reveal .container {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .case-card__swatches {
+    gap: 10px;
+  }
+
+  .swatch__chip {
+    max-width: 88px;
+  }
+
+  .specimens,
+  .contact-form__row {
+    grid-template-columns: 1fr;
+  }
+
+  .footer__bottom-links {
+    flex-direction: column;
+    gap: 8px;
+  }
 }
