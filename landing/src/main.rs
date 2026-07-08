@@ -1,17 +1,37 @@
 use dioxus::prelude::*;
 
+use components::{Footer, Nav};
+
+/// Shared UI components: nav, footer, and the section components added in L3+.
+mod components;
+
+const FAVICON: Asset = asset!("/assets/favicon.ico");
+const LANDING_CSS: Asset = asset!("/assets/styling/landing.css");
+
 fn main() {
     dioxus::launch(App);
 }
 
-/// L1 scaffold spike: proves `landing/` builds and serves standalone, as its own single-crate
-/// Cargo project alongside (not inside) the `color-brain-frontend` app. Real content lands in L2+.
 #[component]
 fn App() -> Element {
     rsx! {
-        div {
-            h1 { "Color Brain" }
-            p { "Landing page scaffold — L1 spike." }
+        document::Link { rel: "icon", href: FAVICON }
+        document::Link { rel: "preconnect", href: "https://fonts.googleapis.com" }
+        document::Link { rel: "preconnect", href: "https://fonts.gstatic.com" }
+        document::Link {
+            rel: "stylesheet",
+            href: "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap",
+        }
+        document::Link { rel: "stylesheet", href: LANDING_CSS }
+
+        div { id: "top",
+            Nav {}
+            main {
+                // L2 shell placeholder — hero, problem, proof, case studies, who-it's-for, and
+                // contact sections land in L3-L6.
+                div { class: "shell-placeholder container", "Landing page shell — sections coming in L3+." }
+            }
+            Footer {}
         }
     }
 }
