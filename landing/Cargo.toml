@@ -1,0 +1,16 @@
+[package]
+name = "color-brain-landing"
+version = "0.1.0"
+authors = ["ksmit323 <ksmit323@gmail.com>"]
+edition = "2021"
+
+# Marketing site for colorbrain.co. Deliberately independent of the sibling `color-brain-frontend`
+# app crate (../Cargo.toml) — no shared Cargo workspace, no backend calls, no router (one page).
+# See ../LANDING_PAGE_PLAN.md.
+
+[dependencies]
+dioxus = "0.7.1"
+
+[features]
+default = ["web"]
+web = ["dioxus/web"]
