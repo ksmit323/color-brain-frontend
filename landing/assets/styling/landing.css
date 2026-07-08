@@ -1,15 +1,13 @@
 /*
  * Color Brain — colorbrain.co marketing site.
  *
- * Same instrument-blue accent and font pairing as the operator app (app.colorbrain.co), but
- * pushed further: bigger display type, a deeper graphite stage, and real production color data
- * used as decoration (see the hero's "Archive Wall", built in L3) instead of generic gradients.
- * The one rule carried over from the app: the surround stays neutral so color is the only
- * saturated thing on the page.
+ * A neutral dark stage with monochrome UI chrome (buttons, nav, type all render in ink/graphite)
+ * so that real production dye color — the hero's color burst, the case-study swatches — is the
+ * only saturated thing on the page. No fixed accent hue; this site is independent of the app's.
  */
 
 :root {
-  /* Stage surfaces, deeper than the app's booth for a more dramatic hero-driven page. */
+  /* Stage surfaces. */
   --stage-0: #0f1114;
   --stage-1: #191c21;
   --line: #2a2f37;
@@ -19,10 +17,6 @@
   --ink: #ecedf2;
   --ink-dim: #9aa2ae;
   --ink-faint: #666e7a;
-
-  /* The one accent, identical to the app — the single thread tying both sites together. */
-  --signal: #6ea8fe;
-  --signal-press: #5b97f0;
 
   /* Confidence-tier colors, reused from the app for the proof/case-study sections. Never red —
        abstention is calm, not an error. */
@@ -82,23 +76,13 @@ a {
 /* Small mono label used above section headings and stat readouts — an instrument-style device
    that signals "measured," not "hyped." */
 .eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
+  display: inline-block;
   font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--ink-dim);
-}
-
-.eyebrow::before {
-  content: "";
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--signal);
+  color: var(--ink-faint);
 }
 
 /* ---- Buttons ------------------------------------------------------------------------------- */
@@ -126,12 +110,12 @@ a {
 }
 
 .btn--primary {
-  background: var(--signal);
-  color: #0b1420;
+  background: var(--ink);
+  color: var(--stage-0);
 }
 
 .btn--primary:hover {
-  background: var(--signal-press);
+  background: #ffffff;
 }
 
 .btn--ghost {
@@ -141,7 +125,7 @@ a {
 }
 
 .btn--ghost:hover {
-  border-color: var(--signal);
+  border-color: var(--ink);
 }
 
 /* ---- Nav ----------------------------------------------------------------------------------- */
@@ -206,6 +190,18 @@ a {
 
 @media (max-width: 860px) {
   .nav__links {
+    display: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .nav__row {
+    padding: 14px 18px;
+  }
+
+  /* Keep just the primary CTA in the nav on narrow screens — the ghost button wraps onto three
+     lines otherwise, and "Open the App" is still reachable from the footer. */
+  .nav__actions .btn--ghost {
     display: none;
   }
 }
@@ -292,6 +288,123 @@ a {
   .footer__bottom {
     flex-direction: column;
     gap: 8px;
+  }
+}
+
+/* ---- Hero / Color Burst ---------------------------------------------------------------------
+   The hero's signature element: a dense radiating burst built from real production dye colors
+   (see hero.rs for the source Lab values), not a flat decorative gradient — an explosion of the
+   actual, intricate color data the model searches through. Confined to the right side and faded
+   with a scrim so the headline always sits on solid, legible ground. */
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  min-height: 640px;
+  display: flex;
+  align-items: center;
+  padding: 100px 0;
+}
+
+.color-burst {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.color-burst__blob {
+  position: absolute;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  animation: blob-breathe 7s ease-in-out infinite;
+  animation-delay: calc(var(--blob-i, 0) * -0.4s);
+}
+
+.hero__scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(to right, var(--stage-0) 0%, var(--stage-0) 30%, transparent 62%);
+}
+
+/* A slow, subtle pulse — not a spin — so the burst feels alive without looking mechanical. */
+@keyframes blob-breathe {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  50% {
+    transform: translate(-50%, -50%) scale(1.08);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .color-burst__blob {
+    animation: none;
+  }
+}
+
+.hero__content {
+  position: relative;
+  z-index: 2;
+  max-width: 600px;
+}
+
+.hero__headline {
+  font-size: clamp(2.6rem, 5vw, 4rem);
+  font-weight: 600;
+  line-height: 1.08;
+  margin-top: 18px;
+}
+
+.hero__subhead {
+  margin-top: 20px;
+  font-size: 18px;
+  line-height: 1.55;
+  color: var(--ink-dim);
+  max-width: 46ch;
+}
+
+.hero__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 44px;
+  margin-top: 48px;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stat__value {
+  font-family: var(--font-mono);
+  font-size: 30px;
+  font-weight: 500;
+  color: var(--ink);
+}
+
+.stat__label {
+  font-size: 12.5px;
+  color: var(--ink-dim);
+  max-width: 18ch;
+}
+
+@media (max-width: 780px) {
+  .hero {
+    min-height: 0;
+    padding: 90px 0 64px;
+  }
+
+  /* The burst's geometry is tuned for a wide hero with room to the right of the text column;
+     on a narrow screen the text takes the full width, so keep the mobile hero clean instead of
+     fighting to resize/reposition two dozen blobs around it. */
+  .color-burst {
+    display: none;
   }
 }
 
