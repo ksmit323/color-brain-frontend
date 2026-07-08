@@ -1,0 +1,43 @@
+name: Deploy landing
+on:
+  push:
+    branches: [main]
+    paths: ["landing/**", ".github/workflows/deploy-landing.yml"]
+  workflow_dispatch:
+permissions:
+  id-token: write
+  contents: read
+concurrency:
+  group: deploy-landing
+  cancel-in-progress: true
+env:
+  AWS_REGION: ap-southeast-2
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: landing
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            landing/target
+          key: ${{ runner.os }}-cargo-landing-${{ hashFiles('landing/Cargo.lock') }}
+      - run: cargo install dioxus-cli --version 0.7.9 --locked
+      - run: dx build --release --platform web
+      - name: Resolve output dir
+        id: out
+        run: echo "dir=$(find target/dx -type d -path '*/release/web/public' | head -1)" >> "$GITHUB_OUTPUT"
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - run: aws s3 sync "${{ steps.out.outputs.dir }}" "s3://${{ vars.LANDING_S3_BUCKET }}" --delete
+      - run: aws cloudfront create-invalidation --distribution-id "${{ vars.LANDING_CLOUDFRONT_DISTRIBUTION_ID }}" --paths "/*"
