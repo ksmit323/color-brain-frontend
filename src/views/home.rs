@@ -6,7 +6,7 @@ use crate::api::{
 };
 use crate::components::{
     ComparisonPanel, EvidencePanel, FormFields, HistoryPicker, RecipeTable, ResultPanel,
-    StatusIndicator, TargetForm,
+    StatusIndicator, TargetForm, TrackRecord,
 };
 
 /// State of a recommendation submit. `Done` is boxed because [`Recommendation`] is large and the
@@ -163,6 +163,12 @@ pub fn Home() -> Element {
         _ => Vec::new(),
     };
 
+    // Backtest headline (win rate / median improvement), shown on the picker and live recommendations.
+    let comparison_stats = match metadata() {
+        Some(Ok(ref m)) => m.comparison_stats.clone(),
+        _ => None,
+    };
+
     rsx! {
         div { class: "app",
             header { class: "appbar",
@@ -220,6 +226,7 @@ pub fn Home() -> Element {
                         Some(Ok(resp)) => rsx! {
                             HistoryPicker {
                                 jobs: resp.jobs.clone(),
+                                stats: comparison_stats.clone(),
                                 selected: selected_row_id(),
                                 on_select: move |row_id: String| {
                                     // A replay selection takes over the shared results column.
@@ -277,6 +284,16 @@ pub fn Home() -> Element {
                                 let recommend = rec.recommendation_action == "recommend";
                                 rsx! {
                                     ResultPanel { rec: (*rec).clone() }
+                                    if recommend {
+                                        if let Some(stats) = comparison_stats.clone() {
+                                            div { class: "panel panel--note",
+                                                p { class: "replay-hint",
+                                                    "This recipe is a proven formula from the closest matching past job."
+                                                }
+                                                TrackRecord { stats }
+                                            }
+                                        }
+                                    }
                                     div { class: "result-grid",
                                         if recommend {
                                             RecipeTable { columns: recipe_columns.clone(), recipe: rec.recipe.clone() }

@@ -23,6 +23,16 @@ pub struct Health {
     pub status: String,
 }
 
+/// Aggregate backtest headline: how Color Brain did against the technician across the whole
+/// holdout. `win_rate`/`median_improvement` are `None` when the model made no recommendations.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+pub struct ComparisonStats {
+    #[serde(default)]
+    pub recommended_count: u64,
+    pub win_rate: Option<f64>,
+    pub median_improvement: Option<f64>,
+}
+
 /// `GET /first-attempt/metadata` response.
 ///
 /// Only the fields the UI needs are modelled; serde ignores the rest (`feature_columns`,
@@ -48,6 +58,9 @@ pub struct Metadata {
     pub required_input_fields: Vec<String>,
     #[serde(default)]
     pub optional_input_fields: Vec<String>,
+    /// Backtest headline used by the replay-proof and live "vs technician" views.
+    #[serde(default)]
+    pub comparison_stats: Option<ComparisonStats>,
 }
 
 /// `POST /first-attempt/recommend` request body.

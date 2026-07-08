@@ -3,7 +3,8 @@
 
 use dioxus::prelude::*;
 
-use crate::api::ReplayJob;
+use crate::api::{ComparisonStats, ReplayJob};
+use crate::components::TrackRecord;
 
 /// A single selectable job row: its batch id and program, plus a compact win/loss badge. Clicking
 /// emits the `row_id` so the parent can fetch and show the full comparison. Kept private, like
@@ -37,22 +38,27 @@ fn ReplayRow(job: ReplayJob, selected: bool, on_select: EventHandler<String>) ->
     }
 }
 
-/// The list of replayable past jobs. `selected` is the currently open job (for highlighting);
-/// `on_select` fires with the chosen `row_id`.
+/// The curated list of past jobs Color Brain recommended on. `stats` is the backtest headline
+/// shown above the list; `selected` is the currently open job (for highlighting); `on_select`
+/// fires with the chosen `row_id`.
 #[component]
 pub fn HistoryPicker(
     jobs: Vec<ReplayJob>,
+    stats: Option<ComparisonStats>,
     selected: Option<String>,
     on_select: EventHandler<String>,
 ) -> Element {
     rsx! {
         section { class: "panel",
-            h2 { class: "panel__title", "Replay a past job" }
+            h2 { class: "panel__title", "How Color Brain compares" }
+            if let Some(stats) = stats {
+                TrackRecord { stats }
+            }
             p { class: "replay-hint",
-                "Pick a job a technician already ran to see how Color Brain compares."
+                "Pick a past job below to see the head-to-head against the technician."
             }
             if jobs.is_empty() {
-                p { class: "evidence__empty", "No past jobs are available to replay." }
+                p { class: "evidence__empty", "No recommended past jobs are available to replay." }
             } else {
                 div { class: "replay-list",
                     for job in jobs {
