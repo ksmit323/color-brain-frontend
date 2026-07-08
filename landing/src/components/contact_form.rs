@@ -6,7 +6,7 @@
 use dioxus::prelude::*;
 
 /// Formspree (or equivalent) endpoint — forwards to the @colorbrain.co inbox. Replace before launch.
-const FORM_ACTION: &str = "https://formspree.io/f/REPLACE_ME";
+const FORM_ACTION: &str = "https://formspree.io/f/mwvdjnde";
 
 /// One labeled input in the pilot-request form.
 #[component]
