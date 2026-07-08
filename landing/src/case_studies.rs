@@ -7,6 +7,9 @@ use dioxus::prelude::*;
 
 use crate::lab_color::Lab;
 
+/// First-attempt ΔE above this threshold is treated as missing the color spec in the UI.
+pub const TECHNICIAN_FAIL_DE: f64 = 1.0;
+
 /// One anonymized holdout job with target, technician, and Color Brain achieved colors.
 #[derive(Clone, Copy, PartialEq)]
 pub struct CaseStudy {
@@ -18,6 +21,13 @@ pub struct CaseStudy {
     pub technician_de: f64,
     pub color_brain_de: f64,
     pub improvement: f64,
+}
+
+impl CaseStudy {
+    /// Whether the technician's first attempt missed the usual ΔE 1.0 pass/fail gate.
+    pub fn technician_missed_spec(self) -> bool {
+        self.technician_de > TECHNICIAN_FAIL_DE
+    }
 }
 
 /// The five high-confidence wins called out in LANDING_PAGE_PLAN.md.
@@ -140,15 +150,30 @@ fn Swatch(
     label: String,
     color: String,
     delta_e: Option<f64>,
+    #[props(optional)] large: bool,
     #[props(optional)] accent: bool,
+    #[props(optional)] failed: bool,
 ) -> Element {
+    let swatch_class = if large {
+        if failed {
+            "swatch swatch--lg swatch--fail"
+        } else {
+            "swatch swatch--lg"
+        }
+    } else if failed {
+        "swatch swatch--fail"
+    } else {
+        "swatch"
+    };
     let de_class = if accent {
         "swatch__de swatch__de--win"
+    } else if failed {
+        "swatch__de swatch__de--fail"
     } else {
         "swatch__de"
     };
     rsx! {
-        div { class: "swatch",
+        div { class: "{swatch_class}",
             div {
                 class: "swatch__chip",
                 background_color: "{color}",
@@ -157,42 +182,59 @@ fn Swatch(
             if let Some(de) = delta_e {
                 span { class: "{de_class}", "ΔE {de:.3}" }
             }
+            if failed {
+                span { class: "swatch__status", "Failed — above ΔE {TECHNICIAN_FAIL_DE:.1}" }
+            }
         }
     }
 }
 
-/// A single case-study card: target vs technician vs Color Brain swatches with ΔE readouts.
+/// The active case-study detail panel: target vs technician vs Color Brain at full size.
 #[component]
-pub fn CaseStudyCard(study: CaseStudy) -> Element {
+pub fn CaseStudyDetail(study: CaseStudy) -> Element {
     let (tl, ta, tb) = (study.target.l, study.target.a, study.target.b);
-
+    let tech_failed = study.technician_missed_spec();
     rsx! {
-        article { class: "case-card",
-            header { class: "case-card__head",
-                span { class: "case-card__substrate", "{study.substrate}" }
-                span { class: "case-card__id", "Job {study.row_id}" }
-                span { class: "case-card__win", "+{study.improvement:.3} ΔE" }
+        article { class: "case-panel",
+            header { class: "case-panel__head",
+                div { class: "case-panel__meta",
+                    span { class: "case-panel__substrate", "{study.substrate}" }
+                    span { class: "case-panel__id", "Job {study.row_id}" }
+                }
+                span { class: "case-panel__win", "Color Brain +{study.improvement:.3} ΔE closer" }
             }
-            div { class: "case-card__lab",
-                span { b { "L " } "{tl:.2}" }
-                span { b { "a " } "{ta:.2}" }
-                span { b { "b " } "{tb:.2}" }
+            p { class: "case-outcome",
+                if tech_failed {
+                    "Technician first attempt "
+                    span { class: "case-outcome__fail",
+                        "failed — ΔE {study.technician_de:.3} (above {TECHNICIAN_FAIL_DE:.1})"
+                    }
+                } else {
+                    "Technician first attempt within spec — ΔE {study.technician_de:.3}"
+                }
             }
-            div { class: "case-card__swatches",
+            div { class: "case-panel__lab",
+                span { b { "Target Lab " } "{tl:.2}, {ta:.2}, {tb:.2}" }
+            }
+            div { class: "case-panel__swatches",
                 Swatch {
                     label: "Target".to_string(),
                     color: study.target.to_css(),
                     delta_e: None,
+                    large: true,
                 }
                 Swatch {
                     label: "Technician".to_string(),
                     color: study.technician.to_css(),
                     delta_e: Some(study.technician_de),
+                    large: true,
+                    failed: tech_failed,
                 }
                 Swatch {
                     label: "Color Brain".to_string(),
                     color: study.color_brain.to_css(),
                     delta_e: Some(study.color_brain_de),
+                    large: true,
                     accent: true,
                 }
             }

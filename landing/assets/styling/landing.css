@@ -21,6 +21,7 @@
   /* Confidence-tier colors, reused from the app for the proof/case-study sections. Never red —
        abstention is calm, not an error. */
   --tier-high: #46c79a;
+  --tier-fail: #e06c75;
   --tier-abstain: #8b94a1;
 
   --radius: 12px;
@@ -132,6 +133,13 @@ a {
   border-color: var(--ink);
 }
 
+.btn--sm {
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 6px;
+}
+
 /* ---- Nav ----------------------------------------------------------------------------------- */
 
 .nav {
@@ -139,24 +147,38 @@ a {
   top: 0;
   z-index: 20;
   background: rgba(15, 17, 20, 0.82);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--line-soft);
+  backdrop-filter: blur(14px) saturate(1.15);
+  border-bottom: 1px solid rgba(42, 47, 55, 0.55);
 }
 
-.nav__row {
+.nav__inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 24px;
-  padding: 16px 28px;
+  gap: 28px;
+  height: 60px;
 }
 
 .nav__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.nav__logo {
+  display: block;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.nav__wordmark {
   font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 18px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
   color: var(--ink);
   white-space: nowrap;
 }
@@ -164,47 +186,68 @@ a {
 .nav__links {
   display: flex;
   align-items: center;
-  gap: 28px;
+  gap: 2px;
   list-style: none;
   margin: 0;
   padding: 0;
+  flex: 1;
+  justify-content: center;
 }
 
-.nav__links a {
+.nav__link {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
   font-size: 14px;
   font-weight: 500;
   color: var(--ink-dim);
-  transition: color 0.15s ease;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
 }
 
-.nav__links a:hover {
+.nav__link:hover {
   color: var(--ink);
+  background: rgba(236, 237, 242, 0.06);
 }
 
 .nav__actions {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
+  flex-shrink: 0;
+  padding-left: 20px;
+  border-left: 1px solid var(--line-soft);
 }
 
-.nav__actions .btn {
-  padding: 10px 18px;
-  font-size: 14px;
+.nav__actions .btn:hover {
+  transform: none;
 }
 
-@media (max-width: 860px) {
+@media (max-width: 960px) {
   .nav__links {
     display: none;
+  }
+
+  .nav__actions {
+    padding-left: 0;
+    border-left: none;
   }
 }
 
 @media (max-width: 560px) {
-  .nav__row {
-    padding: 14px 18px;
+  .nav__inner {
+    height: 56px;
+    gap: 16px;
   }
 
-  /* Keep just the primary CTA in the nav on narrow screens — the ghost button wraps onto three
-     lines otherwise, and "Open the App" is still reachable from the footer. */
+  .nav__wordmark {
+    font-size: 14px;
+  }
+
   .nav__actions .btn--ghost {
     display: none;
   }
@@ -224,11 +267,24 @@ a {
 }
 
 .footer__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.footer__logo {
+  display: block;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+}
+
+.footer__wordmark {
   font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 18px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--ink);
 }
 
 .footer__tagline {
@@ -595,28 +651,118 @@ a {
   border-top: 1px solid var(--line-soft);
 }
 
-.case-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 24px;
-  margin-top: 52px;
+.case-browser {
+  margin-top: 48px;
 }
 
-.case-card {
-  padding: 24px;
+.case-browser__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.case-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  min-width: 5.5rem;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-sm);
+  background: rgba(15, 17, 20, 0.45);
+  color: inherit;
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.case-tab:hover {
+  border-color: var(--line);
+}
+
+.case-tab--active {
+  border-color: var(--ink-dim);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.case-tab__chip {
+  width: 52px;
+  height: 52px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.25),
+    inset 0 -8px 18px -10px rgba(0, 0, 0, 0.5);
+}
+
+.case-tab__label {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+}
+
+.case-tab__flag {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--tier-fail);
+}
+
+.case-browser__panel {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.case-browser__nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-sm);
+  background: rgba(15, 17, 20, 0.5);
+  color: var(--ink-dim);
+  font-size: 18px;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.case-browser__nav:hover {
+  border-color: var(--ink-dim);
+  color: var(--ink);
+}
+
+.case-panel {
+  padding: 28px 32px;
   border: 1px solid var(--line-soft);
   border-radius: var(--radius);
   background: rgba(15, 17, 20, 0.5);
 }
 
-.case-card__head {
+.case-panel__head {
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: space-between;
+  gap: 16px;
   flex-wrap: wrap;
 }
 
-.case-card__substrate {
+.case-panel__meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.case-panel__substrate {
   font-family: var(--font-mono);
   font-size: 13px;
   font-weight: 500;
@@ -625,14 +771,13 @@ a {
   color: var(--ink);
 }
 
-.case-card__id {
+.case-panel__id {
   font-family: var(--font-mono);
   font-size: 12px;
   color: var(--ink-faint);
 }
 
-.case-card__win {
-  margin-left: auto;
+.case-panel__win {
   font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 500;
@@ -642,25 +787,42 @@ a {
   border-radius: 999px;
 }
 
-.case-card__lab {
-  display: flex;
-  gap: 14px;
-  margin-top: 14px;
+.case-outcome {
+  margin-top: 16px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink-dim);
+}
+
+.case-outcome__fail {
+  color: var(--tier-fail);
+  font-weight: 500;
+}
+
+.case-panel__lab {
+  margin-top: 12px;
   font-family: var(--font-mono);
   font-size: 11.5px;
   color: var(--ink-dim);
 }
 
-.case-card__lab b {
+.case-panel__lab b {
   color: var(--ink-faint);
   font-weight: 400;
 }
 
-.case-card__swatches {
+.case-panel__swatches {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  margin-top: 22px;
+  gap: 24px;
+  margin-top: 28px;
+}
+
+.case-browser__hint {
+  margin-top: 16px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--ink-faint);
 }
 
 .swatch {
@@ -700,6 +862,33 @@ a {
   font-weight: 500;
 }
 
+.swatch__de--fail {
+  color: var(--tier-fail);
+  font-weight: 500;
+}
+
+.swatch--fail .swatch__chip {
+  border-color: var(--tier-fail);
+}
+
+.swatch__status {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--tier-fail);
+}
+
+.swatch--lg .swatch__chip {
+  max-width: 148px;
+}
+
+.swatch--lg .swatch__label {
+  font-size: 13px;
+}
+
+.swatch--lg .swatch__de {
+  font-size: 14px;
+}
+
 @media (max-width: 900px) {
   .readout-grid--3,
   .readout-grid--proof,
@@ -717,8 +906,13 @@ a {
     max-width: none;
   }
 
-  .case-grid {
+  .case-browser__panel {
     grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .case-browser__nav {
+    display: none;
   }
 }
 
@@ -916,12 +1110,16 @@ a {
 }
 
 @media (max-width: 480px) {
-  .case-card__swatches {
-    gap: 10px;
+  .case-panel__swatches {
+    gap: 12px;
   }
 
-  .swatch__chip {
-    max-width: 88px;
+  .swatch--lg .swatch__chip {
+    max-width: 100px;
+  }
+
+  .case-panel {
+    padding: 22px 20px;
   }
 
   .specimens,
