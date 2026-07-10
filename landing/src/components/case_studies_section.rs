@@ -25,7 +25,7 @@ fn CaseTab(study: CaseStudy, is_active: bool, on_select: EventHandler<()>) -> El
             }
             span { class: "case-tab__label", "{study.substrate}" }
             if study.technician_missed_spec() {
-                span { class: "case-tab__flag", "Failed" }
+                span { class: "case-tab__flag" }
             }
         }
     }
