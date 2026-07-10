@@ -1,8 +1,8 @@
 use dioxus::prelude::*;
 
 use crate::api::{
-    get_health, get_history, get_metadata, get_replay, post_recommendation, RecommendRequest,
-    Recommendation, ReplayDetail,
+    get_health, get_history, get_metadata, get_replay, post_recommendation, HistoryResponse,
+    RecommendRequest, Recommendation, ReplayDetail,
 };
 use crate::components::{
     ComparisonPanel, EvidencePanel, FormFields, HistoryPicker, RecipeTable, ResultPanel,
@@ -35,6 +35,9 @@ enum ActiveView {
     Live,
     Replay,
 }
+
+/// Replay picker disabled for demo until `GET /first-attempt/history` is wired up.
+const SHOW_REPLAY_PANEL: bool = false;
 
 /// Build a recommendation request from the form's raw string fields, validating the required
 /// numeric inputs. Returns a user-facing error message when a required field is missing or not a
@@ -97,7 +100,12 @@ pub fn Home() -> Element {
     // run once on mount.
     let health = use_resource(move || async move { get_health().await });
     let metadata = use_resource(move || async move { get_metadata().await });
-    let history = use_resource(move || async move { get_history().await });
+    let history = use_resource(move || async move {
+        if !SHOW_REPLAY_PANEL {
+            return Ok(HistoryResponse { jobs: vec![] });
+        }
+        get_history().await
+    });
 
     // Form fields are kept as strings for free-form numeric entry and parsed on submit.
     let fields = FormFields {
@@ -222,47 +230,49 @@ pub fn Home() -> Element {
                         }}
                     }
 
-                    {match history() {
-                        Some(Ok(resp)) => rsx! {
-                            HistoryPicker {
-                                jobs: resp.jobs.clone(),
-                                stats: comparison_stats.clone(),
-                                selected: selected_row_id(),
-                                on_select: move |row_id: String| {
-                                    // A replay selection takes over the shared results column.
-                                    *active_view.write() = ActiveView::Replay;
-                                    *selected_row_id.write() = Some(row_id.clone());
-                                    *replay_state.write() = ReplayState::Loading;
-                                    spawn(async move {
-                                        match get_replay(&row_id).await {
-                                            Ok(detail) => {
-                                                *replay_state.write() =
-                                                    ReplayState::Done(Box::new(detail))
+                    if SHOW_REPLAY_PANEL {
+                        {match history() {
+                            Some(Ok(resp)) => rsx! {
+                                HistoryPicker {
+                                    jobs: resp.jobs.clone(),
+                                    stats: comparison_stats.clone(),
+                                    selected: selected_row_id(),
+                                    on_select: move |row_id: String| {
+                                        // A replay selection takes over the shared results column.
+                                        *active_view.write() = ActiveView::Replay;
+                                        *selected_row_id.write() = Some(row_id.clone());
+                                        *replay_state.write() = ReplayState::Loading;
+                                        spawn(async move {
+                                            match get_replay(&row_id).await {
+                                                Ok(detail) => {
+                                                    *replay_state.write() =
+                                                        ReplayState::Done(Box::new(detail))
+                                                }
+                                                Err(err) => {
+                                                    *replay_state.write() = ReplayState::Error(err)
+                                                }
                                             }
-                                            Err(err) => {
-                                                *replay_state.write() = ReplayState::Error(err)
-                                            }
-                                        }
-                                    });
-                                },
-                            }
-                        },
-                        Some(Err(err)) => rsx! {
-                            section { class: "panel",
-                                h2 { class: "panel__title", "Replay a past job" }
-                                div { class: "inline-msg inline-msg--error",
-                                    "Could not load past jobs."
-                                    div { class: "inline-msg__mono", "{err}" }
+                                        });
+                                    },
                                 }
-                            }
-                        },
-                        None => rsx! {
-                            section { class: "panel",
-                                h2 { class: "panel__title", "Replay a past job" }
-                                p { class: "inline-msg", "Loading past jobs…" }
-                            }
-                        },
-                    }}
+                            },
+                            Some(Err(err)) => rsx! {
+                                section { class: "panel",
+                                    h2 { class: "panel__title", "Replay a past job" }
+                                    div { class: "inline-msg inline-msg--error",
+                                        "Could not load past jobs."
+                                        div { class: "inline-msg__mono", "{err}" }
+                                    }
+                                }
+                            },
+                            None => rsx! {
+                                section { class: "panel",
+                                    h2 { class: "panel__title", "Replay a past job" }
+                                    p { class: "inline-msg", "Loading past jobs…" }
+                                }
+                            },
+                        }}
+                    }
                 }
 
                 div { class: "results",
