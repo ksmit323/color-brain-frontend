@@ -1,0 +1,77 @@
+---
+/**
+ * Who it's for — the three roles in the color chain, one card each.
+ */
+const ROLES = [
+  {
+    tag: "Brands",
+    tagline: "Fewer rejected batches. Faster color approvals.",
+    body: "You set the standard. Color Brain helps your supply chain hit your color spec on the first attempt — fewer lab-dip rounds, faster final approval.",
+  },
+  {
+    tag: "Suppliers",
+    tagline: "Hit the brand's spec. Without the guesswork.",
+    body: "You win or lose contracts on consistency. Color Brain draws on your own production history to recommend recipes more likely to pass first time, cutting rejections before they cost you.",
+  },
+  {
+    tag: "Factories",
+    tagline: "Less rework. More consistent output at scale.",
+    body: "At scale, every first-attempt failure multiplies. Color Brain works across your entire job volume, cutting the rework that eats into your margins.",
+  },
+];
+---
+
+<section class="who section" id="who-its-for">
+  <div class="container">
+    <div class="reveal">
+      <p class="eyebrow">Who it's for</p>
+      <h2 class="title">Every link in the color chain.</h2>
+    </div>
+    <div class="who__grid reveal">
+      {
+        ROLES.map((role) => (
+          <article class="who__card">
+            <p class="who__tag">{role.tag}</p>
+            <h3>{role.tagline}</h3>
+            <p class="who__body">{role.body}</p>
+          </article>
+        ))
+      }
+    </div>
+  </div>
+</section>
+
+<style>
+  .who__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.25rem;
+    margin-top: 3.5rem;
+  }
+
+  .who__card {
+    background: var(--surface);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius);
+    padding: 2rem 1.75rem;
+  }
+
+  .who__tag {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .who__card h3 {
+    font-size: 1.35rem;
+    margin-top: 0.9rem;
+  }
+
+  .who__body {
+    color: var(--ink-dim);
+    margin-top: 0.8rem;
+    font-size: 0.95rem;
+  }
+</style>

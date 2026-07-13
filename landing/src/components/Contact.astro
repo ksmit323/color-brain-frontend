@@ -1,0 +1,103 @@
+---
+/**
+ * Pilot request form. Plain HTML POST to Formspree — no JS involved.
+ * NOTE: the endpoint is a placeholder to swap before launch (carried over
+ * from the previous site).
+ */
+const FORM_ACTION = "https://formspree.io/f/mwvdjnde";
+---
+
+<section class="contact section" id="contact">
+  <div class="container contact__inner">
+    <div class="reveal">
+      <p class="eyebrow">Request a pilot</p>
+      <h2 class="title">Your history already contains the answer.</h2>
+      <p class="lede">
+        Color Brain finds it for you. Tell us about your operation and we'll
+        follow up to scope a pilot.
+      </p>
+    </div>
+
+    <form class="contact__form reveal" method="post" action={FORM_ACTION}>
+      <input type="hidden" name="_subject" value="Pilot request — colorbrain.co" />
+      <div class="contact__row">
+        <label class="contact__field">
+          <span>Name</span>
+          <input type="text" name="name" required autocomplete="name" />
+        </label>
+        <label class="contact__field">
+          <span>Company</span>
+          <input type="text" name="company" autocomplete="organization" />
+        </label>
+      </div>
+      <label class="contact__field">
+        <span>Email</span>
+        <input type="email" name="email" required autocomplete="email" />
+      </label>
+      <label class="contact__field">
+        <span>Message</span>
+        <textarea
+          name="message"
+          rows="5"
+          required
+          placeholder="Substrates you dye, approximate job volume, what a successful pilot would look like…"
+        ></textarea>
+      </label>
+      <button class="btn btn--primary contact__submit" type="submit">
+        Request a Pilot
+      </button>
+    </form>
+  </div>
+</section>
+
+<style>
+  .contact__inner {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 3.5rem;
+    align-items: start;
+  }
+
+  .contact__form {
+    display: grid;
+    gap: 1.2rem;
+  }
+
+  .contact__row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1.2rem;
+  }
+
+  .contact__field {
+    display: grid;
+    gap: 0.45rem;
+    font-size: 0.9rem;
+    color: var(--ink-dim);
+  }
+
+  .contact__field input,
+  .contact__field textarea {
+    font: inherit;
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 0.7em 0.9em;
+    transition: border-color 160ms ease;
+  }
+
+  .contact__field input:focus-visible,
+  .contact__field textarea:focus-visible {
+    outline: none;
+    border-color: var(--ink-dim);
+  }
+
+  .contact__field textarea {
+    resize: vertical;
+  }
+
+  .contact__submit {
+    justify-self: start;
+  }
+</style>
