@@ -1,0 +1,124 @@
+---
+/**
+ * colorbrain.co — single-page landing site.
+ *
+ * Head metadata is preserved from the previous site (same title, description,
+ * OG/Twitter tags, canonical) so search/social presence carries over unchanged.
+ *
+ * The hero, problem, and how-it-works sections share one scroll "stage": they
+ * scroll over a sticky visual layer (StageLayer) that holds the dye-history
+ * brain constellation and its static poster fallback.
+ */
+import "../styles/global.css";
+import Nav from "../components/Nav.astro";
+import StageLayer from "../components/StageLayer.astro";
+import Hero from "../components/Hero.astro";
+import Problem from "../components/Problem.astro";
+import HowItWorks from "../components/HowItWorks.astro";
+import Proof from "../components/Proof.astro";
+import CaseStudies from "../components/CaseStudies.astro";
+import WhoItsFor from "../components/WhoItsFor.astro";
+import Contact from "../components/Contact.astro";
+import Footer from "../components/Footer.astro";
+
+const SITE_TITLE = "Color Brain — Dye Recipe Intelligence";
+const SITE_DESCRIPTION =
+  "Color Brain helps dye houses improve first-attempt color accuracy using historical production data — no new hardware, no new process. 86.7% win rate on validated holdout records.";
+const SITE_URL = "https://colorbrain.co";
+
+/* Clash Display (display) and Satoshi (body) come from the Fontshare CDN:
+   their EULA forbids committing font files to a public repo. */
+const FONTSHARE_CSS =
+  "https://api.fontshare.com/v2/css?f[]=clash-display@500,600&f[]=satoshi@400,500,700&display=swap";
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{SITE_TITLE}</title>
+    <meta name="description" content={SITE_DESCRIPTION} />
+    <meta property="og:title" content={SITE_TITLE} />
+    <meta property="og:description" content={SITE_DESCRIPTION} />
+    <meta property="og:url" content={SITE_URL} />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Color Brain" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={SITE_TITLE} />
+    <meta name="twitter:description" content={SITE_DESCRIPTION} />
+    <meta name="theme-color" content="#0a0b10" />
+    <link rel="canonical" href={SITE_URL} />
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="preconnect" href="https://cdn.fontshare.com" crossorigin />
+    <!-- Async font CSS: fallback faces paint first, webfonts swap in without
+         blocking render (the EULA rules out self-hosting from a public repo). -->
+    <link rel="preload" as="style" href={FONTSHARE_CSS} />
+    <link
+      rel="stylesheet"
+      href={FONTSHARE_CSS}
+      media="print"
+      onload="this.media='all'"
+    />
+    <noscript><link rel="stylesheet" href={FONTSHARE_CSS} /></noscript>
+    <link
+      rel="preload"
+      href="/fonts/IBMPlexMono-Medium.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <script is:inline>
+      // Marks JS availability before first paint so reveal styles only hide
+      // content when the script that reveals it will actually run.
+      document.documentElement.classList.add("has-js");
+    </script>
+  </head>
+  <body id="top">
+    <Nav />
+    <main>
+      <div id="stage">
+        <StageLayer />
+        <Hero />
+        <Problem />
+        <HowItWorks />
+      </div>
+      <Proof />
+      <CaseStudies />
+      <WhoItsFor />
+      <Contact />
+    </main>
+    <Footer />
+    <script>
+      import { initMotion } from "../lib/motion";
+      import { initCaseBrowser } from "../lib/caseBrowser";
+
+      initMotion();
+      initCaseBrowser();
+
+      // The dye-history brain loads lazily, and only for clients that will
+      // actually render it — reduced-motion or WebGL-less visitors keep the
+      // static poster and never download the three.js chunk.
+      const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const webgl2 = (() => {
+        try {
+          return document.createElement("canvas").getContext("webgl2") !== null;
+        } catch {
+          return false;
+        }
+      })();
+      if (!reducedMotion && webgl2) {
+        const boot = () => {
+          setTimeout(async () => {
+            const { initBrain } = await import("../lib/brain/index");
+            const ambient =
+              matchMedia("(pointer: coarse)").matches || window.innerWidth < 768;
+            initBrain(ambient ? "ambient" : "full");
+          }, 150);
+        };
+        if (document.readyState === "complete") boot();
+        else window.addEventListener("load", boot, { once: true });
+      }
+    </script>
+  </body>
+</html>
