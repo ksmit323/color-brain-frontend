@@ -1,0 +1,98 @@
+---
+/**
+ * Sticky top navigation. Middle links collapse away on small screens
+ * (the page is a single scroll — the CTAs are what matter on mobile).
+ */
+---
+
+<header class="nav">
+  <div class="container nav__inner">
+    <a class="nav__brand" href="#top">
+      <img src="/cb_logo.svg" alt="" width="26" height="27" />
+      <span>Color Brain</span>
+    </a>
+    <nav class="nav__links" aria-label="Sections">
+      <a href="#how-it-works">How It Works</a>
+      <a href="#proof">Proof</a>
+      <a href="#case-studies">Case Studies</a>
+      <a href="#who-its-for">Who It's For</a>
+    </nav>
+    <div class="nav__actions">
+      <a class="nav__ghost" href="https://app.colorbrain.co">Open the App</a>
+      <a class="btn btn--primary nav__cta" href="#contact">Request a Pilot</a>
+    </div>
+  </div>
+</header>
+
+<style>
+  .nav {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: color-mix(in srgb, var(--bg) 78%, transparent);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--line-soft);
+  }
+
+  .nav__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    height: 4rem;
+  }
+
+  .nav__brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-family: var(--font-display);
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .nav__links {
+    display: flex;
+    gap: 1.75rem;
+  }
+
+  .nav__links a {
+    font-size: 0.9rem;
+    color: var(--ink-dim);
+    text-decoration: none;
+    transition: color 160ms ease;
+  }
+
+  .nav__links a:hover {
+    color: var(--ink);
+  }
+
+  .nav__actions {
+    display: flex;
+    align-items: center;
+    gap: 1.1rem;
+  }
+
+  .nav__ghost {
+    font-size: 0.9rem;
+    color: var(--ink-dim);
+    text-decoration: none;
+  }
+
+  .nav__ghost:hover {
+    color: var(--ink);
+  }
+
+  .nav__cta {
+    padding: 0.55em 1.2em;
+    font-size: 0.9rem;
+  }
+
+  @media (max-width: 860px) {
+    .nav__links,
+    .nav__ghost {
+      display: none;
+    }
+  }
+</style>

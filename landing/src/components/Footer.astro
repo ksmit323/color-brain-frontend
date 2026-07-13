@@ -1,0 +1,148 @@
+---
+/**
+ * Footer: brand, site links, founders, contact.
+ */
+const LINKS = [
+  { href: "#how-it-works", label: "How It Works" },
+  { href: "#proof", label: "Proof" },
+  { href: "#case-studies", label: "Case Studies" },
+  { href: "#who-its-for", label: "Who It's For" },
+  { href: "#contact", label: "Request a Pilot" },
+  { href: "https://app.colorbrain.co", label: "Open the App" },
+];
+
+const FOUNDERS = [
+  { name: "Luis Aloma", role: "CEO & Cofounder" },
+  { name: "Will Sandman", role: "Chief Commercial & Founder" },
+  { name: "Ken Smith", role: "Cofounder & Chief Technical" },
+];
+---
+
+<footer class="footer">
+  <div class="container footer__inner">
+    <div class="footer__brand">
+      <a class="footer__logo" href="#top">
+        <img src="/cb_logo.svg" alt="" width="30" height="31" />
+        <span>Color Brain</span>
+      </a>
+      <p class="footer__tagline">
+        Decision support for textile coloration — recommend proven history,
+        abstain when the evidence isn't there.
+      </p>
+    </div>
+
+    <nav class="footer__col" aria-label="Site">
+      <p class="footer__col-title">Site</p>
+      <ul>
+        {LINKS.map((link) => <li><a href={link.href}>{link.label}</a></li>)}
+      </ul>
+    </nav>
+
+    <div class="footer__col">
+      <p class="footer__col-title">Founders</p>
+      <ul>
+        {
+          FOUNDERS.map((f) => (
+            <li>
+              <span class="footer__name">{f.name}</span>
+              <span class="footer__role">{f.role}</span>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </div>
+
+  <div class="container footer__bottom">
+    <span>© 2026 Color Brain</span>
+    <a href="mailto:luis@colorbrain.co">luis@colorbrain.co</a>
+  </div>
+</footer>
+
+<style>
+  .footer {
+    border-top: 1px solid var(--line-soft);
+    padding-block: 4rem 2rem;
+  }
+
+  .footer__inner {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 2.5rem;
+  }
+
+  @media (max-width: 720px) {
+    .footer__inner {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .footer__logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.05rem;
+    text-decoration: none;
+  }
+
+  .footer__tagline {
+    margin-top: 1rem;
+    color: var(--ink-faint);
+    font-size: 0.9rem;
+    max-width: 34ch;
+  }
+
+  .footer__col-title {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .footer__col ul {
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0 0;
+    display: grid;
+    gap: 0.55rem;
+  }
+
+  .footer__col a {
+    color: var(--ink-dim);
+    text-decoration: none;
+  }
+
+  .footer__col a:hover {
+    color: var(--ink);
+  }
+
+  .footer__name {
+    display: block;
+    color: var(--ink-dim);
+  }
+
+  .footer__role {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--ink-faint);
+  }
+
+  .footer__bottom {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 3.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--line-soft);
+    font-size: 0.85rem;
+    color: var(--ink-faint);
+  }
+
+  .footer__bottom a {
+    color: var(--ink-dim);
+  }
+</style>
