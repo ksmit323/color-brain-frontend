@@ -1,0 +1,50 @@
+---
+/**
+ * The cost of guessing — why first-attempt accuracy matters. Sits inside the
+ * scroll stage, so the constellation drifts behind it while these numbers land.
+ */
+---
+
+<section class="problem stage-panel section" id="problem">
+  <div class="container">
+    <div class="reveal">
+      <p class="eyebrow">The cost of guessing</p>
+      <h2 class="title">
+        Every failed first attempt costs time, material, and the brand's patience.
+      </h2>
+      <p class="lede">
+        Most color-matching tools start from a generic model and spend months
+        correcting toward your factory — after you've paid for new hardware.
+        Color Brain starts from the recipes your factory already proved, on day
+        one.
+      </p>
+    </div>
+    <dl class="problem__readouts reveal">
+      <div>
+        <dt class="readout__value">4–6</dt>
+        <dd class="readout__label">attempts on average to approve a new color</dd>
+      </div>
+      <div>
+        <dt class="readout__value">50%</dt>
+        <dd class="readout__label">of first attempts miss the target</dd>
+      </div>
+      <div>
+        <dt class="readout__value">$500–2K</dt>
+        <dd class="readout__label">typical cost per failed attempt</dd>
+      </div>
+    </dl>
+  </div>
+</section>
+
+<style>
+  .problem__readouts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 2.5rem;
+    margin-top: 4rem;
+  }
+
+  .problem__readouts dd {
+    margin: 0;
+  }
+</style>
