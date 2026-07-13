@@ -20,24 +20,23 @@ jobs:
         working-directory: landing
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-node@v4
         with:
-          targets: wasm32-unknown-unknown
-      - uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            landing/target
-          key: ${{ runner.os }}-cargo-landing-${{ hashFiles('landing/Cargo.lock') }}
-      - run: cargo install dioxus-cli --version 0.7.9 --locked
-      - run: dx build --release --platform web
-      - name: Resolve output dir
-        id: out
-        run: echo "dir=$(find target/dx -type d -path '*/release/web/public' | head -1)" >> "$GITHUB_OUTPUT"
+          node-version: 24
+          cache: npm
+          cache-dependency-path: landing/package-lock.json
+      - run: npm ci
+      - run: npm run build
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
-      - run: aws s3 sync "${{ steps.out.outputs.dir }}" "s3://${{ vars.LANDING_S3_BUCKET }}" --delete
+      - run: aws s3 sync dist "s3://${{ vars.LANDING_S3_BUCKET }}" --delete
+      # Astro content-hashes everything under _astro/, so those files are
+      # safe to cache forever; HTML stays on default caching + invalidation.
+      - run: >
+          aws s3 cp "s3://${{ vars.LANDING_S3_BUCKET }}/_astro"
+          "s3://${{ vars.LANDING_S3_BUCKET }}/_astro"
+          --recursive --metadata-directive REPLACE
+          --cache-control "public,max-age=31536000,immutable"
       - run: aws cloudfront create-invalidation --distribution-id "${{ vars.LANDING_CLOUDFRONT_DISTRIBUTION_ID }}" --paths "/*"
