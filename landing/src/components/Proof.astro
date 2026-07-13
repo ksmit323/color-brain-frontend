@@ -1,0 +1,109 @@
+---
+/**
+ * Validated holdout results — the instrument panel. Six readouts from the
+ * first_attempt_v1 evaluation, stated plainly. The win rate is the only
+ * number allowed a status color; abstention is slate, never red.
+ */
+---
+
+<section class="proof section" id="proof">
+  <div class="container">
+    <div class="reveal">
+      <p class="eyebrow">Validated holdout · first_attempt_v1</p>
+      <h2 class="title">Tested on jobs it had never seen.</h2>
+      <p class="lede">
+        Trained on 12,398 real production records, then evaluated on 2,043
+        future holdout jobs. Color Brain never invents a recipe — it retrieves
+        one your factory already ran, only on the same substrate, and only when
+        confident.
+      </p>
+    </div>
+
+    <dl class="proof__grid reveal">
+      <div class="proof__cell">
+        <dt class="readout__value">12,398</dt>
+        <dd class="readout__label">production records trained on</dd>
+      </div>
+      <div class="proof__cell">
+        <dt class="readout__value">2,043</dt>
+        <dd class="readout__label">unseen holdout jobs tested</dd>
+      </div>
+      <div class="proof__cell">
+        <dt class="readout__value">414</dt>
+        <dd class="readout__label">jobs recommended — 20.3% coverage</dd>
+      </div>
+      <div class="proof__cell">
+        <dt class="readout__value proof__win">86.7%</dt>
+        <dd class="readout__label">win rate when it recommends</dd>
+      </div>
+      <div class="proof__cell">
+        <dt class="readout__value">+0.2082</dt>
+        <dd class="readout__label">median ΔE improvement on recommended jobs</dd>
+      </div>
+      <div class="proof__cell">
+        <dt class="readout__value proof__abstain">~80%</dt>
+        <dd class="readout__label">abstention rate — calibrated silence, not failure</dd>
+      </div>
+    </dl>
+
+    <p class="proof__footnote reveal">
+      On the ~80% of jobs where Color Brain abstains, it is saying the evidence
+      isn't strong enough to beat your technician's first attempt. Selectivity
+      is the point — a recommendation you can trust.
+    </p>
+  </div>
+</section>
+
+<style>
+  .proof {
+    background: var(--bg);
+    position: relative;
+  }
+
+  .proof__grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    margin-top: 4rem;
+    background: var(--line-soft);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .proof__cell {
+    background: var(--surface);
+    padding: 2rem 1.75rem;
+  }
+
+  .proof__cell dd {
+    margin: 0;
+  }
+
+  .proof__win {
+    color: var(--win);
+  }
+
+  .proof__abstain {
+    color: var(--abstain);
+  }
+
+  @media (max-width: 900px) {
+    .proof__grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 560px) {
+    .proof__grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .proof__footnote {
+    margin-top: 2rem;
+    font-size: 0.9rem;
+    color: var(--ink-faint);
+    max-width: 62ch;
+  }
+</style>

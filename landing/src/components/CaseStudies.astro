@@ -1,0 +1,457 @@
+---
+/**
+ * Case studies as "target plates": a colorimeter-style bullseye per holdout
+ * job. The plate is the job's real target color; concentric rings measure
+ * ΔE distance from a perfect match (log scale, spec gate at 1.0); the two
+ * markers land where the technician's first attempt and Color Brain's
+ * retrieved recipe actually hit — direction taken from the real (a*, b*)
+ * error vector, radius from the real ΔE. Closer to center wins, at a glance.
+ *
+ * All geometry is computed at build time; caseBrowser.ts animates it.
+ */
+import { CASE_STUDIES, TECHNICIAN_FAIL_DE } from "../data/caseStudies";
+import { labToCss, labToRgb, type Lab } from "../lib/lab";
+
+const SIZE = 460;
+const CENTER = SIZE / 2;
+const PLATE_R = 210;
+const MARKER_MAX_R = PLATE_R - 18;
+
+/* Log-scale ΔE → radius, so 0.15 and 6.7 both plot legibly. */
+const DE_FLOOR = 0.1;
+const DE_CEIL = 8;
+const rOf = (de: number): number =>
+  (Math.log10(Math.max(de, DE_FLOOR) / DE_FLOOR) / Math.log10(DE_CEIL / DE_FLOOR)) *
+  MARKER_MAX_R;
+
+const RINGS = [0.25, 0.5, 1.0, 2.0, 4.0];
+
+/** Where an attempt lands on the plate: radius from its ΔE, direction from
+    its real error vector in the a*b* plane (SVG y points down, b* up). */
+function markerPos(target: Lab, achieved: Lab, de: number): { x: number; y: number } {
+  const angle = Math.atan2(-(achieved.b - target.b), achieved.a - target.a);
+  const r = rOf(de);
+  return { x: CENTER + r * Math.cos(angle), y: CENTER + r * Math.sin(angle) };
+}
+
+const studies = CASE_STUDIES.map((cs, i) => {
+  const [tr, tg, tb] = labToRgb(cs.target.l, cs.target.a, cs.target.b);
+  const lightPlate = (0.2126 * tr + 0.7152 * tg + 0.0722 * tb) / 255 > 0.5;
+  return {
+    ...cs,
+    index: i,
+    targetCss: labToCss(cs.target),
+    technicianCss: labToCss(cs.technician),
+    colorBrainCss: labToCss(cs.colorBrain),
+    techFailed: cs.technicianDe > TECHNICIAN_FAIL_DE,
+    ratio: (cs.technicianDe / cs.colorBrainDe).toFixed(1),
+    techPos: markerPos(cs.target, cs.technician, cs.technicianDe),
+    cbPos: markerPos(cs.target, cs.colorBrain, cs.colorBrainDe),
+    /* etched lines must contrast with the plate's own color */
+    etch: lightPlate ? "rgba(10, 11, 16, 0.38)" : "rgba(255, 255, 255, 0.45)",
+    etchStrong: lightPlate ? "rgba(10, 11, 16, 0.62)" : "rgba(255, 255, 255, 0.75)",
+  };
+});
+---
+
+<section class="cases section" id="case-studies">
+  <div class="container">
+    <div class="reveal">
+      <p class="eyebrow">Case studies · validated holdout</p>
+      <h2 class="title">Five real jobs. Five wins.</h2>
+      <p class="lede">
+        The plate is the job's actual target color. Rings measure ΔE distance
+        from a perfect match — the spec gate sits at 1.0. See where the
+        technician's first attempt landed, and where Color Brain's recipe did.
+      </p>
+    </div>
+
+    <div class="cases__browser reveal" data-case-browser>
+      <div class="cases__bar">
+        <div class="cases__tabs" role="tablist" aria-label="Case studies">
+          {
+            studies.map((cs) => (
+              <button
+                class="cases__tab"
+                role="tab"
+                id={`case-tab-${cs.index}`}
+                aria-controls={`case-panel-${cs.index}`}
+                aria-selected={cs.index === 0 ? "true" : "false"}
+                tabindex={cs.index === 0 ? 0 : -1}
+              >
+                <span class="cases__chip" style={`background:${cs.targetCss}`} />
+                <span class="cases__tab-label">{cs.substrate}</span>
+              </button>
+            ))
+          }
+        </div>
+        <div class="cases__pager">
+          <button class="cases__arrow" data-case-prev aria-label="Previous case study">←</button>
+          <button class="cases__arrow" data-case-next aria-label="Next case study">→</button>
+        </div>
+      </div>
+
+      {
+        studies.map((cs) => (
+          <article
+            class="case-panel"
+            role="tabpanel"
+            id={`case-panel-${cs.index}`}
+            aria-labelledby={`case-tab-${cs.index}`}
+            hidden={cs.index !== 0}
+          >
+            <div class="plate">
+              <svg
+                viewBox={`0 0 ${SIZE} ${SIZE}`}
+                role="img"
+                aria-label={`Target plate: Color Brain landed ΔE ${cs.colorBrainDe.toFixed(3)} from target, the technician ΔE ${cs.technicianDe.toFixed(3)}`}
+              >
+                <circle cx={CENTER} cy={CENTER} r={PLATE_R} fill={cs.targetCss} />
+                <circle
+                  cx={CENTER}
+                  cy={CENTER}
+                  r={PLATE_R}
+                  fill="none"
+                  stroke="rgba(255,255,255,0.08)"
+                  stroke-width="1"
+                />
+                {RINGS.map((de) => (
+                  <circle
+                    class="plate__ring"
+                    cx={CENTER}
+                    cy={CENTER}
+                    r={rOf(de)}
+                    fill="none"
+                    stroke={de === TECHNICIAN_FAIL_DE ? cs.etchStrong : cs.etch}
+                    stroke-width={de === TECHNICIAN_FAIL_DE ? 2 : 1}
+                    stroke-dasharray={de === TECHNICIAN_FAIL_DE ? "none" : "3 5"}
+                  />
+                ))}
+                {/* labels sit at the bottom of each ring — the top is where
+                    this dataset's markers tend to land */}
+                {RINGS.map((de) => (
+                  <text
+                    class="plate__ring-label"
+                    x={CENTER}
+                    y={CENTER + rOf(de) + 14}
+                    text-anchor="middle"
+                    fill={de === TECHNICIAN_FAIL_DE ? cs.etchStrong : cs.etch}
+                  >
+                    {de === TECHNICIAN_FAIL_DE ? "ΔE 1.0 · SPEC" : de}
+                  </text>
+                ))}
+                {/* target crosshair */}
+                <g class="plate__crosshair" stroke={cs.etchStrong} stroke-width="1.5">
+                  <line x1={CENTER - 11} y1={CENTER} x2={CENTER + 11} y2={CENTER} />
+                  <line x1={CENTER} y1={CENTER - 11} x2={CENTER} y2={CENTER + 11} />
+                </g>
+                {/* attempts: fill = real achieved color, ring = verdict */}
+                <circle
+                  class="plate__marker"
+                  cx={cs.techPos.x}
+                  cy={cs.techPos.y}
+                  r="11"
+                  fill={cs.technicianCss}
+                  stroke="var(--fail)"
+                  stroke-width="2.5"
+                />
+                <circle
+                  class="plate__pulse"
+                  cx={cs.cbPos.x}
+                  cy={cs.cbPos.y}
+                  r="11"
+                  fill="none"
+                  stroke="var(--win)"
+                />
+                <circle
+                  class="plate__marker"
+                  cx={cs.cbPos.x}
+                  cy={cs.cbPos.y}
+                  r="11"
+                  fill={cs.colorBrainCss}
+                  stroke="var(--win)"
+                  stroke-width="2.5"
+                />
+              </svg>
+            </div>
+
+            <div class="verdict">
+              <p class="verdict__meta">
+                <span class="verdict__substrate">{cs.substrate}</span>
+                <span class="verdict__job">Job {cs.rowId}</span>
+              </p>
+              <p class="verdict__ratio">
+                <span class="verdict__num" data-ratio={cs.ratio}>{cs.ratio}</span
+                ><span class="verdict__x">×</span>
+              </p>
+              <p class="verdict__line">
+                closer to the target color than the technician's first attempt
+              </p>
+              <ul class="verdict__facts">
+                <li>
+                  <span
+                    class="verdict__dot verdict__dot--fail"
+                    style={`background:${cs.technicianCss}`}
+                  />
+                  <span class="verdict__who">Technician</span>
+                  <span class="verdict__de">ΔE {cs.technicianDe.toFixed(3)}</span>
+                  <span class={cs.techFailed ? "verdict__flag verdict__flag--fail" : "verdict__flag"}>
+                    {cs.techFailed ? "missed spec" : "within spec"}
+                  </span>
+                </li>
+                <li>
+                  <span
+                    class="verdict__dot verdict__dot--win"
+                    style={`background:${cs.colorBrainCss}`}
+                  />
+                  <span class="verdict__who">Color Brain</span>
+                  <span class="verdict__de">ΔE {cs.colorBrainDe.toFixed(3)}</span>
+                  <span class="verdict__flag verdict__flag--win">within spec</span>
+                </li>
+                <li>
+                  <span class="verdict__dot" style={`background:${cs.targetCss}`} />
+                  <span class="verdict__who">Target</span>
+                  <span class="verdict__de">
+                    Lab {cs.target.l.toFixed(2)}, {cs.target.a.toFixed(2)},{" "}
+                    {cs.target.b.toFixed(2)}
+                  </span>
+                </li>
+              </ul>
+            </div>
+          </article>
+        ))
+      }
+
+      <p class="cases__hint">
+        <span data-case-count>1</span> of {studies.length} · every marker is the
+        attempt's real achieved color
+      </p>
+    </div>
+  </div>
+</section>
+
+<style>
+  .cases__browser {
+    margin-top: 3.5rem;
+  }
+
+  .cases__bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .cases__tabs {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+
+  .cases__tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55em;
+    padding: 0.5em 0.95em;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--ink-dim);
+    transition: border-color 160ms ease, color 160ms ease;
+  }
+
+  .cases__tab[aria-selected="true"] {
+    border-color: var(--ink-dim);
+    color: var(--ink);
+  }
+
+  .cases__chip {
+    width: 1.1em;
+    height: 1.1em;
+    border-radius: 50%;
+  }
+
+  .cases__pager {
+    display: flex;
+    gap: 0.4rem;
+  }
+
+  .cases__arrow {
+    width: 2.4rem;
+    height: 2.4rem;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    color: var(--ink-dim);
+    transition: border-color 160ms ease, color 160ms ease;
+  }
+
+  .cases__arrow:hover {
+    border-color: var(--ink-faint);
+    color: var(--ink);
+  }
+
+  .case-panel {
+    display: grid;
+    grid-template-columns: minmax(0, 460px) 1fr;
+    gap: clamp(2rem, 5vw, 4.5rem);
+    align-items: center;
+    margin-top: 2.5rem;
+  }
+
+  /* display: grid would otherwise defeat the hidden attribute's UA rule. */
+  .case-panel[hidden] {
+    display: none;
+  }
+
+  .plate svg {
+    width: 100%;
+    height: auto;
+  }
+
+  .plate__ring-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+  }
+
+  /* Soft repeating pulse on the Color Brain marker. */
+  .plate__pulse {
+    stroke-width: 2;
+    transform-box: fill-box;
+    transform-origin: center;
+    animation: plate-pulse 2.6s ease-out infinite;
+  }
+
+  @keyframes plate-pulse {
+    0% {
+      transform: scale(1);
+      opacity: 0.9;
+    }
+    70%,
+    100% {
+      transform: scale(2.4);
+      opacity: 0;
+    }
+  }
+
+  .verdict__meta {
+    display: flex;
+    align-items: baseline;
+    gap: 0.9rem;
+  }
+
+  .verdict__substrate {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 0.9rem;
+    padding: 0.25em 0.7em;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+  }
+
+  .verdict__job {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    color: var(--ink-faint);
+  }
+
+  .verdict__ratio {
+    margin-top: 1.5rem;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(4rem, 9vw, 6.75rem);
+    line-height: 1;
+    color: var(--win);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .verdict__x {
+    font-size: 0.55em;
+    margin-left: 0.06em;
+  }
+
+  .verdict__line {
+    margin-top: 0.75rem;
+    font-size: var(--text-lede);
+    color: var(--ink-dim);
+    max-width: 24em;
+    text-wrap: balance;
+  }
+
+  .verdict__facts {
+    list-style: none;
+    padding: 0;
+    margin: 2rem 0 0;
+    display: grid;
+    gap: 0.8rem;
+  }
+
+  .verdict__facts li {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+  }
+
+  .verdict__dot {
+    width: 1.15rem;
+    height: 1.15rem;
+    border-radius: 50%;
+    border: 2px solid var(--line);
+    flex-shrink: 0;
+  }
+
+  .verdict__dot--fail {
+    border-color: var(--fail);
+  }
+
+  .verdict__dot--win {
+    border-color: var(--win);
+  }
+
+  .verdict__who {
+    min-width: 6.5em;
+    color: var(--ink-dim);
+  }
+
+  .verdict__de {
+    font-family: var(--font-mono);
+    font-size: 0.88rem;
+    color: var(--ink);
+  }
+
+  .verdict__flag {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .verdict__flag--fail {
+    color: var(--fail);
+  }
+
+  .verdict__flag--win {
+    color: var(--win);
+  }
+
+  .cases__hint {
+    margin-top: 2rem;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--ink-faint);
+  }
+
+  @media (max-width: 900px) {
+    .case-panel {
+      grid-template-columns: 1fr;
+    }
+
+    .plate {
+      max-width: 420px;
+    }
+  }
+</style>
