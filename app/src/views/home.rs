@@ -16,6 +16,7 @@ enum SubmitState {
     Idle,
     Loading,
     Done(Box<Recommendation>),
+    ValidationError(String),
     Error(String),
 }
 
@@ -54,35 +55,45 @@ fn build_request(
     liquor_ratio: &str,
     cycle_time: &str,
 ) -> Result<RecommendRequest, String> {
-    let required = |s: &str, name: &str| -> Result<f64, String> {
-        s.trim()
+    let required = |s: &str, name: &str, min: f64, max: f64| -> Result<f64, String> {
+        let value = s
+            .trim()
             .parse::<f64>()
-            .map_err(|_| format!("{name} must be a number"))
+            .map_err(|_| format!("Enter {name} as a number between {min} and {max}."))?;
+        if !(min..=max).contains(&value) {
+            return Err(format!("{name} must be between {min} and {max}."));
+        }
+        Ok(value)
     };
     let optional = |s: &str, name: &str| -> Result<Option<f64>, String> {
         match s.trim() {
             "" => Ok(None),
-            v => v
-                .parse::<f64>()
-                .map(Some)
-                .map_err(|_| format!("{name} must be a number")),
+            value => {
+                let value = value
+                    .parse::<f64>()
+                    .map_err(|_| format!("{name} must be a number greater than zero."))?;
+                if value <= 0.0 {
+                    return Err(format!("{name} must be greater than zero."));
+                }
+                Ok(Some(value))
+            }
         }
     };
 
     let substrate = substrate.trim();
     let dye_prog = dye_prog.trim();
     if substrate.is_empty() {
-        return Err("Substrate is required.".into());
+        return Err("Select a substrate.".into());
     }
     if dye_prog.is_empty() {
-        return Err("Dye program is required.".into());
+        return Err("Select a dye program.".into());
     }
 
     Ok(RecommendRequest {
         request_id: None,
-        target_l: required(target_l, "Target L")?,
-        target_a: required(target_a, "Target a")?,
-        target_b: required(target_b, "Target b")?,
+        target_l: required(target_l, "Target L*", 0.0, 100.0)?,
+        target_a: required(target_a, "Target a*", -128.0, 127.0)?,
+        target_b: required(target_b, "Target b*", -128.0, 127.0)?,
         substrate: substrate.to_string(),
         dye_prog: dye_prog.to_string(),
         yarn_weight: optional(yarn_weight, "Yarn weight")?,
@@ -125,6 +136,29 @@ pub fn Home() -> Element {
     let mut selected_row_id = use_signal(|| Option::<String>::None);
     let mut active_view = use_signal(|| ActiveView::Live);
 
+    // Results render below the form on narrow screens. Bring the decision into
+    // view after a completed request without disturbing the desktop layout.
+    use_effect(move || {
+        let should_reveal = matches!(
+            &*submit_state.read(),
+            SubmitState::Done(_) | SubmitState::Error(_)
+        );
+        if should_reveal {
+            spawn(async move {
+                let _ = document::eval(
+                    r#"
+                    if (window.matchMedia("(max-width: 900px)").matches) {
+                        const heading = document.getElementById("result-heading");
+                        heading?.scrollIntoView({ behavior: "smooth", block: "start" });
+                        heading?.focus({ preventScroll: true });
+                    }
+                    "#,
+                )
+                .await;
+            });
+        }
+    });
+
     let on_submit = move |event: FormEvent| {
         // Stop the browser's default form submission / page reload.
         event.prevent_default();
@@ -145,7 +179,7 @@ pub fn Home() -> Element {
         ) {
             Ok(req) => req,
             Err(msg) => {
-                *submit_state.write() = SubmitState::Error(msg);
+                *submit_state.write() = SubmitState::ValidationError(msg);
                 return;
             }
         };
@@ -176,13 +210,18 @@ pub fn Home() -> Element {
         Some(Ok(ref m)) => m.comparison_stats.clone(),
         _ => None,
     };
+    let submitting = matches!(&*submit_state.read(), SubmitState::Loading);
+    let validation_error = match &*submit_state.read() {
+        SubmitState::ValidationError(message) => Some(message.clone()),
+        _ => None,
+    };
 
     rsx! {
         div { class: "app",
             header { class: "appbar",
                 div { class: "brand",
                     span { class: "brand__mark", "COLOR" b { "BRAIN" } }
-                    span { class: "brand__sub", "First-attempt recipe recommender" }
+                    span { class: "brand__sub", "Historical recipe decision support" }
                 }
                 StatusIndicator { online }
             }
@@ -195,8 +234,7 @@ pub fn Home() -> Element {
                             span { class: "metastrip__item", span { class: "metastrip__num", "{rows}" } " batches" }
                         }
                         span { class: "metastrip__item", span { class: "metastrip__num", "{meta.known_substrates.len()}" } " substrates" }
-                        span { class: "metastrip__item", span { class: "metastrip__num", "{meta.known_dye_programs.len()}" } " programs" }
-                        span { class: "metastrip__item", span { class: "metastrip__num", "{meta.recipe_columns.len()}" } " dyes" }
+                        span { class: "metastrip__item", span { class: "metastrip__num", "{meta.known_dye_programs.len()}" } " dye programs" }
                     }
                 },
                 Some(Err(_)) => rsx! {
@@ -210,7 +248,11 @@ pub fn Home() -> Element {
             main { class: "bench",
                 div { class: "bench__col",
                     section { class: "panel panel--form",
-                        h2 { class: "panel__title", "Target job" }
+                        p { class: "panel__eyebrow", "Step 1 · Job setup" }
+                        h1 { class: "form__title", "Enter the target job" }
+                        p { class: "form__intro",
+                            "Use the measured target and production context from the job ticket."
+                        }
                         {match metadata() {
                             None => rsx! { p { class: "inline-msg", "Loading metadata…" } },
                             Some(Err(err)) => rsx! {
@@ -224,6 +266,9 @@ pub fn Home() -> Element {
                                     fields,
                                     substrates: meta.known_substrates.clone(),
                                     dye_programs: meta.dye_programs_chronological(),
+                                    submitting,
+                                    backend_online: online,
+                                    validation_error: validation_error.clone(),
                                     on_submit,
                                 }
                             },
@@ -275,18 +320,43 @@ pub fn Home() -> Element {
                     }
                 }
 
-                div { class: "results",
+                div { class: "results", id: "results", aria_live: "polite",
                     {match active_view() {
                         ActiveView::Live => match submit_state() {
                             SubmitState::Idle => rsx! {
-                                div { class: "placeholder", "Enter a target color and submit to see a recommendation." }
+                                div { class: "placeholder",
+                                    span { class: "placeholder__step", "01" }
+                                    h2 { "Start with the target job" }
+                                    p {
+                                        "Enter the measured Lab color, substrate, and dye program. "
+                                        "Color Brain will search compatible production history."
+                                    }
+                                    ol { class: "placeholder__flow",
+                                        li { "Validate the target" }
+                                        li { "Search proven batches" }
+                                        li { "Return a recipe or a clear no-match" }
+                                    }
+                                }
                             },
                             SubmitState::Loading => rsx! {
-                                div { class: "inline-msg", "Computing recommendation…" }
+                                div { class: "loading-state", role: "status",
+                                    span { class: "loading-state__spinner", aria_hidden: "true" }
+                                    div {
+                                        h2 { "Searching production history" }
+                                        p { "Comparing this target with compatible jobs and checking the confidence gate." }
+                                    }
+                                }
+                            },
+                            SubmitState::ValidationError(_) => rsx! {
+                                div { class: "placeholder placeholder--compact",
+                                    h2 { "Check the target job" }
+                                    p { "Correct the highlighted form entry, then try again." }
+                                }
                             },
                             SubmitState::Error(err) => rsx! {
                                 div { class: "inline-msg inline-msg--error",
-                                    "Recommendation failed."
+                                    strong { "Color Brain could not complete the recommendation." }
+                                    p { "Your entries are unchanged. Check the connection and try again." }
                                     div { class: "inline-msg__mono", "{err}" }
                                 }
                             },
@@ -295,20 +365,30 @@ pub fn Home() -> Element {
                                 rsx! {
                                     ResultPanel { rec: (*rec).clone() }
                                     if recommend {
-                                        if let Some(stats) = comparison_stats.clone() {
-                                            div { class: "panel panel--note",
-                                                p { class: "replay-hint",
-                                                    "This recipe is a proven formula from the closest matching past job."
+                                        RecipeTable { columns: recipe_columns.clone(), recipe: rec.recipe.clone() }
+                                    }
+                                    details { class: "explanation", open: !recommend,
+                                        summary {
+                                            span {
+                                                if recommend {
+                                                    "Why this recipe was selected"
+                                                } else {
+                                                    "Why no recipe was recommended"
                                                 }
-                                                TrackRecord { stats }
+                                            }
+                                            small { "Source batch, target distance, and model evidence" }
+                                        }
+                                        div { class: "explanation__body",
+                                            EvidencePanel { rec: (*rec).clone() }
+                                            if recommend {
+                                                if let Some(stats) = comparison_stats.clone() {
+                                                    div { class: "panel panel--track",
+                                                        h2 { class: "panel__title", "Model track record" }
+                                                        TrackRecord { stats }
+                                                    }
+                                                }
                                             }
                                         }
-                                    }
-                                    div { class: "result-grid",
-                                        if recommend {
-                                            RecipeTable { columns: recipe_columns.clone(), recipe: rec.recipe.clone() }
-                                        }
-                                        EvidencePanel { rec: (*rec).clone() }
                                     }
                                 }
                             }
@@ -332,11 +412,17 @@ pub fn Home() -> Element {
                                 rsx! {
                                     ComparisonPanel { detail: (*detail).clone() }
                                     ResultPanel { rec: rec.clone() }
-                                    div { class: "result-grid",
-                                        if recommend {
-                                            RecipeTable { columns: recipe_columns.clone(), recipe: detail.recipe.clone() }
+                                    if recommend {
+                                        RecipeTable { columns: recipe_columns.clone(), recipe: detail.recipe.clone() }
+                                    }
+                                    details { class: "explanation", open: true,
+                                        summary {
+                                            span { "Evidence for this replay" }
+                                            small { "Source batch and target distance" }
                                         }
-                                        EvidencePanel { rec }
+                                        div { class: "explanation__body",
+                                            EvidencePanel { rec }
+                                        }
                                     }
                                 }
                             }
@@ -345,5 +431,42 @@ pub fn Home() -> Element {
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::build_request;
+
+    fn valid_request(liquor_ratio: &str) -> Result<crate::api::RecommendRequest, String> {
+        build_request(
+            "52.4",
+            "18.1",
+            "-7.2",
+            "Cotton",
+            "P3",
+            "250",
+            "2500",
+            liquor_ratio,
+            "60",
+        )
+    }
+
+    #[test]
+    fn accepts_numeric_liquor_ratio() {
+        let request = valid_request("10").expect("numeric liquor ratio should be valid");
+        assert_eq!(request.liquor_ratio, Some(10.0));
+    }
+
+    #[test]
+    fn rejects_out_of_range_lab_coordinates() {
+        let result = build_request("101", "0", "0", "Cotton", "P3", "", "", "", "");
+        assert!(result.is_err_and(|message| message.contains("between 0 and 100")));
+    }
+
+    #[test]
+    fn rejects_formatted_liquor_ratio() {
+        let result = valid_request("1:10");
+        assert!(result.is_err_and(|message| message.contains("greater than zero")));
     }
 }

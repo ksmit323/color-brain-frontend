@@ -1,5 +1,6 @@
 //! Shared UI components for the Color Brain app.
 
+mod color;
 mod comparison_panel;
 mod evidence_panel;
 mod history_picker;
@@ -17,3 +18,5 @@ pub use result_panel::ResultPanel;
 pub use status_indicator::StatusIndicator;
 pub use target_form::{FormFields, TargetForm};
 pub use track_record::TrackRecord;
+
+pub(crate) use color::lab_to_rgb;

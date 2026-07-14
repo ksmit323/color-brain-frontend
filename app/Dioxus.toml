@@ -3,7 +3,7 @@
 [web.app]
 
 # HTML title tag content
-title = "color-brain-frontend"
+title = "Color Brain — Recipe Decision Support"
 
 # include `assets` in web platform
 [web.resource]

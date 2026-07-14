@@ -7,9 +7,9 @@ use dioxus::prelude::*;
 #[component]
 pub fn StatusIndicator(online: Option<bool>) -> Element {
     let (modifier, label) = match online {
-        None => ("connecting", "Connecting"),
-        Some(true) => ("online", "Backend online"),
-        Some(false) => ("offline", "Backend offline"),
+        None => ("connecting", "Connecting…"),
+        Some(true) => ("online", "Color Brain ready"),
+        Some(false) => ("offline", "Service unavailable"),
     };
     rsx! {
         div { class: "status",

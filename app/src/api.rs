@@ -74,7 +74,7 @@ impl Metadata {
 ///
 /// Pure numeric codes sort numerically. Alphanumeric codes like `P1` sort by prefix then number.
 pub fn sort_dye_programs_chronologically(mut programs: Vec<String>) -> Vec<String> {
-    programs.sort_by(|a, b| dye_program_sort_key(a).cmp(&dye_program_sort_key(b)));
+    programs.sort_by_key(|program| dye_program_sort_key(program));
     programs
 }
 
