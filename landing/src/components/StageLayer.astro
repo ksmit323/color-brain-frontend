@@ -32,7 +32,7 @@ interface Ring {
 
 /* Small blobs get no blur: blurring a dot near its own size smears it into a
    gray square. Unblurred radial-gradient dots stay crisp and read as nodes. */
-const ORIGIN = { x: 76, y: 40 };
+const ORIGIN = { x: 54, y: 47 };
 const RINGS: Ring[] = [
   { count: 5, radius: 55, size: 190, opacity: 0.92, blur: 30, paletteOffset: 0 },
   { count: 8, radius: 150, size: 108, opacity: 0.62, blur: 18, paletteOffset: 4 },
@@ -62,31 +62,108 @@ for (const ring of RINGS) {
 ---
 
 <div class="stage-layer" aria-hidden="true">
-  <div class="stage-layer__poster">
-    {blobs.map((style) => <div class="stage-layer__blob" style={style} />)}
+  <div class="stage-layer__frame">
+    <div class="stage-layer__grid"></div>
+    <div class="stage-layer__poster">
+      {blobs.map((style) => <div class="stage-layer__blob" style={style} />)}
+    </div>
+    <canvas id="brain-canvas"></canvas>
+
+    <div class="stage-layer__topbar">
+      <span>Chromatic memory map</span>
+      <span class="stage-layer__live"><i></i> Model live</span>
+    </div>
+
+    <span class="stage-layer__axis stage-layer__axis--l">L* · lightness</span>
+    <span class="stage-layer__axis stage-layer__axis--a">a* · red / green</span>
+    <span class="stage-layer__axis stage-layer__axis--b">b* · blue / yellow</span>
+    <div class="stage-layer__reticle"><i></i></div>
+
+    <div class="scene-status">
+      <p class="scene-status__index">
+        <span>Index ready</span>
+        12,398 historical dye jobs mapped
+      </p>
+      <p class="scene-status__search">
+        <span>Query propagating</span>
+        Searching substrate-compatible history
+      </p>
+      <p class="scene-status__match">
+        <span>Evidence retrieved</span>
+        Proven production recipe · confidence 0.867
+      </p>
+      <p class="scene-status__abstain">
+        <span>Confidence gate active</span>
+        Below threshold · recommendation withheld
+      </p>
+    </div>
+
+    <dl class="stage-layer__telemetry">
+      <div><dt>Space</dt><dd>CIELAB</dd></div>
+      <div><dt>Illuminant</dt><dd>D65</dd></div>
+      <div><dt>Distance</dt><dd>ΔE00</dd></div>
+    </dl>
+
+    <div class="stage-layer__confidence">
+      <span>Confidence gate</span>
+      <i><b></b></i>
+      <strong>τ 0.82</strong>
+    </div>
+
+    <i class="stage-layer__corner stage-layer__corner--tl"></i>
+    <i class="stage-layer__corner stage-layer__corner--tr"></i>
+    <i class="stage-layer__corner stage-layer__corner--bl"></i>
+    <i class="stage-layer__corner stage-layer__corner--br"></i>
   </div>
-  <canvas id="brain-canvas"></canvas>
 </div>
 
 <style>
-  /* Sticky full-viewport layer; the negative margin lets the stage sections
-     scroll over it instead of after it. */
   .stage-layer {
     position: sticky;
     top: 0;
-    height: 100vh;
-    margin-bottom: -100vh;
+    z-index: 0;
+    height: 100svh;
+    margin-bottom: -100svh;
     overflow: hidden;
     pointer-events: none;
   }
 
+  .stage-layer__frame {
+    position: absolute;
+    top: clamp(5.5rem, 9vh, 7rem);
+    right: max(1.5rem, calc((100vw - 1360px) / 2));
+    bottom: clamp(2rem, 5vh, 4rem);
+    width: min(57vw, 790px);
+    overflow: hidden;
+    border: 1px solid rgba(154, 163, 178, 0.2);
+    border-radius: 18px;
+    background:
+      radial-gradient(circle at 55% 48%, rgba(46, 52, 68, 0.24), transparent 48%),
+      rgba(8, 10, 15, 0.78);
+    box-shadow:
+      0 40px 100px rgba(0, 0, 0, 0.42),
+      inset 0 0 80px rgba(0, 0, 0, 0.28);
+  }
+
   .stage-layer__poster,
-  #brain-canvas {
+  #brain-canvas,
+  .stage-layer__grid {
     position: absolute;
     inset: 0;
   }
 
+  .stage-layer__grid {
+    z-index: 0;
+    opacity: 0.3;
+    background-image:
+      linear-gradient(rgba(154, 163, 178, 0.09) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(154, 163, 178, 0.09) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: radial-gradient(circle at center, black 18%, transparent 78%);
+  }
+
   .stage-layer__poster {
+    z-index: 1;
     transition: opacity 900ms ease;
   }
 
@@ -97,18 +174,299 @@ for (const ring of RINGS) {
   }
 
   #brain-canvas {
+    z-index: 1;
     width: 100%;
     height: 100%;
     opacity: 0;
     transition: opacity 900ms ease;
   }
 
-  /* brain/index.ts adds .is-live to the layer once the first frame renders. */
   .stage-layer.is-live .stage-layer__poster {
     opacity: 0;
   }
 
   .stage-layer.is-live #brain-canvas {
     opacity: 1;
+  }
+
+  .stage-layer__frame::after {
+    content: "";
+    position: absolute;
+    z-index: 2;
+    inset: 0;
+    background:
+      linear-gradient(180deg, rgba(7, 8, 12, 0.58), transparent 18%, transparent 76%, rgba(7, 8, 12, 0.74)),
+      radial-gradient(circle at center, transparent 36%, rgba(7, 8, 12, 0.38) 100%);
+  }
+
+  .stage-layer__topbar {
+    position: absolute;
+    z-index: 4;
+    top: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.8rem 1rem;
+    border-bottom: 1px solid rgba(154, 163, 178, 0.14);
+    background: rgba(7, 8, 12, 0.44);
+    font-family: var(--font-mono);
+    font-size: 0.61rem;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .stage-layer__live {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--ink-dim);
+  }
+
+  .stage-layer__live i {
+    width: 0.42rem;
+    height: 0.42rem;
+    border-radius: 50%;
+    background: var(--win);
+    box-shadow: 0 0 10px var(--win);
+    animation: live-pulse 2.2s ease-in-out infinite;
+  }
+
+  @keyframes live-pulse {
+    50% { opacity: 0.42; }
+  }
+
+  .stage-layer__axis {
+    position: absolute;
+    z-index: 3;
+    font-family: var(--font-mono);
+    font-size: 0.53rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(154, 163, 178, 0.48);
+  }
+
+  .stage-layer__axis--l {
+    top: 18%;
+    left: 1rem;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+  }
+
+  .stage-layer__axis--a {
+    right: 1rem;
+    bottom: 5rem;
+  }
+
+  .stage-layer__axis--b {
+    right: 1rem;
+    top: 4.2rem;
+  }
+
+  .stage-layer__reticle {
+    position: absolute;
+    z-index: 3;
+    top: 48%;
+    left: 54%;
+    width: 5rem;
+    height: 5rem;
+    transform: translate(-50%, -50%);
+    border: 1px solid rgba(237, 238, 244, 0.13);
+    border-radius: 50%;
+    transition: border-color 400ms ease, box-shadow 400ms ease;
+  }
+
+  .stage-layer__reticle::before,
+  .stage-layer__reticle::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    background: rgba(237, 238, 244, 0.28);
+    transform: translate(-50%, -50%);
+  }
+
+  .stage-layer__reticle::before {
+    width: 6.5rem;
+    height: 1px;
+  }
+
+  .stage-layer__reticle::after {
+    width: 1px;
+    height: 6.5rem;
+  }
+
+  .stage-layer__reticle i {
+    position: absolute;
+    inset: 0.45rem;
+    border: 1px dashed rgba(237, 238, 244, 0.13);
+    border-radius: 50%;
+    animation: reticle-spin 18s linear infinite;
+  }
+
+  @keyframes reticle-spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .scene-status {
+    position: absolute;
+    z-index: 4;
+    left: 1rem;
+    bottom: 4.25rem;
+    width: min(20rem, calc(100% - 2rem));
+    min-height: 3rem;
+  }
+
+  .scene-status p {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transform: translateY(6px);
+    font-family: var(--font-mono);
+    font-size: 0.67rem;
+    line-height: 1.5;
+    color: var(--ink-faint);
+    transition: opacity 260ms ease, transform 260ms ease;
+  }
+
+  .scene-status span {
+    display: block;
+    margin-bottom: 0.18rem;
+    font-size: 0.6rem;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+
+  :global(#stage[data-scene-phase="index"]) .scene-status__index,
+  :global(#stage[data-scene-phase="search"]) .scene-status__search,
+  :global(#stage[data-scene-phase="match"]) .scene-status__match,
+  :global(#stage[data-scene-phase="abstain"]) .scene-status__abstain {
+    opacity: 1;
+    transform: none;
+  }
+
+  :global(#stage[data-scene-phase="match"]) .stage-layer__reticle {
+    border-color: rgba(70, 199, 154, 0.55);
+    box-shadow: 0 0 36px rgba(70, 199, 154, 0.13);
+  }
+
+  .stage-layer__telemetry {
+    position: absolute;
+    z-index: 4;
+    right: 1rem;
+    bottom: 4.25rem;
+    display: flex;
+    gap: 1rem;
+  }
+
+  .stage-layer__telemetry div {
+    min-width: 3.7rem;
+  }
+
+  .stage-layer__telemetry dt,
+  .stage-layer__telemetry dd {
+    font-family: var(--font-mono);
+    font-size: 0.55rem;
+    line-height: 1.45;
+  }
+
+  .stage-layer__telemetry dt {
+    color: rgba(154, 163, 178, 0.5);
+    text-transform: uppercase;
+  }
+
+  .stage-layer__telemetry dd {
+    margin: 0;
+    color: var(--ink-dim);
+  }
+
+  .stage-layer__confidence {
+    position: absolute;
+    z-index: 4;
+    left: 1rem;
+    right: 1rem;
+    bottom: 1rem;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 0.8rem;
+    font-family: var(--font-mono);
+    font-size: 0.55rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .stage-layer__confidence > i {
+    display: block;
+    height: 2px;
+    background: rgba(154, 163, 178, 0.16);
+  }
+
+  .stage-layer__confidence b {
+    display: block;
+    width: 18%;
+    height: 100%;
+    background: var(--abstain);
+    box-shadow: 0 0 10px rgba(139, 148, 161, 0.35);
+    transition: width 500ms ease, background-color 500ms ease;
+  }
+
+  :global(#stage[data-scene-phase="search"]) .stage-layer__confidence b {
+    width: 58%;
+  }
+
+  :global(#stage[data-scene-phase="match"]) .stage-layer__confidence b {
+    width: 86.7%;
+    background: var(--win);
+  }
+
+  :global(#stage[data-scene-phase="abstain"]) .stage-layer__confidence b {
+    width: 34%;
+  }
+
+  .stage-layer__corner {
+    position: absolute;
+    z-index: 5;
+    width: 1rem;
+    height: 1rem;
+    border-color: rgba(237, 238, 244, 0.36);
+  }
+
+  .stage-layer__corner--tl { top: 0.45rem; left: 0.45rem; border-top: 1px solid; border-left: 1px solid; }
+  .stage-layer__corner--tr { top: 0.45rem; right: 0.45rem; border-top: 1px solid; border-right: 1px solid; }
+  .stage-layer__corner--bl { bottom: 0.45rem; left: 0.45rem; border-bottom: 1px solid; border-left: 1px solid; }
+  .stage-layer__corner--br { bottom: 0.45rem; right: 0.45rem; border-bottom: 1px solid; border-right: 1px solid; }
+
+  @media (max-width: 980px) {
+    .stage-layer__frame {
+      right: -8%;
+      width: 68vw;
+      opacity: 0.72;
+    }
+
+    .stage-layer__telemetry {
+      display: none;
+    }
+  }
+
+  @media (max-width: 720px) {
+    .stage-layer__frame {
+      top: 4.5rem;
+      right: -26%;
+      bottom: 1rem;
+      width: 102vw;
+      opacity: 0.52;
+      border-radius: 14px;
+    }
+
+    .stage-layer__axis,
+    .stage-layer__telemetry,
+    .scene-status {
+      display: none;
+    }
   }
 </style>
