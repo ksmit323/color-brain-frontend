@@ -73,15 +73,18 @@ const NODE_VERT = `
   uniform float uTime, uDrift, uPointScale;
   varying vec3 vColor;
   varying float vDepth;
+  varying float vFog;
   ${DRIFT_GLSL}
   void main() {
-    vec3 p = drifted(position, uTime * 0.4 + aPhase, uDrift);
+    vec3 p = drifted(position, uTime * 0.4, uDrift);
     vec4 mv = modelViewMatrix * vec4(p, 1.0);
     gl_Position = projectionMatrix * mv;
-    float size = 1.1 + 0.9 * smoothstep(0.25, 0.0, aDepth);
+    float breathe = 0.96 + 0.04 * sin(uTime * 0.8 + aPhase);
+    float size = (1.1 + 0.9 * smoothstep(0.25, 0.0, aDepth)) * breathe;
     gl_PointSize = uPointScale * size / -mv.z;
     vColor = aColor;
     vDepth = aDepth;
+    vFog = 1.0 - smoothstep(165.0, 285.0, -mv.z);
   }
 `;
 
@@ -90,12 +93,16 @@ const NODE_FRAG = `
   uniform float uDim, uPulse;
   varying vec3 vColor;
   varying float vDepth;
+  varying float vFog;
   void main() {
     float d = length(gl_PointCoord - 0.5);
     float alpha = smoothstep(0.5, 0.1, d);
     float flare = uPulse * smoothstep(0.09, 0.0, vDepth);
     vec3 rgb = vColor * (0.95 + 2.6 * flare) + vec3(0.045) + vec3(1.3) * flare * smoothstep(0.3, 0.0, d);
-    gl_FragColor = vec4(rgb * (1.0 - uDim * 0.85), alpha * (0.8 + 0.2 * flare));
+    gl_FragColor = vec4(
+      rgb * (0.5 + 0.5 * vFog) * (1.0 - uDim * 0.85),
+      alpha * (0.48 + 0.52 * vFog) * (0.8 + 0.2 * flare)
+    );
   }
 `;
 
@@ -105,12 +112,15 @@ const EDGE_VERT = `
   uniform float uTime, uDrift;
   varying vec3 vColor;
   varying float vOrder;
+  varying float vFog;
   ${DRIFT_GLSL}
   void main() {
     vec3 p = drifted(position, uTime * 0.4, uDrift);
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.0);
+    vec4 mv = modelViewMatrix * vec4(p, 1.0);
+    gl_Position = projectionMatrix * mv;
     vColor = aColor;
     vOrder = aOrder;
+    vFog = 1.0 - smoothstep(165.0, 285.0, -mv.z);
   }
 `;
 
@@ -119,12 +129,16 @@ const EDGE_FRAG = `
   uniform float uReveal, uDim;
   varying vec3 vColor;
   varying float vOrder;
+  varying float vFog;
   void main() {
     float dt = uReveal - vOrder;
     float lit = step(0.0, dt);
     float front = lit * exp(-dt * 7.0);
     float intensity = 0.055 + lit * (0.12 + 0.6 * front);
-    gl_FragColor = vec4((vColor + vec3(0.12)) * intensity * (1.0 - uDim * 0.9), 1.0);
+    gl_FragColor = vec4(
+      (vColor + vec3(0.12)) * intensity * (0.35 + 0.65 * vFog) * (1.0 - uDim * 0.9),
+      1.0
+    );
   }
 `;
 
@@ -171,7 +185,7 @@ export function createScene(
   } catch {
     return null;
   }
-  renderer.setClearColor(0x0a0b10, 0);
+  renderer.setClearColor(0x07080c, 0);
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75));
 
   const scene = new Scene();
@@ -291,6 +305,8 @@ export function createScene(
   let frameAccum = 0;
   let lastTime = 0;
   let degradeStep = 0;
+  let parallaxX = 0;
+  let parallaxY = 0;
 
   function degrade(): void {
     degradeStep += 1;
@@ -325,12 +341,11 @@ export function createScene(
     edgeMaterial.uniforms.uReveal!.value = params.reveal;
     targetMaterial.uniforms.uProgress!.value = params.targetProgress;
 
-    camera.position.set(
-      cameraBase.x + params.parallaxX * 9,
-      cameraBase.y + params.parallaxY * 6,
-      cameraBase.z,
-    );
+    parallaxX += (params.parallaxX - parallaxX) * 0.055;
+    parallaxY += (params.parallaxY - parallaxY) * 0.055;
+    camera.position.set(cameraBase.x + parallaxX * 9, cameraBase.y + parallaxY * 6, cameraBase.z);
     camera.lookAt(lookAt);
+    scene.rotation.y = Math.sin(now / 14000) * 0.028;
 
     renderer.render(scene, camera);
     if (firstFrame) {

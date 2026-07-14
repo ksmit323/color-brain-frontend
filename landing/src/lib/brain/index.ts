@@ -24,7 +24,9 @@ export function initBrain(mode: "full" | "ambient"): void {
     mode === "full" ? NODES_PER_CLUSTER_FULL : NODES_PER_CLUSTER_AMBIENT,
   );
   const params = defaultParams();
-  const scene = createScene(canvas, data, params, () => layer.classList.add("is-live"));
+  const scene = createScene(canvas, data, params, () =>
+    layer.classList.add("is-live"),
+  );
   if (!scene) return; // WebGL context refused — the poster stays.
 
   // Render only while the stage is on screen and the tab is visible.
@@ -73,7 +75,10 @@ export function initBrain(mode: "full" | "ambient"): void {
  *   match   → the retrieved recipe's node flares (recommend)
  *   abstain → the network dims and stills (calibrated silence)
  */
-function buildTimeline(stage: HTMLElement, params: BrainParams): gsap.core.Timeline {
+function buildTimeline(
+  stage: HTMLElement,
+  params: BrainParams,
+): gsap.core.Timeline {
   const scrollRange = Math.max(1, stage.scrollHeight - window.innerHeight);
   const stageTop = stage.getBoundingClientRect().top;
   const beatAt = (name: string): number => {
@@ -83,7 +88,8 @@ function buildTimeline(stage: HTMLElement, params: BrainParams): gsap.core.Timel
     // Rect difference, not offsetTop: the steps' offset parent is their
     // section, not the stage.
     const rect = el.getBoundingClientRect();
-    const center = rect.top - stageTop + rect.height / 2 - window.innerHeight / 2;
+    const center =
+      rect.top - stageTop + rect.height / 2 - window.innerHeight / 2;
     return Math.min(1, Math.max(0, center / scrollRange));
   };
 
@@ -91,19 +97,41 @@ function buildTimeline(stage: HTMLElement, params: BrainParams): gsap.core.Timel
   const match = beatAt("match");
   const abstain = beatAt("abstain");
 
+  const syncPhase = (progress: number) => {
+    const phase =
+      progress < search - 0.02
+        ? "index"
+        : progress < match - 0.02
+          ? "search"
+          : progress < abstain - 0.02
+            ? "match"
+            : "abstain";
+    if (stage.dataset.scenePhase !== phase) stage.dataset.scenePhase = phase;
+  };
+
   const tl = gsap.timeline({
     defaults: { ease: "none" },
     scrollTrigger: {
       trigger: stage,
       start: "top top",
       end: "bottom bottom",
-      scrub: 0.8,
+      scrub: 0.28,
+      onUpdate: (self) => syncPhase(self.progress),
     },
   });
-  tl.to(params, { targetProgress: 1, duration: 0.08 }, Math.max(0, search - 0.06));
+  tl.to(
+    params,
+    { targetProgress: 1, duration: 0.08 },
+    Math.max(0, search - 0.06),
+  );
   tl.to(params, { reveal: 1, duration: Math.max(0.1, match - search) }, search);
   tl.to(params, { pulse: 1, duration: 0.05 }, match);
-  tl.to(params, { dim: 1, drift: 0.12, pulse: 0.25, duration: 0.1 }, Math.max(match + 0.05, abstain - 0.08));
+  tl.to(
+    params,
+    { dim: 1, drift: 0.12, pulse: 0.25, duration: 0.1 },
+    Math.max(match + 0.05, abstain - 0.08),
+  );
   tl.set({}, {}, 1); // pin timeline duration to 1 so beat positions map exactly
+  syncPhase(tl.scrollTrigger?.progress ?? 0);
   return tl;
 }
