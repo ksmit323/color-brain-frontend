@@ -19,9 +19,9 @@
 @font-face {
   font-family: "Clash Display Fallback";
   /* Liberation Sans is Arial-metric-compatible (Linux); Helvetica covers macOS. */
-  src: local("Arial Bold"), local("Liberation Sans Bold"),
-    local("Helvetica Bold"), local("Arial"), local("Liberation Sans"),
-    local("Helvetica");
+  src:
+    local("Arial Bold"), local("Liberation Sans Bold"), local("Helvetica Bold"),
+    local("Arial"), local("Liberation Sans"), local("Helvetica");
   size-adjust: 101.9%;
   ascent-override: 87.3%;
   descent-override: 24.5%;
@@ -57,16 +57,16 @@
 
 :root {
   /* Stage */
-  --bg: #0a0b10;
-  --surface: #12141b;
-  --surface-raised: #171a23;
-  --line: #232733;
-  --line-soft: #1a1e28;
+  --bg: #07080c;
+  --surface: #0f1118;
+  --surface-raised: #151822;
+  --line: #292e3a;
+  --line-soft: #191d27;
 
   /* Ink */
-  --ink: #edeef4;
-  --ink-dim: #9aa3b2;
-  --ink-faint: #78818f; /* lightest gray that keeps ≥4.5:1 on --bg */
+  --ink: #f1f2f7;
+  --ink-dim: #a3abba;
+  --ink-faint: #7d8694;
 
   /* Semantic status colors, shared with the app */
   --win: #46c79a;
@@ -79,16 +79,16 @@
   --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", monospace;
 
   /* Scale */
-  --text-hero: clamp(2.4rem, 5.5vw, 4.25rem);
-  --text-title: clamp(1.9rem, 4vw, 3rem);
+  --text-hero: clamp(2.75rem, 5.2vw, 4.75rem);
+  --text-title: clamp(2.15rem, 4.4vw, 3.65rem);
   --text-lede: clamp(1.05rem, 1.6vw, 1.25rem);
 
   /* Layout */
-  --container: 1180px;
+  --container: 1240px;
   --gutter: clamp(1.25rem, 4vw, 2.5rem);
   --section-pad: clamp(4.5rem, 10vw, 8.5rem);
-  --radius: 12px;
-  --radius-sm: 7px;
+  --radius: 9px;
+  --radius-sm: 5px;
 }
 
 /* ---------------------------------------------------------------- reset --- */
@@ -103,10 +103,19 @@
 html {
   color-scheme: dark;
   -webkit-text-size-adjust: 100%;
+  scroll-padding-top: 4rem;
 }
 
 body {
-  background: var(--bg);
+  min-width: 320px;
+  overflow-x: clip;
+  background:
+    radial-gradient(
+      circle at 76% 10%,
+      rgba(78, 82, 124, 0.09),
+      transparent 26rem
+    ),
+    var(--bg);
   color: var(--ink);
   font-family: var(--font-body);
   font-size: 1rem;
@@ -139,7 +148,7 @@ h3 {
   font-family: var(--font-display);
   font-weight: 600;
   line-height: 1.05;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.025em;
   text-wrap: balance;
 }
 
@@ -173,7 +182,9 @@ h3 {
 }
 
 .section {
+  position: relative;
   padding-block: var(--section-pad);
+  border-top: 1px solid rgba(41, 46, 58, 0.55);
 }
 
 /*
@@ -185,9 +196,9 @@ h3 {
   align-items: center;
   gap: 0.6em;
   font-family: var(--font-mono);
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   font-weight: 500;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--ink-dim);
 }
@@ -202,8 +213,8 @@ h3 {
 
 .title {
   font-size: var(--text-title);
-  margin-top: 1rem;
-  max-width: 24ch;
+  margin-top: 1.15rem;
+  max-width: 20ch;
 }
 
 .lede {
@@ -218,28 +229,38 @@ h3 {
   align-items: center;
   justify-content: center;
   gap: 0.5em;
-  padding: 0.85em 1.7em;
-  border-radius: 999px;
-  font-family: var(--font-body);
-  font-size: 0.95rem;
+  min-height: 3rem;
+  padding: 0.8em 1.45em;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
   font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   text-decoration: none;
-  transition: background-color 160ms ease, border-color 160ms ease,
-    color 160ms ease, transform 160ms ease;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
 }
 
 .btn--primary {
-  background: var(--ink);
+  border: 1px solid rgba(255, 255, 255, 0.88);
+  background: linear-gradient(135deg, #ffffff, #d9dce6);
   color: var(--bg);
+  box-shadow: 0 10px 32px rgba(237, 238, 244, 0.09);
 }
 
 .btn--primary:hover {
   background: #ffffff;
-  transform: translateY(-1px);
+  box-shadow: 0 14px 38px rgba(237, 238, 244, 0.15);
+  transform: translateY(-2px);
 }
 
 .btn--ghost {
   border: 1px solid var(--line);
+  background: rgba(15, 17, 24, 0.52);
   color: var(--ink);
 }
 
@@ -269,6 +290,7 @@ h3 {
    StageLayer. Sections need their own stacking context to paint above it. */
 #stage {
   position: relative;
+  isolation: isolate;
 }
 
 #stage section {
@@ -276,35 +298,29 @@ h3 {
   z-index: 1;
 }
 
-/* Soft darkening behind stage-panel text so copy stays legible over the
-   constellation without hiding it. */
-.stage-panel {
-  background: linear-gradient(
-    180deg,
-    transparent 0%,
-    rgba(10, 11, 16, 0.72) 18%,
-    rgba(10, 11, 16, 0.72) 82%,
-    transparent 100%
-  );
-}
-
 /* Scroll-reveal targets; motion.ts toggles .is-visible. Hidden state only
    applies when JS is running (html.has-js) so no-JS visitors see everything. */
 html.has-js .reveal {
   opacity: 0;
   transform: translateY(24px);
-  transition: opacity 700ms ease, transform 700ms ease;
+  filter: blur(3px);
+  transition:
+    opacity 700ms ease,
+    transform 700ms ease,
+    filter 700ms ease;
 }
 
 html.has-js .reveal.is-visible {
   opacity: 1;
   transform: none;
+  filter: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
   html.has-js .reveal {
     opacity: 1;
     transform: none;
+    filter: none;
   }
 }
 

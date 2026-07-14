@@ -255,7 +255,7 @@ const studies = CASE_STUDIES.map((cs, i) => {
     gap: 0.55em;
     padding: 0.5em 0.95em;
     border: 1px solid var(--line);
-    border-radius: 999px;
+    border-radius: var(--radius-sm);
     font-family: var(--font-mono);
     font-size: 0.8rem;
     color: var(--ink-dim);
@@ -298,6 +298,12 @@ const studies = CASE_STUDIES.map((cs, i) => {
     gap: clamp(2rem, 5vw, 4.5rem);
     align-items: center;
     margin-top: 2.5rem;
+    padding: clamp(1.25rem, 3.5vw, 2.75rem);
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius);
+    background:
+      radial-gradient(circle at 20% 45%, rgba(255, 255, 255, 0.035), transparent 30%),
+      var(--surface);
   }
 
   /* display: grid would otherwise defeat the hidden attribute's UA rule. */

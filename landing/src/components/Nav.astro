@@ -10,6 +10,7 @@
     <a class="nav__brand" href="#top">
       <img src="/cb_logo.svg" alt="" width="26" height="27" />
       <span>Color Brain</span>
+      <em>AI</em>
     </a>
     <nav class="nav__links" aria-label="Sections">
       <a href="#how-it-works">How It Works</a>
@@ -29,10 +30,10 @@
     position: sticky;
     top: 0;
     z-index: 10;
-    background: color-mix(in srgb, var(--bg) 78%, transparent);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    border-bottom: 1px solid var(--line-soft);
+    background: color-mix(in srgb, var(--bg) 72%, transparent);
+    backdrop-filter: blur(18px) saturate(1.25);
+    -webkit-backdrop-filter: blur(18px) saturate(1.25);
+    border-bottom: 1px solid rgba(41, 46, 58, 0.66);
   }
 
   .nav__inner {
@@ -50,6 +51,21 @@
     font-family: var(--font-display);
     font-weight: 600;
     text-decoration: none;
+  }
+
+  .nav__brand img {
+    filter: drop-shadow(0 0 12px rgba(237, 238, 244, 0.14));
+  }
+
+  .nav__brand em {
+    padding: 0.22em 0.42em;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 0.53rem;
+    font-style: normal;
+    letter-spacing: 0.12em;
+    color: var(--ink-faint);
   }
 
   .nav__links {
@@ -85,8 +101,9 @@
   }
 
   .nav__cta {
-    padding: 0.55em 1.2em;
-    font-size: 0.9rem;
+    min-height: 2.35rem;
+    padding: 0.5em 1.1em;
+    font-size: 0.67rem;
   }
 
   @media (max-width: 860px) {

@@ -29,9 +29,12 @@ const ROLES = [
     </div>
     <div class="who__grid reveal">
       {
-        ROLES.map((role) => (
+        ROLES.map((role, index) => (
           <article class="who__card">
-            <p class="who__tag">{role.tag}</p>
+            <div class="who__meta">
+              <p class="who__tag">{role.tag}</p>
+              <span>0{index + 1}</span>
+            </div>
             <h3>{role.tagline}</h3>
             <p class="who__body">{role.body}</p>
           </article>
@@ -50,10 +53,33 @@ const ROLES = [
   }
 
   .who__card {
+    position: relative;
+    min-height: 19rem;
+    display: flex;
+    flex-direction: column;
     background: var(--surface);
     border: 1px solid var(--line-soft);
     border-radius: var(--radius);
     padding: 2rem 1.75rem;
+    transition: border-color 220ms ease, transform 220ms ease, background-color 220ms ease;
+  }
+
+  .who__card:hover {
+    border-color: var(--line);
+    background: var(--surface-raised);
+    transform: translateY(-3px);
+  }
+
+  .who__meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .who__meta > span {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--ink-faint);
   }
 
   .who__tag {
@@ -66,7 +92,8 @@ const ROLES = [
 
   .who__card h3 {
     font-size: 1.35rem;
-    margin-top: 0.9rem;
+    margin-top: auto;
+    padding-top: 3rem;
   }
 
   .who__body {

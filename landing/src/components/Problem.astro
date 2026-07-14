@@ -10,7 +10,7 @@
     <div class="reveal">
       <p class="eyebrow">The cost of guessing</p>
       <h2 class="title">
-        Every failed first attempt costs time, material, and the brand's patience.
+        Guessing is expensive. Repeating it is worse.
       </h2>
       <p class="lede">
         Most color-matching tools start from a generic model and spend months
@@ -21,14 +21,17 @@
     </div>
     <dl class="problem__readouts reveal">
       <div>
+        <span class="problem__index">01 / Attempts</span>
         <dt class="readout__value">4–6</dt>
         <dd class="readout__label">attempts on average to approve a new color</dd>
       </div>
       <div>
+        <span class="problem__index">02 / Failure</span>
         <dt class="readout__value">50%</dt>
         <dd class="readout__label">of first attempts miss the target</dd>
       </div>
       <div>
+        <span class="problem__index">03 / Cost</span>
         <dt class="readout__value">$500–2K</dt>
         <dd class="readout__label">typical cost per failed attempt</dd>
       </div>
@@ -37,11 +40,57 @@
 </section>
 
 <style>
+  .problem {
+    overflow: hidden;
+    background:
+      radial-gradient(circle at 86% 18%, rgba(224, 108, 117, 0.07), transparent 28rem),
+      var(--surface);
+  }
+
+  .problem::after {
+    content: "";
+    position: absolute;
+    top: -10rem;
+    right: 7vw;
+    width: 28rem;
+    height: 28rem;
+    border: 1px solid rgba(224, 108, 117, 0.09);
+    border-radius: 50%;
+    box-shadow:
+      0 0 0 5rem rgba(224, 108, 117, 0.018),
+      0 0 0 10rem rgba(224, 108, 117, 0.012);
+  }
+
+  .problem .container {
+    position: relative;
+    z-index: 1;
+  }
+
   .problem__readouts {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 2.5rem;
+    gap: 1px;
     margin-top: 4rem;
+    border-block: 1px solid var(--line);
+    background: var(--line);
+  }
+
+  .problem__readouts > div {
+    min-height: 13rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 1.6rem;
+    background: var(--surface);
+  }
+
+  .problem__index {
+    margin-bottom: auto;
+    font-family: var(--font-mono);
+    font-size: 0.61rem;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: var(--fail);
   }
 
   .problem__readouts dd {
