@@ -63,6 +63,57 @@ pub struct Metadata {
     pub comparison_stats: Option<ComparisonStats>,
 }
 
+impl Metadata {
+    /// Dye program codes in chronological order for dropdowns (`1`, `2`, `11` — not `1`, `11`, `2`).
+    pub fn dye_programs_chronological(&self) -> Vec<String> {
+        sort_dye_programs_chronologically(self.known_dye_programs.clone())
+    }
+}
+
+/// Sort dye program codes in ascending chronological/id order for UI dropdowns.
+///
+/// Pure numeric codes sort numerically. Alphanumeric codes like `P1` sort by prefix then number.
+pub fn sort_dye_programs_chronologically(mut programs: Vec<String>) -> Vec<String> {
+    programs.sort_by(|a, b| dye_program_sort_key(a).cmp(&dye_program_sort_key(b)));
+    programs
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+struct DyeProgramSortKey {
+    prefix: String,
+    number: u64,
+    raw: String,
+}
+
+fn dye_program_sort_key(s: &str) -> DyeProgramSortKey {
+    let raw = s.trim().to_string();
+    if let Ok(number) = raw.parse::<u64>() {
+        return DyeProgramSortKey {
+            prefix: String::new(),
+            number,
+            raw,
+        };
+    }
+
+    let mut prefix = String::new();
+    let mut digits = String::new();
+    let mut in_digits = false;
+    for c in raw.chars() {
+        if c.is_ascii_digit() {
+            in_digits = true;
+            digits.push(c);
+        } else if !in_digits {
+            prefix.push(c);
+        }
+    }
+
+    DyeProgramSortKey {
+        prefix: prefix.to_ascii_lowercase(),
+        number: digits.parse().unwrap_or(u64::MAX),
+        raw,
+    }
+}
+
 /// `POST /first-attempt/recommend` request body.
 ///
 /// `target_l`/`target_a`/`target_b`, `substrate` and `dye_prog` are required. The process
@@ -260,7 +311,9 @@ pub async fn get_history() -> Result<HistoryResponse, String> {
     if !resp.ok() {
         return Err(format!("HTTP {}", resp.status()));
     }
-    resp.json::<HistoryResponse>().await.map_err(|e| e.to_string())
+    resp.json::<HistoryResponse>()
+        .await
+        .map_err(|e| e.to_string())
 }
 
 /// Fetch `GET /first-attempt/replay/{row_id}` — the full technician-vs-Color-Brain comparison for
@@ -274,4 +327,27 @@ pub async fn get_replay(row_id: &str) -> Result<ReplayDetail, String> {
         return Err(format!("HTTP {}", resp.status()));
     }
     resp.json::<ReplayDetail>().await.map_err(|e| e.to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::sort_dye_programs_chronologically;
+
+    #[test]
+    fn dye_programs_sort_numeric_codes_chronologically() {
+        let sorted = sort_dye_programs_chronologically(vec![
+            "11".into(),
+            "2".into(),
+            "60".into(),
+            "1".into(),
+        ]);
+        assert_eq!(sorted, vec!["1", "2", "11", "60"]);
+    }
+
+    #[test]
+    fn dye_programs_sort_alphanumeric_codes_by_prefix_then_number() {
+        let sorted =
+            sort_dye_programs_chronologically(vec!["P11".into(), "P2".into(), "P1".into()]);
+        assert_eq!(sorted, vec!["P1", "P2", "P11"]);
+    }
 }

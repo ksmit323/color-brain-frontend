@@ -223,7 +223,7 @@ pub fn Home() -> Element {
                                 TargetForm {
                                     fields,
                                     substrates: meta.known_substrates.clone(),
-                                    dye_programs: meta.known_dye_programs.clone(),
+                                    dye_programs: meta.dye_programs_chronological(),
                                     on_submit,
                                 }
                             },
