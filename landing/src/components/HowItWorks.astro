@@ -10,118 +10,194 @@
  */
 ---
 
-<section class="how stage-panel" id="how-it-works">
+<section class="how" id="how-it-works">
   <div class="container">
     <div class="how__head reveal">
-      <p class="eyebrow">How it works · no new hardware</p>
-      <h2 class="title">Three steps. Zero new process.</h2>
+      <p class="eyebrow">Live inference · one target</p>
+      <h2 class="title">Watch history become a decision.</h2>
+      <p class="lede">
+        No generated formula. No black-box guess. Color Brain searches what
+        your factory has already proven.
+      </p>
     </div>
 
     <ol class="how__steps">
       <li class="how__step reveal" data-beat="connect">
-        <span class="how__num">01</span>
-        <h3>Connect</h3>
+        <div class="how__step-top">
+          <span class="how__num">01</span>
+          <span class="how__state">Index</span>
+        </div>
+        <h3>Your production memory, mapped.</h3>
         <p>
-          Share your historical batch records. Every dye job you've ever run
-          becomes a point in color space — the more history, the sharper and
-          more substrate-specific the match.
+          Historical batch records become a living CIELAB map. Substrate,
+          process, recipe, and measured outcome remain connected as evidence.
         </p>
       </li>
-      <li class="how__step how__step--right reveal" data-beat="search">
-        <span class="how__num">02</span>
-        <h3>Search</h3>
+      <li class="how__step reveal" data-beat="search">
+        <div class="how__step-top">
+          <span class="how__num">02</span>
+          <span class="how__state">Search</span>
+        </div>
+        <h3>A new target enters the map.</h3>
         <p>
-          A new target color drops into the map. Color Brain finds the closest
-          proven recipe on the same substrate and scores how likely it is to
-          beat your technician's first attempt.
+          Retrieval propagates only through compatible history, finding the
+          closest proven recipe on the same substrate and production context.
         </p>
       </li>
       <li class="how__step reveal" data-beat="match">
-        <span class="how__num">03</span>
-        <h3>Recommend</h3>
+        <div class="how__step-top">
+          <span class="how__num">03</span>
+          <span class="how__state how__state--win">Recommend</span>
+        </div>
+        <h3>Evidence clears the confidence gate.</h3>
         <p>
-          Above the calibrated confidence gate, you get a real recipe your
-          factory already ran — batch number, evidence, and win probability
-          included.
+          You receive a recipe your factory actually ran, with its batch
+          number, measured result, neighborhood evidence, and win probability.
+        </p>
+      </li>
+      <li class="how__step how__step--silence reveal" data-beat="abstain">
+        <div class="how__step-top">
+          <span class="how__num">04</span>
+          <span class="how__state">Abstain</span>
+        </div>
+        <h3>Not enough evidence? It stays silent.</h3>
+        <p>
+          The same gate that makes a recommendation useful also knows when not
+          to make one. Calibrated silence is part of the product.
         </p>
       </li>
     </ol>
-  </div>
-
-  <!-- The abstention moment: color drains, motion stills, one line stands. -->
-  <div class="how__silence" data-beat="abstain">
-    <p class="how__silence-line reveal">
-      And when it isn't sure&thinsp;—&thinsp;it says nothing.
-    </p>
-    <p class="how__silence-sub reveal">
-      Abstention is a trust feature, not a miss. A recommendation you can act
-      on, or calibrated silence.
-    </p>
   </div>
 </section>
 
 <style>
   .how {
-    padding-top: var(--section-pad);
+    position: relative;
+    padding-bottom: 15vh;
+  }
+
+  .how::before {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    inset: 0 38% 0 0;
+    background: linear-gradient(90deg, rgba(7, 8, 12, 0.98) 68%, transparent);
+    pointer-events: none;
+  }
+
+  .how__head {
+    min-height: 48vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    max-width: 31rem;
+    padding-bottom: 5rem;
   }
 
   .how__steps {
+    position: relative;
     list-style: none;
     padding: 0;
     margin: 0;
   }
 
+  .how__steps::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 1px;
+    background: linear-gradient(180deg, transparent, var(--line) 8%, var(--line) 92%, transparent);
+  }
+
   .how__step {
-    min-height: 78vh;
+    min-height: 68svh;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    max-width: 26rem;
+    max-width: 30rem;
+    padding: 2rem 2rem 2rem 2.25rem;
+    border-left: 1px solid transparent;
   }
 
-  .how__step--right {
-    margin-left: auto;
+  .how__step-top {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+
+  .how__num,
+  .how__state {
+    font-family: var(--font-mono);
+    font-size: 0.67rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
   }
 
   .how__num {
-    font-family: var(--font-mono);
-    font-size: 0.85rem;
-    color: var(--ink-faint);
-    letter-spacing: 0.14em;
+    position: relative;
+    color: var(--ink-dim);
+  }
+
+  .how__num::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: -2.55rem;
+    width: 0.58rem;
+    height: 0.58rem;
+    border: 1px solid var(--ink-faint);
+    background: var(--bg);
+    transform: translateY(-50%) rotate(45deg);
+  }
+
+  .how__state {
+    padding: 0.25em 0.6em;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+  }
+
+  .how__state--win {
+    border-color: rgba(70, 199, 154, 0.35);
+    color: var(--win);
   }
 
   .how__step h3 {
-    font-size: 1.6rem;
-    margin-top: 0.6rem;
+    max-width: 14ch;
+    margin-top: 1rem;
+    font-size: clamp(1.65rem, 2.7vw, 2.25rem);
   }
 
   .how__step p {
+    max-width: 29rem;
     color: var(--ink-dim);
-    margin-top: 0.8rem;
+    margin-top: 1rem;
   }
 
-  .how__silence {
-    min-height: 90vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    padding-inline: var(--gutter);
-  }
-
-  .how__silence-line {
-    font-family: var(--font-display);
-    font-weight: 500;
-    font-size: clamp(1.6rem, 3.4vw, 2.6rem);
+  .how__step--silence h3 {
     color: var(--abstain);
-    max-width: 24ch;
   }
 
-  .how__silence-sub {
-    margin-top: 1.2rem;
-    font-size: 0.95rem;
-    color: var(--ink-faint);
-    max-width: 44ch;
+  @media (max-width: 720px) {
+    .how {
+      padding-bottom: 5rem;
+    }
+
+    .how::before {
+      right: 0;
+      background: rgba(7, 8, 12, 0.58);
+    }
+
+    .how__head {
+      min-height: 58svh;
+    }
+
+    .how__step {
+      min-height: 62svh;
+      max-width: 27rem;
+      padding-right: 0.5rem;
+    }
   }
 </style>
