@@ -9,35 +9,44 @@
 <section class="hero" id="hero">
   <div class="hero__scrim"></div>
   <div class="container hero__inner">
-    <p class="eyebrow">12,398 dye jobs · CIELAB · D65</p>
-    <h1 class="hero__headline" data-split>The recipe already exists. We find it.</h1>
+    <p class="eyebrow">Production intelligence · Model 01</p>
+    <h1 class="hero__headline">
+      <span data-split>The recipe already exists.</span>
+      <span class="hero__answer" data-split>We find it.</span>
+    </h1>
     <p class="hero__subhead">
-      Color Brain plots your factory's entire dye history in color space,
-      matches every new target to a recipe you've already proven — and stays
-      silent when it isn't sure.
+      Color Brain turns your factory's dye history into a searchable memory:
+      one new target in, one proven recipe out — or calibrated silence.
     </p>
     <div class="hero__actions">
       <a class="btn btn--primary" href="#contact">Request a Pilot</a>
       <a class="btn btn--ghost" href="https://app.colorbrain.co">Open the App</a>
     </div>
-    <dl class="hero__metrics">
+    <dl class="hero__metrics" aria-label="Validated model results">
       <div class="hero__metric">
-        <dt class="readout__value">86.7%</dt>
-        <dd class="readout__label">win rate on recommendations</dd>
+        <dt class="hero__metric-label">Recommendation precision</dt>
+        <dd class="hero__metric-value">86.7%</dd>
       </div>
       <div class="hero__metric">
-        <dt class="readout__value">2,043</dt>
-        <dd class="readout__label">unseen holdout jobs</dd>
+        <dt class="hero__metric-label">Validated holdout</dt>
+        <dd class="hero__metric-value">2,043</dd>
+      </div>
+      <div class="hero__metric">
+        <dt class="hero__metric-label">Invented recipes</dt>
+        <dd class="hero__metric-value">0</dd>
       </div>
     </dl>
   </div>
-  <p class="hero__cue" aria-hidden="true">scroll — watch it search</p>
+  <div class="hero__cue" aria-hidden="true">
+    <span>Scroll to run inference</span>
+    <i></i>
+  </div>
 </section>
 
 <style>
   .hero {
     position: relative;
-    min-height: 100vh;
+    min-height: 100svh;
     display: flex;
     align-items: center;
   }
@@ -47,32 +56,44 @@
     position: absolute;
     inset: 0;
     background: linear-gradient(
-      100deg,
-      rgba(10, 11, 16, 0.92) 30%,
-      rgba(10, 11, 16, 0.45) 60%,
-      rgba(10, 11, 16, 0.05) 100%
+      90deg,
+      rgba(7, 8, 12, 0.98) 0%,
+      rgba(7, 8, 12, 0.94) 35%,
+      rgba(7, 8, 12, 0.3) 61%,
+      rgba(7, 8, 12, 0) 100%
     );
   }
 
   .hero__inner {
     position: relative;
     width: 100%;
-    padding-block: 7rem;
+    padding-block: 8.5rem 7rem;
   }
 
   .hero__headline {
     font-size: var(--text-hero);
     /* em, not ch: ch depends on the loaded font, so a ch-based box re-wraps
        when the webfont swaps in — the one layout shift on this page. */
-    max-width: 9.3em;
-    margin-top: 1.5rem;
+    max-width: 8.8em;
+    margin-top: 1.35rem;
+  }
+
+  .hero__headline > span {
+    display: block;
+  }
+
+  .hero__answer {
+    width: max-content;
+    max-width: 100%;
+    color: #ffd580;
+    text-shadow: 0 0 32px rgba(255, 213, 128, 0.12);
   }
 
   .hero__subhead {
     font-size: var(--text-lede);
     color: var(--ink-dim);
-    max-width: 28em; /* em, not ch — see headline */
-    margin-top: 1.5rem;
+    max-width: 26em; /* em, not ch — see headline */
+    margin-top: 1.65rem;
   }
 
   .hero__actions {
@@ -83,25 +104,101 @@
   }
 
   .hero__metrics {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 3rem;
-    margin-top: 3.5rem;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 9.5rem));
+    width: max-content;
+    max-width: 100%;
+    margin-top: 3rem;
+    border-block: 1px solid var(--line-soft);
   }
 
-  .hero__metric dd {
+  .hero__metric {
+    padding: 0.8rem 1.25rem 0.9rem 0;
+  }
+
+  .hero__metric + .hero__metric {
+    padding-left: 1.25rem;
+    border-left: 1px solid var(--line-soft);
+  }
+
+  .hero__metric-label {
+    font-family: var(--font-mono);
+    font-size: 0.63rem;
+    line-height: 1.35;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .hero__metric-value {
     margin: 0;
+    margin-top: 0.3rem;
+    font-family: var(--font-mono);
+    font-size: 1.1rem;
+    line-height: 1;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
   }
 
   .hero__cue {
     position: absolute;
-    bottom: 1.5rem;
-    left: 50%;
-    transform: translateX(-50%);
+    bottom: 1.4rem;
+    left: var(--gutter);
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
     font-family: var(--font-mono);
-    font-size: 0.72rem;
-    letter-spacing: 0.18em;
+    font-size: 0.64rem;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
     color: var(--ink-faint);
+  }
+
+  .hero__cue i {
+    position: relative;
+    display: block;
+    width: 4.5rem;
+    height: 1px;
+    overflow: hidden;
+    background: var(--line);
+  }
+
+  .hero__cue i::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--ink-dim);
+    transform: translateX(-100%);
+    animation: cue-scan 2.4s ease-in-out infinite;
+  }
+
+  @keyframes cue-scan {
+    55%,
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  @media (max-width: 760px) {
+    .hero__inner {
+      padding-block: 7.5rem 6rem;
+    }
+
+    .hero__metrics {
+      grid-template-columns: repeat(3, 1fr);
+      width: 100%;
+    }
+
+    .hero__metric {
+      padding-right: 0.65rem;
+    }
+
+    .hero__metric + .hero__metric {
+      padding-left: 0.65rem;
+    }
+
+    .hero__metric-label {
+      font-size: 0.56rem;
+    }
   }
 </style>
