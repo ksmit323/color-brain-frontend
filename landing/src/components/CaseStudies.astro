@@ -24,7 +24,20 @@ const rOf = (de: number): number =>
   (Math.log10(Math.max(de, DE_FLOOR) / DE_FLOOR) / Math.log10(DE_CEIL / DE_FLOOR)) *
   MARKER_MAX_R;
 
-const RINGS = [0.25, 0.5, 1.0, 2.0, 4.0];
+const RINGS = [0.5, 1.0, 2.0, 4.0];
+
+/** Build a target-specific tolerance field. The center remains the exact
+    target; lightness and chroma drift outward so distance reads as increasing
+    mismatch without inventing an unrelated hue spectrum. Ring geometry and
+    marker positions remain the quantitative ΔE layer. */
+function fieldColor(target: Lab, amount: number): string {
+  const lightnessDirection = target.l >= 58 ? -1 : 1;
+  return labToCss({
+    l: Math.min(96, Math.max(4, target.l + lightnessDirection * 13 * amount)),
+    a: target.a * (1 - 0.42 * amount),
+    b: target.b * (1 - 0.42 * amount),
+  });
+}
 
 /** Where an attempt lands on the plate: radius from its ΔE, direction from
     its real error vector in the a*b* plane (SVG y points down, b* up). */
@@ -41,6 +54,9 @@ const studies = CASE_STUDIES.map((cs, i) => {
     ...cs,
     index: i,
     targetCss: labToCss(cs.target),
+    fieldNearCss: fieldColor(cs.target, 0.18),
+    fieldSpecCss: fieldColor(cs.target, 0.42),
+    fieldOuterCss: fieldColor(cs.target, 1),
     technicianCss: labToCss(cs.technician),
     colorBrainCss: labToCss(cs.colorBrain),
     techFailed: cs.technicianDe > TECHNICIAN_FAIL_DE,
@@ -106,7 +122,28 @@ const studies = CASE_STUDIES.map((cs, i) => {
                 role="img"
                 aria-label={`Target plate: Color Brain landed ΔE ${cs.colorBrainDe.toFixed(3)} from target, the technician ΔE ${cs.technicianDe.toFixed(3)}`}
               >
-                <circle cx={CENTER} cy={CENTER} r={PLATE_R} fill={cs.targetCss} />
+                <defs>
+                  <radialGradient id={`plate-field-${cs.index}`}>
+                    <stop offset="0%" stop-color={cs.targetCss} />
+                    <stop offset="16%" stop-color={cs.targetCss} />
+                    <stop
+                      offset={`${((rOf(0.5) / PLATE_R) * 100).toFixed(1)}%`}
+                      stop-color={cs.fieldNearCss}
+                    />
+                    <stop
+                      offset={`${((rOf(1) / PLATE_R) * 100).toFixed(1)}%`}
+                      stop-color={cs.fieldSpecCss}
+                    />
+                    <stop offset="100%" stop-color={cs.fieldOuterCss} />
+                  </radialGradient>
+                </defs>
+                <circle
+                  class="plate__field"
+                  cx={CENTER}
+                  cy={CENTER}
+                  r={PLATE_R}
+                  fill={`url(#plate-field-${cs.index})`}
+                />
                 <circle
                   cx={CENTER}
                   cy={CENTER}
@@ -173,6 +210,13 @@ const studies = CASE_STUDIES.map((cs, i) => {
                   stroke-width="2.5"
                 />
               </svg>
+              <p class="plate__key">
+                <span>
+                  <i style={`background:${cs.targetCss}`}></i>
+                  Center = exact target
+                </span>
+                <span>Outward shade drift = increasing mismatch</span>
+              </p>
             </div>
 
             <div class="verdict">
@@ -316,10 +360,40 @@ const studies = CASE_STUDIES.map((cs, i) => {
     height: auto;
   }
 
+  .plate__field {
+    filter: saturate(1.04);
+  }
+
   .plate__ring-label {
     font-family: var(--font-mono);
     font-size: 11px;
     letter-spacing: 0.08em;
+  }
+
+  .plate__key {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.55rem 1.1rem;
+    margin-top: 0.75rem;
+    font-family: var(--font-mono);
+    font-size: 0.61rem;
+    letter-spacing: 0.06em;
+    color: var(--ink-faint);
+  }
+
+  .plate__key span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+
+  .plate__key i {
+    width: 0.65rem;
+    height: 0.65rem;
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    border-radius: 50%;
   }
 
   /* Soft repeating pulse on the Color Brain marker. */
