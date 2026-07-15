@@ -255,9 +255,12 @@ for (const ring of RINGS) {
     transform: rotate(180deg);
   }
 
+  /* Bottom-center so it reads as the horizontal a* axis without sitting on
+     the bottom-right telemetry (Space / Illuminant / Distance). */
   .stage-layer__axis--a {
-    right: 1rem;
-    bottom: 5rem;
+    left: 50%;
+    bottom: 7.75rem;
+    transform: translateX(-50%);
   }
 
   .stage-layer__axis--b {
@@ -359,11 +362,15 @@ for (const ring of RINGS) {
     right: 1rem;
     bottom: 4.25rem;
     display: flex;
-    gap: 1rem;
+    gap: 1.15rem;
+    /* Soft plate so labels stay readable over the constellation / grid. */
+    padding: 0.35rem 0.55rem;
+    border-radius: 6px;
+    background: rgba(7, 8, 12, 0.42);
   }
 
   .stage-layer__telemetry div {
-    min-width: 3.7rem;
+    min-width: 4.2rem;
   }
 
   .stage-layer__telemetry dt,
@@ -374,8 +381,9 @@ for (const ring of RINGS) {
   }
 
   .stage-layer__telemetry dt {
-    color: rgba(154, 163, 178, 0.5);
+    color: rgba(154, 163, 178, 0.62);
     text-transform: uppercase;
+    letter-spacing: 0.06em;
   }
 
   .stage-layer__telemetry dd {
