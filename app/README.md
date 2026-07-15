@@ -1,76 +1,30 @@
-# Color Brain Frontend
+# Color Brain App
 
-A [Dioxus](https://dioxuslabs.com/) 0.7 web application that provides an operator-facing UI for the **Color Brain** first-attempt dye recipe recommendation system. Operators enter a target Lab color, substrate, dye program, and optional process variables; the app calls a local Python backend and displays the model's recommend/abstain decision with supporting evidence.
+Operator-facing UI for **Color Brain** first-attempt dye recipe recommendations, served at [app.colorbrain.co](https://app.colorbrain.co).
 
-This repository is the frontend companion to the [Color Brain backend](https://github.com/ksmit323/color-brain-backend) (or the sibling `color-brain-backend` repo in a monorepo layout). It is intended for **local development and internal demos**, not production deployment.
+A [Dioxus](https://dioxuslabs.com/) 0.7 single-page app compiled to WebAssembly. Operators enter a target job; the UI calls the backend and surfaces a recommend or abstain decision with confidence, historical evidence, and recipe quantities when the model clears its calibrated gate.
 
-## Table of Contents
+This package is independent of [`../landing`](../landing) (public marketing site). Shared conventions: [../CODING_RULES.md](../CODING_RULES.md). Dioxus 0.7 API reference: [../AGENTS.md](../AGENTS.md). Monorepo deploy overview: [../README.md](../README.md).
 
-- [Overview](#overview)
-- [Features](#features)
-- [Prerequisites](#prerequisites)
-- [Quick Start](#quick-start)
-- [Development](#development)
-- [Architecture](#architecture)
-- [Backend API Integration](#backend-api-integration)
-- [Configuration](#configuration)
-- [Project Structure](#project-structure)
-- [Development Guidelines](#development-guidelines)
-- [Roadmap](#roadmap)
-- [Related Repositories](#related-repositories)
-
-## Overview
-
-Color Brain helps textile coloration teams decide whether a factory's own historical dyeing records support a better first-attempt recipe than a technician's manual starting point. The backend is a confidence-gated nearest-history recommender: it retrieves same-substrate historical precedents, scores the probability that the retrieved recipe beats the technician's first attempt, and **recommends only when calibrated confidence is high enough**.
-
-This frontend exposes that logic through a single-page workflow:
-
-1. Load model metadata (known substrates, dye programs, recipe columns).
-2. Collect target Lab values and program selection from the operator.
-3. Submit a live recommendation request.
-4. Display the backend response — recommendation, abstention, confidence tier, nearest historical evidence, and recipe quantities when applicable.
-
-The UI is actively under development. Milestones M1 (API client) and M2 (minimal working page) are complete; polished components, styling, and edge-case handling are planned in M3–M5. See [IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md) for the full milestone breakdown.
-
-## Features
-
-### Implemented
-
-- **Metadata-driven form** — Substrate and dye program dropdowns are populated from `GET /first-attempt/metadata`; values are never hard-coded.
-- **Target color input** — Required Lab fields (`L`, `a`, `b`) with client-side numeric validation on submit.
-- **Optional process variables** — Yarn weight, water volume, liquor ratio, and cycle time; omitted from the request body when left blank.
-- **Async recommendation flow** — Loading, error, and success states with non-blocking form submission via `spawn`.
-- **Typed API client** — Serde-modeled request/response types in `src/api.rs` with graceful deserialization defaults.
-- **Dev proxy** — `Dioxus.toml` forwards same-origin API paths to the local backend, avoiding CORS during `dx serve`.
-- **Single-route app** — One `Home` page at `/`; starter blog/navbar demo removed.
-
-### Planned (M3–M5)
-
-- Dark operational theme with design tokens and responsive layout.
-- Extracted components: status indicator, target form, result panel, evidence panel, recipe table.
-- Distinct abstention UX, backend-unavailable banner, inline validation, and disabled submit states.
-- Lab color swatch rendering and recipe table ordered by `recipe_columns` from metadata.
+---
 
 ## Prerequisites
 
-| Tool                                                                   | Version / Notes                                                                              |
-| ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| [Rust](https://rustup.rs/)                                             | Edition 2021 (tested with rustc 1.95+)                                                       |
-| [Dioxus CLI](https://dioxuslabs.com/learn/0.7/getting_started) (`dx`)  | 0.7.x — install via `curl -sSL https://dioxus.dev/install.sh \| sh`                          |
-| [Color Brain backend](https://github.com/ksmit323/color-brain-backend) | Python 3.11 + [uv](https://docs.astral.sh/uv/)                                               |
-| Prepared dataset                                                       | Required by the backend `serve-first-attempt` command (e.g. `datasets/prepared_dataset.csv`) |
+| Tool | Notes |
+| --- | --- |
+| [Rust](https://rustup.rs/) | Edition 2021 |
+| `wasm32-unknown-unknown` | `rustup target add wasm32-unknown-unknown` |
+| [Dioxus CLI](https://dioxuslabs.com/learn/0.7/getting_started) (`dx`) | 0.7.x — `curl -sSL https://dioxus.dev/install.sh \| sh` |
+| [color-brain-backend](https://github.com/ksmit323/color-brain-backend) | Local FastAPI process for development |
+| Prepared dataset | Required by the backend `serve-first-attempt` command |
 
-Add the `wasm32-unknown-unknown` target if it is not already installed:
+---
 
-```bash
-rustup target add wasm32-unknown-unknown
-```
-
-## Quick Start
+## Quick start
 
 ### 1. Start the backend
 
-From the Color Brain backend repository:
+From the backend repository (example):
 
 ```bash
 uv sync --extra dev
@@ -79,139 +33,114 @@ uv run color-brain serve-first-attempt datasets/prepared_dataset.csv \
   --port 8000
 ```
 
-Confirm the API is reachable:
+Smoke-check:
 
 ```bash
 curl http://127.0.0.1:8000/health
 curl http://127.0.0.1:8000/first-attempt/metadata
 ```
 
-### 2. Start the frontend
-
-From this repository:
+### 2. Start the app
 
 ```bash
+cd app
 dx serve
 ```
 
-Open the URL printed by the dev server (typically `http://127.0.0.1:8080` or similar). The app loads metadata, populates the form dropdowns, and accepts recommendation submissions.
+Open the URL printed by the dev server (typically `http://127.0.0.1:8080`). Metadata should populate the form; a valid submit returns a recommend or abstain result.
 
-### End-to-end success criteria
+| Command | Purpose |
+| --- | --- |
+| `dx serve` | Dev server with hot reload |
+| `dx build --release --platform web` | Production WASM build |
+| `cargo fmt` | Format |
+| `cargo clippy -- -D warnings` | Lint |
+| `cargo test` | Unit tests (e.g. dye-program sort in `api.rs`) |
 
-- Metadata loads without error and fills substrate/dye program selects.
-- Submitting a valid form returns a recommendation or a clean abstention response in the UI.
+Default Cargo feature is `web` (browser/WASM). `desktop` and `mobile` features exist in `Cargo.toml` but are not used for production deploys.
 
-## Development
+---
 
-### Common commands
+## What the app does
 
-```bash
-# Dev server with hot reload (requires backend on :8000)
-dx serve
+Color Brain is a confidence-gated nearest-history recommender: it retrieves same-substrate historical precedents and recommends a proven recipe only when calibrated confidence is high enough. This UI is the operator workflow for that decision.
 
-# Production WASM build
-dx build
+1. Load model metadata (substrates, dye programs, recipe columns, backtest stats).
+2. Collect target Lab color, substrate, dye program, and optional process variables.
+3. Submit a live recommendation request.
+4. Show recommend vs abstain, confidence, nearest-batch evidence, and recipe when applicable.
 
-# Format and lint
-cargo fmt
-cargo clippy -- -D warnings
+Optional historical replay (technician vs Color Brain on holdout jobs) is implemented in the client; the picker is currently gated off for demos via `SHOW_REPLAY_PANEL` in `src/views/home.rs` until the product wants it live.
 
-# Check compilation without serving
-dx build
-```
-
-### Build targets
-
-The project supports multiple Dioxus platform features via Cargo features:
-
-| Feature         | Description                          |
-| --------------- | ------------------------------------ |
-| `web` (default) | Browser/WASM target via `dioxus/web` |
-| `desktop`       | Native desktop via `dioxus/desktop`  |
-| `mobile`        | Mobile via `dioxus/mobile`           |
-
-Local development uses the default `web` feature.
-
-### Async signal safety
-
-`clippy.toml` forbids holding Dioxus signal borrows across `.await` points. The submit handler reads all form signals into owned values **before** awaiting the HTTP call, then writes results afterward. Follow this pattern for any new async code.
+---
 
 ## Architecture
 
 ```text
-┌─────────────────────────────────────────────────────────────┐
-│  Browser (WASM)                                             │
-│  ┌─────────────┐    ┌──────────────┐    ┌────────────────┐  │
-│  │  Home view  │───▶│  api.rs      │───▶│  gloo-net      │  │
-│  │  (form UI)  │    │  (types +    │    │  (fetch API)   │  │
-│  │             │◀───│   client)    │◀───│                │  │
-│  └─────────────┘    └──────────────┘    └───────┬────────┘  │
-└─────────────────────────────────────────────────┼───────────┘
-                                                  │ same-origin
-                                                  │ /health, /first-attempt/*
-                                                  ▼
-┌─────────────────────────────────────────────────────────────┐
-│  dx dev proxy (Dioxus.toml)                                 │
-└─────────────────────────────────────────────────┬───────────┘
-                                                  ▼
-┌─────────────────────────────────────────────────────────────┐
-│  Color Brain FastAPI backend (:8000)                        │
-│  FirstAttemptLiveService — retrieval + confidence scoring   │
-└─────────────────────────────────────────────────────────────┘
+Browser (WASM)
+  Home view  ──►  api.rs (types + client)  ──►  gloo-net (fetch)
+       ▲                                              │
+       └──────────────────────────────────────────────┘
+                    same-origin relative paths
+                    /health, /first-attempt/*
+                              │
+              ┌───────────────┴────────────────┐
+              │  local: dx proxy (Dioxus.toml) │
+              │  prod:  CloudFront → App Runner│
+              └───────────────┬────────────────┘
+                              ▼
+                    Color Brain FastAPI backend
 ```
 
-### Key modules
+| Module | Responsibility |
+| --- | --- |
+| `src/main.rs` | Launch, document assets, single `/` route |
+| `src/api.rs` | Serde models and async HTTP client |
+| `src/views/home.rs` | Page orchestration: resources, form, submit/replay state |
+| `src/components/*` | Form, results, evidence, recipe, status, comparison, history |
+| `assets/styling/color_brain.css` | Design tokens and component styles |
 
-| Module              | Responsibility                                                                          |
-| ------------------- | --------------------------------------------------------------------------------------- |
-| `src/main.rs`       | App entry, asset links, `Route` enum, `Router` setup                                    |
-| `src/api.rs`        | Serde types and async HTTP client (`get_health`, `get_metadata`, `post_recommendation`) |
-| `src/views/home.rs` | First-attempt page: metadata resource, form state, submit handler, result display       |
-| `src/components/`   | Shared UI components (placeholder; populated in M3)                                     |
+### Components
 
-### State management
+| Component | Role |
+| --- | --- |
+| `StatusIndicator` | Backend reachability pill |
+| `TargetForm` | Job ticket: Lab, substrate, program, optional process vars |
+| `ResultPanel` | Recommend/abstain verdict, confidence meter, Lab swatch |
+| `EvidencePanel` | Nearest historical batch (ΔE, program, result) |
+| `RecipeTable` | Dye amounts in metadata column order (zeros omitted) |
+| `TrackRecord` | Holdout headline (win rate / median improvement) |
+| `HistoryPicker` / `ComparisonPanel` | Replay list and head-to-head (when enabled) |
 
-- `use_resource` loads metadata once on mount.
-- `use_signal` holds each form field as a `String` for free-form numeric entry; values are parsed and validated on submit.
-- `SubmitState` tracks idle, loading, done, and error states for the recommendation request.
+### State
 
-## Backend API Integration
+- `use_resource` loads health, metadata, and (if enabled) history on mount.
+- Form fields are `String` signals for free-form entry; values are parsed and validated on submit.
+- `SubmitState` / `ReplayState` track idle, loading, done, validation, and error paths.
+- `ActiveView` chooses which result column is shown when both live and replay are used.
 
-The frontend communicates with three endpoints. During `dx serve`, requests use **same-origin relative paths**; the dev proxy forwards them to `http://127.0.0.1:8000`.
+### Async and signals
 
-| Method | Path                       | Purpose                                                    |
-| ------ | -------------------------- | ---------------------------------------------------------- |
-| `GET`  | `/health`                  | Process health check (used by planned status indicator)    |
-| `GET`  | `/first-attempt/metadata`  | Known substrates, dye programs, recipe columns, thresholds |
-| `POST` | `/first-attempt/recommend` | Score one live target job                                  |
+`clippy.toml` forbids holding Dioxus signal borrows across `.await`. Read signals into owned values **before** the HTTP call; write results **after**. New async handlers must follow the same pattern.
 
-### Request shape (`POST /first-attempt/recommend`)
+---
 
-**Required fields:** `target_l`, `target_a`, `target_b`, `substrate`, `dye_prog`
+## Backend integration
 
-**Optional fields:** `yarn_weight`, `water_volume`, `liquor_ratio`, `cycle_time`, `request_id`
+HTTP uses [`gloo-net`](https://docs.rs/gloo-net/) so relative URLs work on WASM via browser `fetch`. On WASM, `reqwest` rejects relative URLs at parse time.
 
-Optional fields are omitted from the JSON body entirely when unset, matching the backend's documented contract.
+```rust
+// src/api.rs — empty = same-origin (proxied locally / CloudFront in prod)
+const BASE: &str = "";
+```
 
-### Response behavior
+Set `BASE` to an absolute URL (e.g. `http://127.0.0.1:8000`) only when intentionally bypassing the proxy.
 
-- `recommendation_action` is `"recommend"` or `"abstain"` — the primary branch for UI logic.
-- On abstain, `recipe` is empty (`{}`) but nearest historical evidence fields may still be present.
-- On recommend (high or medium tier), `recipe` contains dye name → quantity mappings.
+### Dev proxy
 
-### HTTP client choice
-
-The app uses [`gloo-net`](https://docs.rs/gloo-net/) rather than `reqwest` because gloo-net issues requests through the browser `fetch` API, which accepts same-origin relative URLs. On WASM, `reqwest` rejects relative URLs at parse time. Set the `BASE` constant in `src/api.rs` to an absolute URL (e.g. `http://127.0.0.1:8000`) to bypass the dev proxy and call the backend directly.
-
-## Configuration
-
-### `Dioxus.toml`
+`Dioxus.toml` (dev only):
 
 ```toml
-[web.app]
-title = "color-brain-frontend"
-
-# Dev-only reverse proxy — forwards API paths to the local Python backend
 [[web.proxy]]
 backend = "http://127.0.0.1:8000/health"
 
@@ -219,75 +148,67 @@ backend = "http://127.0.0.1:8000/health"
 backend = "http://127.0.0.1:8000/first-attempt"
 ```
 
-Change the `backend` URLs if the API listens on a different host or port.
+### Endpoints
 
-### `src/api.rs`
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `GET` | `/health` | Connection indicator |
+| `GET` | `/first-attempt/metadata` | Substrates, dye programs, recipe columns, comparison stats |
+| `POST` | `/first-attempt/recommend` | Score one live target job |
+| `GET` | `/first-attempt/history` | Past jobs available to replay |
+| `GET` | `/first-attempt/replay/{row_id}` | Full technician vs Color Brain detail |
 
-```rust
-/// Empty = same-origin relative paths (proxied by dx serve).
-/// Set to an absolute URL to bypass the proxy.
-const BASE: &str = "";
-```
+**Recommend body — required:** `target_l`, `target_a`, `target_b`, `substrate`, `dye_prog`  
+**Optional** (omitted from JSON when unset): `yarn_weight`, `water_volume`, `liquor_ratio`, `cycle_time`, `request_id`
 
-## Project Structure
+Client validation on submit:
 
-This directory is the `app` project inside the `color-brain-frontend` repo, which also contains
-the independent `landing` project (colorbrain.co marketing site). `AGENTS.md` and
-`CODING_RULES.md` live one level up, at the repo root, and apply to both projects.
+- Lab: L\* ∈ [0, 100], a\*/b\* ∈ [−128, 127]
+- Substrate and dye program required
+- Optional process fields, if present, must be numbers &gt; 0
 
-```text
-app/
-├── IMPLEMENTATION_PLAN.md    # Milestone plan (M1–M5)
-├── Cargo.toml                # Dependencies and platform features
-├── Dioxus.toml               # App title, assets, dev proxy
-├── clippy.toml               # Async/signal borrow lint rules
-├── assets/
-│   ├── favicon.ico
-│   ├── header.svg
-│   ├── tailwind.css          # Prebuilt Tailwind v4 utilities
-│   └── styling/
-│       ├── main.css          # Base dark theme (starter; to be replaced in M3)
-│       ├── blog.css          # Legacy starter asset
-│       └── navbar.css        # Legacy starter asset
-└── src/
-    ├── main.rs               # App root, routing, global stylesheets
-    ├── api.rs                # Backend types and HTTP client
-    ├── components/
-    │   └── mod.rs            # Shared components (M3)
-    └── views/
-        ├── mod.rs
-        └── home.rs           # First-attempt recommendation page
-```
+UI branch key: `recommendation_action` is `"recommend"` or `"abstain"`. On abstain, `recipe` is empty but nearest-history fields may still be present. Only model the response fields the UI needs; serde defaults tolerate missing optional fields.
 
-## Development Guidelines
-
-- Follow [CODING_RULES.md](../CODING_RULES.md): minimum code, surgical changes, verifiable milestones.
-- Use [AGENTS.md](../AGENTS.md) as the authoritative Dioxus 0.7 reference (`use_signal`, `use_resource`, `#[component]`, `Routable`).
-- Read signal values into owned data before `.await`; never hold `.read()` or `.write()` borrows across await points.
-- Model only the API fields the UI needs; rely on `#[serde(default)]` and `skip_serializing_if` for graceful degradation.
-- Do not hard-code substrates or dye programs — always source them from metadata.
-
-## Roadmap
-
-| Milestone                 | Status   | Scope                                                        |
-| ------------------------- | -------- | ------------------------------------------------------------ |
-| M1 — API client + types   | Complete | `src/api.rs`, serde models, `cargo clippy` clean             |
-| M2 — Minimal working page | Complete | Form, metadata dropdowns, raw result output, dev proxy       |
-| M3 — Polished UI          | Planned  | Dark theme, extracted components, recipe table, color swatch |
-| M4 — States & edge cases  | Planned  | Validation, abstention UX, backend-unavailable banner        |
-| M5 — Final verification   | Planned  | Full workflow walkthrough, lint/build report                 |
-
-See [IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md) for detailed acceptance criteria per milestone.
-
-## Related Repositories
-
-| Repository                                                             | Role                                                              |
-| ---------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| [color-brain-backend](https://github.com/ksmit323/color-brain-backend) | Offline validation toolkit, FastAPI server, `first_attempt` model |
-| This repo                                                              | Dioxus web UI for live first-attempt recommendations              |
-
-The backend README documents model validation results, API examples, and the `serve-first-attempt` command in full.
+Substrates and dye programs are **never hard-coded** — always from metadata. Dye programs are sorted chronologically for dropdowns (`sort_dye_programs_chronologically` in `api.rs`).
 
 ---
 
-**Color Brain** is decision support for textile coloration — it recommends reusing proven historical recipes when evidence is strong, and abstains when it is not. This frontend makes that workflow accessible to operators in a browser.
+## Production deploy
+
+Workflow: [../.github/workflows/deploy.yml](../.github/workflows/deploy.yml)
+
+- Triggers on `main` when `app/**` (or the workflow file) changes, or via `workflow_dispatch`.
+- Installs Rust + WASM target, caches Cargo/`app/target`, installs `dioxus-cli` 0.7.9, runs `dx build --release --platform web`.
+- Syncs `target/dx/.../release/web/public` to the app S3 bucket and invalidates CloudFront.
+
+GitHub **repository variables** (from `color-brain-infra` Terraform outputs):
+
+| Variable | Purpose |
+| --- | --- |
+| `AWS_DEPLOY_ROLE_ARN` | OIDC deploy role |
+| `S3_BUCKET` | App static bucket |
+| `CLOUDFRONT_DISTRIBUTION_ID` | App distribution |
+
+In production, CloudFront on `app.colorbrain.co` serves the static WASM app from S3 and forwards `/health` and `/first-attempt/*` to App Runner. The browser keeps same-origin relative paths — no CORS configuration in this package.
+
+Infra for buckets, distribution, API routing, and IAM is managed in **`color-brain-infra`**, not here.
+
+---
+
+## Conventions
+
+- Follow [../CODING_RULES.md](../CODING_RULES.md): minimum code, surgical diffs, verifiable goals.
+- Use [../AGENTS.md](../AGENTS.md) for Dioxus 0.7 (`use_signal`, `use_resource`, `#[component]`; no legacy `cx` / `Scope` / `use_state`).
+- Prefer graceful degradation over hard failures when the API omits optional fields.
+- Historical milestone notes: [IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md) — treat the codebase as source of truth when they disagree.
+
+---
+
+## Related
+
+| Link | Role |
+| --- | --- |
+| [../README.md](../README.md) | Repo overview (app + landing) |
+| [../landing](../landing) | Public marketing site |
+| [color-brain-backend](https://github.com/ksmit323/color-brain-backend) | FastAPI service and model validation |
+| `color-brain-infra` | S3, CloudFront, App Runner routing, deploy IAM |
