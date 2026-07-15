@@ -242,18 +242,26 @@ h3 {
     background-color 160ms ease,
     border-color 160ms ease,
     color 160ms ease,
+    box-shadow 160ms ease,
     transform 160ms ease;
 }
 
+/*
+ * Primary CTA: keep a solid background-color under the gradient. Hover used to
+ * set `background: #fff` (shorthand), which drops the gradient immediately while
+ * background-color was still transparent — a one-frame dark flash on the stage.
+ */
 .btn--primary {
   border: 1px solid rgba(255, 255, 255, 0.88);
-  background: linear-gradient(135deg, #ffffff, #d9dce6);
+  background-color: #d9dce6;
+  background-image: linear-gradient(135deg, #ffffff, #d9dce6);
   color: var(--bg);
   box-shadow: 0 10px 32px rgba(237, 238, 244, 0.09);
 }
 
 .btn--primary:hover {
-  background: #ffffff;
+  background-color: #ffffff;
+  background-image: none;
   box-shadow: 0 14px 38px rgba(237, 238, 244, 0.15);
   transform: translateY(-2px);
 }
