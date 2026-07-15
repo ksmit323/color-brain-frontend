@@ -31,12 +31,18 @@ jobs:
         with:
           role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
-      - run: aws s3 sync dist "s3://${{ vars.LANDING_S3_BUCKET }}" --delete
-      # Astro content-hashes everything under _astro/, so those files are
-      # safe to cache forever; HTML stays on default caching + invalidation.
-      - run: >
-          aws s3 cp "s3://${{ vars.LANDING_S3_BUCKET }}/_astro"
-          "s3://${{ vars.LANDING_S3_BUCKET }}/_astro"
-          --recursive --metadata-directive REPLACE
+      # Two-pass sync so hashed assets get long-lived cache headers without a
+      # follow-up `s3 cp --metadata-directive REPLACE`, which drops Content-Type
+      # and serves CSS/JS as binary/octet-stream (browsers refuse to apply them).
+      - name: Upload HTML and public assets
+        run: >
+          aws s3 sync dist "s3://${{ vars.LANDING_S3_BUCKET }}"
+          --delete
+          --exclude "_astro/*"
+          --cache-control "public,max-age=0,must-revalidate"
+      - name: Upload hashed _astro assets
+        run: >
+          aws s3 sync dist/_astro "s3://${{ vars.LANDING_S3_BUCKET }}/_astro"
+          --delete
           --cache-control "public,max-age=31536000,immutable"
       - run: aws cloudfront create-invalidation --distribution-id "${{ vars.LANDING_CLOUDFRONT_DISTRIBUTION_ID }}" --paths "/*"
