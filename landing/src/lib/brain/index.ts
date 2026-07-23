@@ -13,6 +13,8 @@ import { createScene, defaultParams, type BrainParams } from "./scene";
 
 const NODES_PER_CLUSTER_FULL = 110;
 const NODES_PER_CLUSTER_AMBIENT = 35;
+const SHELL_NODES_FULL = 1100;
+const SHELL_NODES_AMBIENT = 350;
 
 export function initBrain(mode: "full" | "ambient"): void {
   const stage = document.querySelector<HTMLElement>("#stage");
@@ -22,6 +24,7 @@ export function initBrain(mode: "full" | "ambient"): void {
 
   const data = generateBrainData(
     mode === "full" ? NODES_PER_CLUSTER_FULL : NODES_PER_CLUSTER_AMBIENT,
+    mode === "full" ? SHELL_NODES_FULL : SHELL_NODES_AMBIENT,
   );
   const params = defaultParams();
   const scene = createScene(canvas, data, params, () =>
@@ -42,11 +45,20 @@ export function initBrain(mode: "full" | "ambient"): void {
   document.addEventListener("visibilitychange", syncRunning);
 
   if (matchMedia("(pointer: fine)").matches) {
+    // pointerX/Y feed the scene's proximity glow in canvas clip space (NDC),
+    // so they're measured against the canvas rect, not the window.
+    let idleTimer = 0;
     window.addEventListener(
       "pointermove",
       (e) => {
         params.parallaxX = (e.clientX / window.innerWidth - 0.5) * 2;
         params.parallaxY = (e.clientY / window.innerHeight - 0.5) * 2;
+        const rect = canvas.getBoundingClientRect();
+        params.pointerX = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+        params.pointerY = -(((e.clientY - rect.top) / rect.height) * 2 - 1);
+        params.pointerActive = 1;
+        clearTimeout(idleTimer);
+        idleTimer = window.setTimeout(() => (params.pointerActive = 0), 1500);
       },
       { passive: true },
     );

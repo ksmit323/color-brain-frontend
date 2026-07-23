@@ -1,14 +1,17 @@
 /**
- * Deterministic generation of the dye-history constellation.
+ * Deterministic generation of the dye-history brain constellation.
  *
- * Nodes are pseudo dye jobs plotted at literal CIELAB coordinates
- * (x = a*, y = scaled L*, z = b*), clustered around the 23 real anchor colors
- * we have (18 palette colors + 5 case-study targets) and colored by their true
- * Lab → sRGB conversion. Edges are nearest-neighbor links — the same retrieval
+ * Nodes are pseudo dye jobs plotted at CIELAB coordinates (x = a*, y = scaled
+ * L*, z = b*), clustered around the 23 real anchor colors we have (18 palette
+ * colors + 5 case-study targets), plus a gamut-fill "tissue" shell sampled
+ * across the sRGB cube. All positions are then warped into a brain silhouette
+ * (see warpToBrain); colors keep the true Lab → sRGB of the unwarped
+ * coordinate, so the brain literally maps the color spectrum. Edges are
+ * nearest-neighbor links between the dye-job clusters — the same retrieval
  * structure the product uses. Pure math, no three.js imports.
  */
 
-import { labToRgb, type Lab } from "../lab";
+import { labToRgb, rgbToLab, type Lab } from "../lab";
 import { PALETTE } from "../../data/palette";
 import { CASE_STUDIES } from "../../data/caseStudies";
 
@@ -37,7 +40,11 @@ export interface BrainData {
   edgeOrders: Float32Array;
   edgeVertexCount: number;
   /** where the animated target color enters and lands */
-  target: { start: [number, number, number]; end: [number, number, number]; color: [number, number, number] };
+  target: {
+    start: [number, number, number];
+    end: [number, number, number];
+    color: [number, number, number];
+  };
 }
 
 /** Deterministic 32-bit PRNG (mulberry32) so the constellation is identical
@@ -62,7 +69,39 @@ function labToUnitRgb(lab: Lab): [number, number, number] {
   return [r / 255, g / 255, b / 255];
 }
 
-export function generateBrainData(nodesPerCluster: number): BrainData {
+/**
+ * Stylized warp from CIELAB space into a brain silhouette: an ellipsoid
+ * squash (hemispheres split along the a* axis, elongated along b*), a
+ * longitudinal fissure down the x = 0 midline, and low-frequency "cortical
+ * fold" ripples along the radial direction. Positions only — node colors
+ * always keep the true Lab → sRGB of the unwarped coordinate.
+ */
+function warpToBrain(p: [number, number, number]): [number, number, number] {
+  let [x, y, z] = [p[0] / 110, p[1] / 60, p[2] / 110];
+  // Ellipsoid: shorter in L*, longer front-to-back.
+  y *= 0.82;
+  z *= 1.18;
+  // Longitudinal fissure: repel nodes from the midline, strongest up top.
+  const fissure =
+    0.1 * Math.exp(-((x / 0.16) ** 2)) * Math.min(1, Math.max(0, y + 0.55));
+  x += (x >= 0 ? 1 : -1) * fissure;
+  // Cortical folds: gentle radial ripple.
+  const r = Math.hypot(x, y, z);
+  if (r > 1e-4) {
+    const fold =
+      0.05 * Math.sin(5.5 * y + 1.7) * Math.sin(4.5 * z - 0.6) * Math.sin(5.0 * x + 2.3);
+    const s = (r + fold) / r;
+    x *= s;
+    y *= s;
+    z *= s;
+  }
+  return [x * 110, y * 60, z * 110];
+}
+
+export function generateBrainData(
+  nodesPerCluster: number,
+  shellNodes: number,
+): BrainData {
   const rand = mulberry32(0xc0105);
   const gaussian = () => {
     // Box-Muller; rand() is never exactly 0.
@@ -96,7 +135,7 @@ export function generateBrainData(nodesPerCluster: number): BrainData {
               b: anchor.b + gaussian() * 7,
             };
       nodes.push({
-        pos: labToPosition(lab),
+        pos: warpToBrain(labToPosition(lab)),
         rgb: labToUnitRgb(lab),
         phase: rand() * Math.PI * 2,
         cluster: c,
@@ -105,10 +144,28 @@ export function generateBrainData(nodesPerCluster: number): BrainData {
   }
   const matchNode = MATCH_ANCHOR * nodesPerCluster;
 
+  // --- Shell: nodes sampled uniformly across the sRGB gamut, placed at their
+  //     Lab coordinates and warped like everything else. They carry no edges
+  //     (depth stays -1 → normalized 1), so the retrieval narrative never
+  //     lights them — they only give the brain silhouette its density. ---
+  for (let i = 0; i < shellNodes; i++) {
+    const r = Math.round(rand() * 255);
+    const g = Math.round(rand() * 255);
+    const b = Math.round(rand() * 255);
+    nodes.push({
+      pos: warpToBrain(labToPosition(rgbToLab(r, g, b))),
+      rgb: [r / 255, g / 255, b / 255],
+      phase: rand() * Math.PI * 2,
+      cluster: -1,
+    });
+  }
+
   // --- Edges: 2-nearest-neighbor within each cluster + one link between
   //     each cluster anchor and its nearest neighboring anchor. ---
   const dist2 = (a: Node, b: Node) =>
-    (a.pos[0] - b.pos[0]) ** 2 + (a.pos[1] - b.pos[1]) ** 2 + (a.pos[2] - b.pos[2]) ** 2;
+    (a.pos[0] - b.pos[0]) ** 2 +
+    (a.pos[1] - b.pos[1]) ** 2 +
+    (a.pos[2] - b.pos[2]) ** 2;
 
   const edgeSet = new Set<string>();
   const edges: [number, number][] = [];

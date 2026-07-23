@@ -3,8 +3,9 @@
  * The sticky visual layer behind the hero → problem → how-it-works scroll stage.
  *
  * Two stacked visuals:
- *  - A static CSS "color burst" poster: real palette colors as blurred blobs.
- *    This is what no-JS, reduced-motion, no-WebGL, and pre-init visitors see.
+ *  - A static CSS poster: real palette colors as blurred blobs arranged in a
+ *    two-lobed brain silhouette, echoing the WebGL scene. This is what no-JS,
+ *    reduced-motion, no-WebGL, and pre-init visitors see.
  *  - The WebGL canvas for the dye-history brain, which fades in over the
  *    poster once its first frame renders (brain/index.ts adds `.is-live`).
  *
@@ -20,44 +21,36 @@ function jitter(seed: number): number {
   return ((x ^ (x >>> 15)) >>> 0) / 0x100000000;
 }
 
-/** One ring of the burst: `count` blobs spaced evenly around the origin. */
-interface Ring {
-  count: number;
-  radius: number;
-  size: number;
-  opacity: number;
-  blur: number;
-  paletteOffset: number;
-}
-
-/* Small blobs get no blur: blurring a dot near its own size smears it into a
-   gray square. Unblurred radial-gradient dots stay crisp and read as nodes. */
+/* Two lobes around a clear midline fissure. Large inner blobs get blurred
+   into "tissue"; small rim blobs stay crisp and read as nodes (blurring a dot
+   near its own size smears it into a gray square). */
 const ORIGIN = { x: 54, y: 47 };
-const RINGS: Ring[] = [
-  { count: 5, radius: 55, size: 190, opacity: 0.92, blur: 30, paletteOffset: 0 },
-  { count: 8, radius: 150, size: 108, opacity: 0.62, blur: 18, paletteOffset: 4 },
-  { count: 13, radius: 275, size: 40, opacity: 0.55, blur: 0, paletteOffset: 9 },
-];
+const LOBE_OFFSET = 64;
+const LOBE_RX = 92;
+const LOBE_RY = 118;
+const FISSURE_HALF = 14;
+const BLOB_COUNT = 26;
 
 let seed = 0;
 const blobs: string[] = [];
-for (const ring of RINGS) {
-  for (let i = 0; i < ring.count; i++) {
-    const angle =
-      ((i / ring.count) * 360 + (jitter(seed) - 0.5) * 22) * (Math.PI / 180);
-    const radius = ring.radius * (0.88 + jitter(seed + 1) * 0.24);
-    const dx = (radius * Math.cos(angle)).toFixed(1);
-    const dy = (radius * Math.sin(angle)).toFixed(1);
-    const { hex } = PALETTE[(ring.paletteOffset + i) % PALETTE.length]!;
-    blobs.push(
-      `left: calc(${ORIGIN.x}% + ${dx}px); top: calc(${ORIGIN.y}% + ${dy}px); ` +
-        `width: ${ring.size}px; height: ${ring.size}px; ` +
-        `background: radial-gradient(circle, ${hex} 0%, transparent 72%); ` +
-        `opacity: ${ring.opacity};` +
-        (ring.blur > 0 ? ` filter: blur(${ring.blur}px);` : ""),
-    );
-    seed += 2;
-  }
+for (let i = 0; i < BLOB_COUNT; i++) {
+  const side = i % 2 === 0 ? -1 : 1;
+  const angle = jitter(seed) * Math.PI * 2;
+  const radius = Math.sqrt(jitter(seed + 1)); // uniform fill of the lobe
+  let dx = side * LOBE_OFFSET + Math.cos(angle) * LOBE_RX * radius;
+  if (Math.abs(dx) < FISSURE_HALF) dx = side * FISSURE_HALF;
+  const dy = Math.sin(angle) * LOBE_RY * radius;
+  const inner = radius < 0.55;
+  const size = inner ? 150 + jitter(seed + 2) * 50 : 34 + jitter(seed + 2) * 26;
+  const { hex } = PALETTE[(i * 5 + (side > 0 ? 2 : 0)) % PALETTE.length]!;
+  blobs.push(
+    `left: calc(${ORIGIN.x}% + ${dx.toFixed(1)}px); top: calc(${ORIGIN.y}% + ${dy.toFixed(1)}px); ` +
+      `width: ${size.toFixed(0)}px; height: ${size.toFixed(0)}px; ` +
+      `background: radial-gradient(circle, ${hex} 0%, transparent 72%); ` +
+      `opacity: ${inner ? 0.85 : 0.55};` +
+      (inner ? ` filter: blur(26px);` : ""),
+  );
+  seed += 3;
 }
 ---
 
@@ -68,6 +61,7 @@ for (const ring of RINGS) {
       {blobs.map((style) => <div class="stage-layer__blob" style={style} />)}
     </div>
     <canvas id="brain-canvas"></canvas>
+    <div class="stage-layer__scan"></div>
 
     <div class="stage-layer__topbar">
       <span>Chromatic memory map</span>
@@ -138,6 +132,7 @@ for (const ring of RINGS) {
     border: 1px solid rgba(154, 163, 178, 0.2);
     border-radius: 18px;
     background:
+      linear-gradient(155deg, rgba(127, 216, 232, 0.045), transparent 34%),
       radial-gradient(circle at 55% 48%, rgba(46, 52, 68, 0.24), transparent 48%),
       rgba(8, 10, 15, 0.78);
     box-shadow:
@@ -160,6 +155,19 @@ for (const ring of RINGS) {
       linear-gradient(90deg, rgba(154, 163, 178, 0.09) 1px, transparent 1px);
     background-size: 48px 48px;
     mask-image: radial-gradient(circle at center, black 18%, transparent 78%);
+  }
+
+  /* Faint holographic scanlines over the scene; the vignette (::after) sits
+     at the same z-index and paints over them. */
+  .stage-layer__scan {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    background: repeating-linear-gradient(
+      0deg,
+      rgba(241, 242, 247, 0.02) 0 1px,
+      transparent 1px 4px
+    );
   }
 
   .stage-layer__poster {
@@ -276,7 +284,7 @@ for (const ring of RINGS) {
     width: 5rem;
     height: 5rem;
     transform: translate(-50%, -50%);
-    border: 1px solid rgba(237, 238, 244, 0.13);
+    border: 1px solid rgba(127, 216, 232, 0.2);
     border-radius: 50%;
     transition: border-color 400ms ease, box-shadow 400ms ease;
   }
@@ -304,7 +312,7 @@ for (const ring of RINGS) {
   .stage-layer__reticle i {
     position: absolute;
     inset: 0.45rem;
-    border: 1px dashed rgba(237, 238, 244, 0.13);
+    border: 1px dashed rgba(127, 216, 232, 0.14);
     border-radius: 50%;
     animation: reticle-spin 18s linear infinite;
   }

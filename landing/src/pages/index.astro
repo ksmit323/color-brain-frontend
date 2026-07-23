@@ -10,6 +10,7 @@
  * brain constellation and its static poster fallback.
  */
 import "../styles/global.css";
+import Loader from "../components/Loader.astro";
 import Nav from "../components/Nav.astro";
 import StageLayer from "../components/StageLayer.astro";
 import Hero from "../components/Hero.astro";
@@ -75,6 +76,7 @@ const FONTSHARE_CSS =
     </script>
   </head>
   <body id="top">
+    <Loader />
     <Nav />
     <main>
       <div id="stage" data-scene-phase="index">

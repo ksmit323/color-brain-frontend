@@ -1,0 +1,264 @@
+---
+/**
+ * Cinematic boot loader.
+ *
+ * Full-screen overlay shown once per session: a CSS holographic ring plus a
+ * short mono log that scramble-decodes through the product's real boot story
+ * (index → map → gate → ready), then fades out and removes itself. Pure CSS
+ * and a few lines of TS — deliberately no WebGL, so it is cheap and can never
+ * fail the way a GL context can.
+ *
+ * The inline gate script removes the element during HTML parsing for
+ * reduced-motion visitors and repeat views within the session, so they never
+ * see a flash. A hard timeout guarantees the page can never be trapped.
+ */
+---
+
+<div class="loader" id="boot-loader" aria-hidden="true">
+  <div class="loader__scan"></div>
+  <div class="loader__core">
+    <div class="loader__ring">
+      <i class="loader__arc"></i>
+      <i class="loader__arc loader__arc--inner"></i>
+      <i class="loader__dot"></i>
+    </div>
+    <ol class="loader__log">
+      <li data-text="BOOT CIELAB_INDEX"></li>
+      <li data-text="MAPPING 12,398 DYE JOBS"></li>
+      <li data-text="CONFIDENCE GATE τ 0.82"></li>
+      <li data-text="SYSTEM READY" data-final></li>
+    </ol>
+  </div>
+  <i class="loader__corner loader__corner--tl"></i>
+  <i class="loader__corner loader__corner--tr"></i>
+  <i class="loader__corner loader__corner--bl"></i>
+  <i class="loader__corner loader__corner--br"></i>
+</div>
+
+<script is:inline>
+  // Gate: runs synchronously during parsing so skipped visitors never paint
+  // the overlay. Storage may be blocked (private mode) — then we just play.
+  (() => {
+    const el = document.getElementById("boot-loader");
+    if (!el) return;
+    try {
+      if (
+        matchMedia("(prefers-reduced-motion: reduce)").matches ||
+        sessionStorage.getItem("cb-boot") === "1"
+      ) {
+        el.remove();
+      }
+    } catch {
+      /* storage blocked → play the loader */
+    }
+  })();
+</script>
+
+<script>
+  const loader = document.getElementById("boot-loader");
+  if (loader) {
+    try {
+      sessionStorage.setItem("cb-boot", "1");
+    } catch {
+      /* storage blocked — the gate will just play again next page load */
+    }
+
+    const lines = Array.from(
+      loader.querySelectorAll<HTMLLIElement>(".loader__log li"),
+    );
+    const CHARS = "ABCDEFGHKMNPRSTUVXZ0123456789<>/Δτ*";
+
+    /** Resolve one log line left-to-right out of scrambled characters. */
+    const decode = (li: HTMLLIElement): Promise<void> =>
+      new Promise((resolve) => {
+        const text = li.dataset.text ?? "";
+        li.classList.add("is-active");
+        const start = performance.now();
+        const tick = (now: number) => {
+          const p = Math.min(1, (now - start) / 320);
+          const settled = Math.floor(p * text.length);
+          let out = text.slice(0, settled);
+          for (let i = settled; i < text.length; i++) {
+            out +=
+              text[i] === " "
+                ? " "
+                : CHARS[Math.floor(Math.random() * CHARS.length)];
+          }
+          li.textContent = out;
+          if (p < 1) requestAnimationFrame(tick);
+          else {
+            li.textContent = text;
+            li.classList.add("is-done");
+            resolve();
+          }
+        };
+        requestAnimationFrame(tick);
+      });
+
+    let finished = false;
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      loader.classList.add("is-done");
+      loader.addEventListener("transitionend", () => loader.remove(), {
+        once: true,
+      });
+      // Fail-safe in case transitionend never fires.
+      setTimeout(() => loader.remove(), 900);
+    };
+
+    (async () => {
+      for (const li of lines) {
+        await decode(li);
+        await new Promise((r) => setTimeout(r, 110));
+      }
+      setTimeout(finish, 260);
+    })();
+
+    // Hard fail-safe: the page can never be trapped behind the loader.
+    setTimeout(finish, 2500);
+  }
+</script>
+
+<style>
+  .loader {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: grid;
+    place-items: center;
+    background:
+      radial-gradient(circle at 50% 46%, rgba(127, 216, 232, 0.05), transparent 22rem),
+      var(--bg);
+    transition: opacity 550ms ease;
+  }
+
+  .loader.is-done {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .loader__scan {
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      rgba(241, 242, 247, 0.025) 0 1px,
+      transparent 1px 3px
+    );
+  }
+
+  .loader__core {
+    display: grid;
+    justify-items: center;
+  }
+
+  .loader__ring {
+    position: relative;
+    width: 7.5rem;
+    height: 7.5rem;
+  }
+
+  .loader__arc {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: conic-gradient(
+      from 0deg,
+      transparent 0 68%,
+      var(--holo) 88%,
+      transparent 100%
+    );
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
+    mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2px));
+    filter: drop-shadow(0 0 12px rgba(127, 216, 232, 0.35));
+    animation: loader-spin 1.6s linear infinite;
+  }
+
+  .loader__arc--inner {
+    inset: 0.95rem;
+    background: conic-gradient(
+      from 180deg,
+      transparent 0 38%,
+      rgba(127, 216, 232, 0.55) 55%,
+      transparent 72%
+    );
+    animation: loader-spin 2.7s linear infinite reverse;
+  }
+
+  .loader__dot {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0.42rem;
+    height: 0.42rem;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: var(--holo);
+    box-shadow: 0 0 14px var(--holo);
+    animation: loader-dot 1.2s ease-in-out infinite;
+  }
+
+  @keyframes loader-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes loader-dot {
+    50% {
+      opacity: 0.35;
+    }
+  }
+
+  .loader__log {
+    width: 27ch;
+    margin: 2.4rem 0 0;
+    padding: 0;
+    list-style: none;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .loader__log li {
+    height: 1.7em; /* fixed, so decoding lines never shift layout */
+    white-space: nowrap;
+    overflow: hidden;
+    visibility: hidden;
+  }
+
+  .loader__log li.is-active,
+  .loader__log li.is-done {
+    visibility: visible;
+  }
+
+  .loader__log li::before {
+    content: "» ";
+    color: var(--holo);
+    opacity: 0.65;
+  }
+
+  .loader__log li.is-done {
+    color: var(--ink-dim);
+  }
+
+  .loader__log li[data-final].is-done {
+    color: var(--holo);
+    text-shadow: 0 0 12px rgba(127, 216, 232, 0.45);
+  }
+
+  .loader__corner {
+    position: absolute;
+    width: 1.1rem;
+    height: 1.1rem;
+    border-color: rgba(127, 216, 232, 0.3);
+  }
+
+  .loader__corner--tl { top: 1.1rem; left: 1.1rem; border-top: 1px solid; border-left: 1px solid; }
+  .loader__corner--tr { top: 1.1rem; right: 1.1rem; border-top: 1px solid; border-right: 1px solid; }
+  .loader__corner--bl { bottom: 1.1rem; left: 1.1rem; border-bottom: 1px solid; border-left: 1px solid; }
+  .loader__corner--br { bottom: 1.1rem; right: 1.1rem; border-bottom: 1px solid; border-right: 1px solid; }
+</style>

@@ -1,8 +1,9 @@
 /**
- * CIELAB → sRGB conversion for on-page color swatches.
+ * CIELAB ↔ sRGB conversion for on-page color swatches and the brain scene.
  *
- * Ported from the app's Rust implementation (`app/src/components/result_panel.rs`)
- * so every swatch on the landing page matches the product's rendering exactly.
+ * The Lab → sRGB direction is ported from the app's Rust implementation
+ * (`app/src/components/result_panel.rs`) so every swatch on the landing page
+ * matches the product's rendering exactly.
  */
 
 /** A CIELAB color under the D65 illuminant. */
@@ -17,7 +18,11 @@ export interface Lab {
  * Out-of-gamut results are clamped per channel, which is acceptable for an
  * indicative swatch.
  */
-export function labToRgb(l: number, a: number, b: number): [number, number, number] {
+export function labToRgb(
+  l: number,
+  a: number,
+  b: number,
+): [number, number, number] {
   // Lab -> XYZ.
   const fy = (l + 16) / 116;
   const fx = fy + a / 500;
@@ -39,7 +44,10 @@ export function labToRgb(l: number, a: number, b: number): [number, number, numb
   // Linear -> gamma-encoded sRGB.
   const enc = (c: number) => {
     const clamped = Math.min(Math.max(c, 0), 1);
-    const v = clamped <= 0.0031308 ? 12.92 * clamped : 1.055 * clamped ** (1 / 2.4) - 0.055;
+    const v =
+      clamped <= 0.0031308
+        ? 12.92 * clamped
+        : 1.055 * clamped ** (1 / 2.4) - 0.055;
     return Math.round(v * 255);
   };
   return [enc(rl), enc(gl), enc(bl)];
@@ -49,4 +57,31 @@ export function labToRgb(l: number, a: number, b: number): [number, number, numb
 export function labToCss(lab: Lab): string {
   const [r, g, b] = labToRgb(lab.l, lab.a, lab.b);
   return `rgb(${r},${g},${b})`;
+}
+
+/**
+ * Convert an 8-bit sRGB triple to CIELAB (D65) — the exact inverse of
+ * `labToRgb`. Used to place gamut-shell nodes in Lab space.
+ */
+export function rgbToLab(r: number, g: number, b: number): Lab {
+  // sRGB -> linear sRGB.
+  const lin = (c: number) => {
+    const v = c / 255;
+    return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+  };
+  const rl = lin(r);
+  const gl = lin(g);
+  const bl = lin(b);
+  // Linear sRGB -> XYZ (D65).
+  const x = 0.4124 * rl + 0.3576 * gl + 0.1805 * bl;
+  const y = 0.2126 * rl + 0.7152 * gl + 0.0722 * bl;
+  const z = 0.0193 * rl + 0.1192 * gl + 0.9505 * bl;
+  // XYZ -> Lab against the D65 reference white.
+  const eps = 216 / 24389;
+  const kappa = 24389 / 27;
+  const f = (t: number) => (t > eps ? Math.cbrt(t) : (kappa * t + 16) / 116);
+  const fx = f(x / 0.95047);
+  const fy = f(y);
+  const fz = f(z / 1.08883);
+  return { l: 116 * fy - 16, a: 500 * (fx - fy), b: 200 * (fy - fz) };
 }

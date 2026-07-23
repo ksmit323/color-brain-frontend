@@ -18,6 +18,7 @@ import {
   Points,
   Scene,
   ShaderMaterial,
+  Vector2,
   Vector3,
   WebGLRenderer,
 } from "three";
@@ -37,6 +38,11 @@ export interface BrainParams {
   targetProgress: number;
   parallaxX: number;
   parallaxY: number;
+  /** pointer position in canvas clip space, feeding the proximity glow */
+  pointerX: number;
+  pointerY: number;
+  /** 1 while the pointer is moving; set back to 0 after ~1.5s idle */
+  pointerActive: number;
 }
 
 export const defaultParams = (): BrainParams => ({
@@ -47,6 +53,9 @@ export const defaultParams = (): BrainParams => ({
   targetProgress: 0,
   parallaxX: 0,
   parallaxY: 0,
+  pointerX: 0,
+  pointerY: 0,
+  pointerActive: 0,
 });
 
 export interface SceneHandle {
@@ -55,14 +64,37 @@ export interface SceneHandle {
   dispose(): void;
 }
 
-/** Shared ambient wander so edges follow their nodes exactly. */
+/** Shared ambient wander so edges follow their nodes exactly. The sine term
+    keeps the slow drift; the value-noise term makes it read organic. */
 const DRIFT_GLSL = `
+  float cbHash(vec3 p) {
+    p = fract(p * 0.1031);
+    p += dot(p, p.zyx + 31.32);
+    return fract((p.x + p.y) * p.z);
+  }
+  float cbNoise(vec3 p) {
+    vec3 i = floor(p);
+    vec3 f = fract(p);
+    f = f * f * (3.0 - 2.0 * f);
+    return mix(
+      mix(mix(cbHash(i), cbHash(i + vec3(1, 0, 0)), f.x),
+          mix(cbHash(i + vec3(0, 1, 0)), cbHash(i + vec3(1, 1, 0)), f.x), f.y),
+      mix(mix(cbHash(i + vec3(0, 0, 1)), cbHash(i + vec3(1, 0, 1)), f.x),
+          mix(cbHash(i + vec3(0, 1, 1)), cbHash(i + vec3(1, 1, 1)), f.x), f.y),
+      f.z);
+  }
   vec3 drifted(vec3 p, float t, float amp) {
-    return p + amp * 1.7 * vec3(
+    vec3 sine = amp * 1.7 * vec3(
       sin(t * 1.1 + p.y * 0.11),
       cos(t * 0.8 + p.x * 0.09),
       sin(t * 1.4 + p.z * 0.13)
     );
+    vec3 organic = amp * 1.15 * (vec3(
+      cbNoise(p * 0.045 + vec3(t * 0.22, 0.0, t * 0.13)),
+      cbNoise(p * 0.045 + vec3(7.7, t * 0.18, 3.1)),
+      cbNoise(p * 0.045 + vec3(t * 0.15, 9.2, t * 0.20))
+    ) - 0.5);
+    return p + sine + organic;
   }
 `;
 
@@ -74,6 +106,7 @@ const NODE_VERT = `
   varying vec3 vColor;
   varying float vDepth;
   varying float vFog;
+  varying vec2 vNdc;
   ${DRIFT_GLSL}
   void main() {
     vec3 p = drifted(position, uTime * 0.4, uDrift);
@@ -85,23 +118,32 @@ const NODE_VERT = `
     vColor = aColor;
     vDepth = aDepth;
     vFog = 1.0 - smoothstep(165.0, 285.0, -mv.z);
+    vNdc = gl_Position.xy / gl_Position.w;
   }
 `;
 
 const NODE_FRAG = `
   precision highp float;
-  uniform float uDim, uPulse;
+  uniform float uDim, uPulse, uTime, uAspect, uPointerStrength;
+  uniform vec2 uPointer;
   varying vec3 vColor;
   varying float vDepth;
   varying float vFog;
+  varying vec2 vNdc;
   void main() {
     float d = length(gl_PointCoord - 0.5);
     float alpha = smoothstep(0.5, 0.1, d);
     float flare = uPulse * smoothstep(0.09, 0.0, vDepth);
     vec3 rgb = vColor * (0.95 + 2.6 * flare) + vec3(0.045) + vec3(1.3) * flare * smoothstep(0.3, 0.0, d);
+    // Faint holographic scanline sweep.
+    rgb *= 0.94 + 0.06 * sin(gl_FragCoord.y * 0.9 + uTime * 2.2);
+    // Pointer proximity: nodes near the cursor take a --holo glow (#7fd8e8).
+    vec2 pd = (vNdc - uPointer) * vec2(uAspect, 1.0);
+    float prox = exp(-dot(pd, pd) * 34.0) * uPointerStrength;
+    rgb += vec3(0.50, 0.85, 0.91) * prox * (0.35 + 0.65 * smoothstep(0.4, 0.0, d));
     gl_FragColor = vec4(
       rgb * (0.5 + 0.5 * vFog) * (1.0 - uDim * 0.85),
-      alpha * (0.48 + 0.52 * vFog) * (0.8 + 0.2 * flare)
+      alpha * (0.48 + 0.52 * vFog) * (0.8 + 0.2 * flare) + prox * 0.3 * alpha
     );
   }
 `;
@@ -198,6 +240,7 @@ export function createScene(
     uDrift: { value: params.drift },
     uDim: { value: params.dim },
     uPointScale: { value: 1 },
+    uAspect: { value: 1 },
   };
 
   const nodeGeometry = new BufferGeometry();
@@ -213,7 +256,10 @@ export function createScene(
       uDrift: sharedUniforms.uDrift,
       uDim: sharedUniforms.uDim,
       uPointScale: sharedUniforms.uPointScale,
+      uAspect: sharedUniforms.uAspect,
       uPulse: { value: 0 },
+      uPointer: { value: new Vector2(0, 0) },
+      uPointerStrength: { value: 0 },
     },
     transparent: true,
     depthTest: false,
@@ -288,6 +334,7 @@ export function createScene(
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
+    sharedUniforms.uAspect.value = w / h;
     // Perspective-correct point sizing: world units → device pixels at
     // distance 1 (gl_PointSize is specified in device pixels).
     const fovScale = h / (2 * Math.tan((camera.fov * Math.PI) / 360));
@@ -307,6 +354,9 @@ export function createScene(
   let degradeStep = 0;
   let parallaxX = 0;
   let parallaxY = 0;
+  let pointerX = 0;
+  let pointerY = 0;
+  let pointerStrength = 0;
 
   function degrade(): void {
     degradeStep += 1;
@@ -340,6 +390,14 @@ export function createScene(
     nodeMaterial.uniforms.uPulse!.value = params.pulse;
     edgeMaterial.uniforms.uReveal!.value = params.reveal;
     targetMaterial.uniforms.uProgress!.value = params.targetProgress;
+
+    // Proximity glow follows the pointer with a light trail; the strength
+    // eases in on movement and back out after ~1.5s idle.
+    pointerX += (params.pointerX - pointerX) * 0.14;
+    pointerY += (params.pointerY - pointerY) * 0.14;
+    pointerStrength += (params.pointerActive - pointerStrength) * 0.06;
+    (nodeMaterial.uniforms.uPointer!.value as Vector2).set(pointerX, pointerY);
+    nodeMaterial.uniforms.uPointerStrength!.value = pointerStrength;
 
     parallaxX += (params.parallaxX - parallaxX) * 0.055;
     parallaxY += (params.parallaxY - parallaxY) * 0.055;

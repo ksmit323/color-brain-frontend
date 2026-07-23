@@ -1,9 +1,10 @@
 /*
  * Color Brain landing — global tokens, fonts, reset, and shared primitives.
  *
- * Design system: a near-black stage with monochrome chrome. No accent hue exists
- * in the UI — the only saturated color anywhere on the page is real production
- * dye color (the hero constellation and the Lab-derived case-study swatches).
+ * Design system: a near-black stage with monochrome chrome plus one restrained
+ * holographic accent (--holo) reserved for UI chrome effects. The only saturated
+ * data color anywhere on the page is real production dye color (the hero
+ * constellation and the Lab-derived case-study swatches).
  * Semantic status colors are inherited from the app for brand continuity.
  *
  * Clash Display + Satoshi load from the Fontshare CDN (see index.astro): their
@@ -73,6 +74,10 @@
   --fail: #e06c75;
   --abstain: #8b94a1;
 
+  /* Holographic chrome accent: loader ring, nav hover, reticle/pointer glow.
+     Chrome only — data colors always come from real dye data, never this. */
+  --holo: #7fd8e8;
+
   /* Type */
   --font-display: "Clash Display", "Clash Display Fallback", sans-serif;
   --font-body: "Satoshi", "Satoshi Fallback", sans-serif;
@@ -103,7 +108,7 @@
 html {
   color-scheme: dark;
   -webkit-text-size-adjust: 100%;
-  scroll-padding-top: 4rem;
+  scroll-padding-top: 5rem;
 }
 
 body {
