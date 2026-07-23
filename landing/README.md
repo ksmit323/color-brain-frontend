@@ -71,10 +71,10 @@ Hero and how-it-works sit over a sticky visual layer (`StageLayer.astro`):
 
 | Mode | When | Behavior |
 | --- | --- | --- |
-| `full` | Fine pointer, wider viewports | Scroll-scrubbed retrieval narrative aligned to how-it-works beats |
+| `full` | Fine pointer, wider viewports | Scroll-scrubbed camera flight through the state space, aligned to how-it-works beats: query enters at its Lab point, a retrieval wave spreads through substrate-compatible clusters only, the matched recipe flares as confidence clears the gate, then the network stills (abstention). The stage frame dissolves to full-bleed during the dive. |
 | `ambient` | Coarse pointer or narrow viewport | Lighter drifting constellation |
 
-Brain code is **dynamically imported** so reduced-motion / no-WebGL visitors never download Three.js. Nodes use CIELAB coordinates and real Lab→sRGB colors from palette + case-study anchors (`src/lib/brain/data.ts`, `src/lib/lab.ts`).
+Brain code is **dynamically imported** so reduced-motion / no-WebGL visitors never download Three.js. Nodes use CIELAB coordinates and real Lab→sRGB colors from palette + case-study anchors (`src/lib/brain/data.ts`, `src/lib/lab.ts`). The query is the AN case study's real target Lab and the match node sits at Color Brain's real recommended Lab, so the query↔match gap on screen is the actual ΔE 0.856.
 
 ### Motion
 

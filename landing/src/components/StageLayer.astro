@@ -11,6 +11,19 @@
  * Blob layout is generated at build time — deterministic, zero runtime JS.
  */
 import { PALETTE } from "../data/palette";
+import { CASE_STUDIES } from "../data/caseStudies";
+import { labToRgb } from "../lib/lab";
+
+/* The match caption shows the two real colors of the AN holdout job: the
+   target the factory asked for and the recipe Color Brain retrieved —
+   ΔE 0.856 apart, i.e. visually indistinguishable. */
+const toHex = (lab: { l: number; a: number; b: number }): string =>
+  "#" +
+  labToRgb(lab.l, lab.a, lab.b)
+    .map((v) => Math.round(v).toString(16).padStart(2, "0"))
+    .join("");
+const MATCH_TARGET_HEX = toHex(CASE_STUDIES[1]!.target);
+const MATCH_FOUND_HEX = toHex(CASE_STUDIES[1]!.colorBrain);
 
 /** Small deterministic hash → [0, 1), so the burst looks hand-scattered. */
 function jitter(seed: number): number {
@@ -64,6 +77,7 @@ for (const ring of RINGS) {
 <div class="stage-layer" aria-hidden="true">
   <div class="stage-layer__frame">
     <div class="stage-layer__grid"></div>
+    <div class="stage-layer__scrim"></div>
     <div class="stage-layer__poster">
       {blobs.map((style) => <div class="stage-layer__blob" style={style} />)}
     </div>
@@ -85,12 +99,18 @@ for (const ring of RINGS) {
         12,398 historical dye jobs mapped
       </p>
       <p class="scene-status__search">
-        <span>Query propagating</span>
-        Searching substrate-compatible history
+        <span>Query placed · retrieval spreading</span>
+        Compatible history only · <span data-searched>0</span> / 12,398 records scanned
       </p>
       <p class="scene-status__match">
         <span>Evidence retrieved</span>
-        Proven production recipe · confidence 0.867
+        <i class="scene-status__swatches">
+          <b style={`background: ${MATCH_TARGET_HEX}`}></b>
+          →
+          <b style={`background: ${MATCH_FOUND_HEX}`}></b>
+          target → recipe
+        </i>
+        Nearest proven recipe · ΔE 0.856 from target · confidence 0.867
       </p>
       <p class="scene-status__abstain">
         <span>Confidence gate active</span>
@@ -102,12 +122,13 @@ for (const ring of RINGS) {
       <div><dt>Space</dt><dd>CIELAB</dd></div>
       <div><dt>Illuminant</dt><dd>D65</dd></div>
       <div><dt>Distance</dt><dd>ΔE00</dd></div>
+      <div><dt>Camera L* a* b*</dt><dd data-cam>—</dd></div>
     </dl>
 
     <div class="stage-layer__confidence">
       <span>Confidence gate</span>
-      <i><b></b></i>
-      <strong>τ 0.82</strong>
+      <i><b></b><u></u></i>
+      <strong><span data-confidence>0.120</span> · τ 0.82</strong>
     </div>
 
     <i class="stage-layer__corner stage-layer__corner--tl"></i>
@@ -160,6 +181,22 @@ for (const ring of RINGS) {
       linear-gradient(90deg, rgba(154, 163, 178, 0.09) 1px, transparent 1px);
     background-size: 48px 48px;
     mask-image: radial-gradient(circle at center, black 18%, transparent 78%);
+  }
+
+  /* Readability scrim over the text column once the frame dissolves to
+     full-bleed. Opacity is driven by the scroll timeline (brain/index.ts). */
+  .stage-layer__scrim {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    opacity: 0;
+    background: linear-gradient(
+      90deg,
+      rgba(7, 8, 12, 0.94) 0%,
+      rgba(7, 8, 12, 0.72) 28%,
+      rgba(7, 8, 12, 0.25) 46%,
+      transparent 60%
+    );
   }
 
   .stage-layer__poster {
@@ -343,6 +380,26 @@ for (const ring of RINGS) {
     color: var(--ink);
   }
 
+  /* The found recipe, shown as what it is: two real colors side by side. */
+  .scene-status__swatches {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0.3rem 0 0.35rem;
+    font-style: normal;
+    font-size: 0.6rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .scene-status__swatches b {
+    width: 1.05rem;
+    height: 1.05rem;
+    border: 1px solid rgba(237, 238, 244, 0.3);
+    border-radius: 3px;
+  }
+
   :global(#stage[data-scene-phase="index"]) .scene-status__index,
   :global(#stage[data-scene-phase="search"]) .scene-status__search,
   :global(#stage[data-scene-phase="match"]) .scene-status__match,
@@ -409,31 +466,36 @@ for (const ring of RINGS) {
   }
 
   .stage-layer__confidence > i {
+    position: relative;
     display: block;
     height: 2px;
     background: rgba(154, 163, 178, 0.16);
   }
 
+  /* Width and color are driven live by the scroll timeline (brain/index.ts);
+     the transition just low-passes it. Base state: 12%, abstain gray. */
   .stage-layer__confidence b {
     display: block;
-    width: 18%;
+    width: 12%;
     height: 100%;
     background: var(--abstain);
     box-shadow: 0 0 10px rgba(139, 148, 161, 0.35);
-    transition: width 500ms ease, background-color 500ms ease;
+    transition: width 240ms ease-out, background-color 400ms ease;
   }
 
-  :global(#stage[data-scene-phase="search"]) .stage-layer__confidence b {
-    width: 58%;
+  /* The τ 0.82 gate threshold tick on the track. */
+  .stage-layer__confidence u {
+    position: absolute;
+    left: 82%;
+    top: -3px;
+    width: 1px;
+    height: 8px;
+    background: rgba(237, 238, 244, 0.55);
   }
 
-  :global(#stage[data-scene-phase="match"]) .stage-layer__confidence b {
-    width: 86.7%;
-    background: var(--win);
-  }
-
-  :global(#stage[data-scene-phase="abstain"]) .stage-layer__confidence b {
-    width: 34%;
+  .stage-layer__confidence strong span {
+    color: var(--ink-dim);
+    font-weight: inherit;
   }
 
   .stage-layer__corner {

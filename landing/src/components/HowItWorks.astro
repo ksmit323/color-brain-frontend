@@ -1,10 +1,11 @@
 ---
 /**
- * How it works — three steps, each one a beat in the scroll narrative playing
+ * How it works — four steps, each one a beat in the scroll narrative playing
  * out on the constellation behind this section (brain/index.ts reads the
  * data-beat markers to time the scrub):
- *   connect → the network is the factory's history
- *   search  → a target color enters, retrieval propagates (data-beat="search")
+ *   connect → the network is the factory's history; the camera approaches
+ *   search  → frame dissolves to full-bleed, camera dives in, the query
+ *             lands and the retrieval wave spreads (data-beat="search")
  *   recommend → the matched recipe flares (data-beat="match")
  *   silence → the network dims and stills (data-beat="abstain")
  */
@@ -40,8 +41,9 @@
         </div>
         <h3>A new target enters the map.</h3>
         <p>
-          Retrieval propagates only through compatible history, finding the
-          closest proven recipe on the same substrate and production context.
+          Retrieval propagates only through compatible history — everything
+          else on the map goes dark — finding the closest proven recipe on
+          the same substrate and production context.
         </p>
       </li>
       <li class="how__step reveal" data-beat="match">
@@ -73,7 +75,9 @@
 <style>
   .how {
     position: relative;
-    padding-bottom: 15vh;
+    /* Room after the last step so the abstention pull-back can play out
+       before the stage ends. */
+    padding-bottom: 45vh;
   }
 
   .how::before {
@@ -86,7 +90,7 @@
   }
 
   .how__head {
-    min-height: 48vh;
+    min-height: 34vh;
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
@@ -112,7 +116,7 @@
   }
 
   .how__step {
-    min-height: 68svh;
+    min-height: 74svh;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -195,7 +199,7 @@
     }
 
     .how__step {
-      min-height: 62svh;
+      min-height: 68svh;
       max-width: 27rem;
       padding-right: 0.5rem;
     }
