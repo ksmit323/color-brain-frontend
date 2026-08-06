@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Color Brain — RFT Savings Estimator</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        max-width: 680px;
+        margin: 0 auto;
+        padding: 2rem 1.25rem 3rem;
+        color: #1a1a1a;
+        background: #ffffff;
+        line-height: 1.6;
+      }
+      h1 {
+        font-size: 22px;
+        font-weight: 600;
+        margin: 0 0 0.25rem;
+      }
+      .subtitle {
+        color: #666;
+        font-size: 14px;
+        margin: 0 0 1.5rem;
+      }
+      .scope-note {
+        background: #fdf6e3;
+        border: 1px solid #e8d9a0;
+        border-radius: 8px;
+        padding: 0.85rem 1rem;
+        font-size: 13px;
+        color: #6b5518;
+        margin-bottom: 1.5rem;
+        line-height: 1.6;
+      }
+      .field-hint {
+        font-size: 12px;
+        color: #888;
+        margin: 0 0 0.5rem;
+      }
+      .grid3 {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 1rem;
+      }
+      .grid2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 1rem;
+      }
+      @media (max-width: 520px) {
+        .grid3 {
+          grid-template-columns: 1fr;
+        }
+        .grid2 {
+          grid-template-columns: 1fr;
+        }
+      }
+      label {
+        font-size: 13px;
+        color: #555;
+        display: block;
+        margin-bottom: 4px;
+        font-weight: 500;
+      }
+      input[type="number"] {
+        width: 100%;
+        padding: 8px 10px;
+        border: 1px solid #d0d0d0;
+        border-radius: 6px;
+        font-size: 14px;
+        color: #1a1a1a;
+      }
+      input[type="number"]:focus {
+        outline: none;
+        border-color: #999;
+      }
+      .tier-buttons {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 1.5rem;
+      }
+      .tier-btn {
+        flex: 1;
+        padding: 8px 10px;
+        border: 1px solid #d0d0d0;
+        border-radius: 6px;
+        background: #fff;
+        font-size: 13px;
+        cursor: pointer;
+        color: #333;
+      }
+      .tier-btn:hover {
+        background: #f5f5f5;
+      }
+      .slider-block {
+        margin-bottom: 1.5rem;
+      }
+      .slider-label {
+        font-size: 13px;
+        color: #555;
+        display: block;
+        margin-bottom: 4px;
+      }
+      .slider-value {
+        color: #1a1a1a;
+        font-weight: 600;
+      }
+      .slider-caption {
+        color: #999;
+        font-size: 12px;
+      }
+      input[type="range"] {
+        width: 100%;
+        accent-color: #1a1a1a;
+      }
+      .results {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin: 1.5rem 0 1rem;
+      }
+      @media (max-width: 520px) {
+        .results {
+          grid-template-columns: 1fr;
+        }
+      }
+      .result-card {
+        background: #f7f7f5;
+        border-radius: 8px;
+        padding: 1rem;
+      }
+      .result-card.highlight {
+        border: 2px solid #1a1a1a;
+      }
+      .result-label {
+        font-size: 12px;
+        color: #666;
+        margin: 0 0 4px;
+      }
+      .result-value {
+        font-size: 22px;
+        font-weight: 600;
+        margin: 0;
+      }
+      .formula-note {
+        font-size: 12px;
+        color: #999;
+        line-height: 1.6;
+        margin: 0 0 1.5rem;
+      }
+      .disclaimer {
+        font-size: 12px;
+        color: #999;
+        border-top: 1px solid #eee;
+        padding-top: 1rem;
+        margin-top: 1.5rem;
+        line-height: 1.6;
+      }
+      .cta-btn {
+        width: 100%;
+        padding: 12px;
+        background: #1a1a1a;
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+        margin-top: 0.5rem;
+      }
+      .cta-btn:hover {
+        background: #333;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>What is inconsistent color matching costing you?</h1>
+    <p class="subtitle">
+      A rough estimate based on your own numbers &mdash; adjust anything below.
+    </p>
+
+    <div class="scope-note">
+      <strong>What this does and doesn't cover:</strong> Color Brain works by recalling and matching
+      recipes from your own historical dye data. It helps most on colors you've made before or
+      something close to it &mdash; it does not yet predict recipes for entirely new colors with no
+      history. Estimates below apply only to that addressable share of your production, not your
+      total volume.
+    </div>
+
+    <p class="field-hint">
+      Enter any two of the three fields below &mdash; the third fills in automatically.
+    </p>
+    <div class="grid3">
+      <div>
+        <label for="revenue">Annual revenue ($)</label>
+        <input type="number" id="revenue" value="20000000" step="100000" />
+      </div>
+      <div>
+        <label for="volume">Annual volume (kg)</label>
+        <input type="number" id="volume" value="1428571" step="1000" />
+      </div>
+      <div>
+        <label for="price">Selling price ($/kg)</label>
+        <input type="number" id="price" value="14" step="0.5" />
+      </div>
+    </div>
+
+    <div class="tier-buttons">
+      <button class="tier-btn" data-revenue="20000000">~$20M mill</button>
+      <button class="tier-btn" data-revenue="50000000">~$50M mill</button>
+      <button class="tier-btn" data-revenue="100000000">~$100M mill</button>
+    </div>
+
+    <div class="grid2">
+      <div>
+        <label for="rftCurrent">Current right-first-time rate (%)</label>
+        <input type="number" id="rftCurrent" value="88" step="1" />
+      </div>
+      <div>
+        <label for="rftTarget">Target right-first-time rate (%)</label>
+        <input type="number" id="rftTarget" value="92" step="1" />
+      </div>
+    </div>
+
+    <div class="slider-block">
+      <label class="slider-label">
+        Addressable volume &mdash; colors you've dyed before
+        <span class="slider-value" id="addrPctOut">60%</span>
+      </label>
+      <input type="range" id="addrPct" min="10" max="90" value="60" step="5" />
+      <div class="slider-caption">
+        Unverified estimate. The real number depends on your product mix &mdash; adjust to what fits
+        your operation.
+      </div>
+    </div>
+
+    <div class="slider-block">
+      <label class="slider-label">
+        Rework cost as a share of selling price
+        <span class="slider-value" id="reworkPctOut">40%</span>
+      </label>
+      <input type="range" id="reworkPct" min="15" max="60" value="40" step="1" />
+      <div class="slider-caption">
+        Covers re-dye labor, chemicals, and machine time. A planning assumption, not your specific
+        cost.
+      </div>
+    </div>
+
+    <div class="slider-block">
+      <label class="slider-label">
+        Correction success rate
+        <span class="slider-value" id="correctPctOut">90%</span>
+      </label>
+      <input type="range" id="correctPct" min="50" max="100" value="90" step="5" />
+      <div class="slider-caption">
+        Share of failed batches that get successfully corrected rather than scrapped or sold as
+        second quality.
+      </div>
+    </div>
+
+    <div class="results">
+      <div class="result-card">
+        <p class="result-label">Conservative</p>
+        <p class="result-value" id="lowOut">$0</p>
+      </div>
+      <div class="result-card highlight">
+        <p class="result-label">Mid estimate</p>
+        <p class="result-value" id="midOut">$0</p>
+      </div>
+      <div class="result-card">
+        <p class="result-label">Upside</p>
+        <p class="result-value" id="highOut">$0</p>
+      </div>
+    </div>
+
+    <p class="formula-note">
+      Addressable volume = annual volume &times; addressable %. Estimated savings = addressable
+      volume &times; RFT improvement (percentage points) &times; rework cost per kg. Rework cost per
+      kg = selling price &times; rework % &times; correction success rate. Range shown is
+      &plusmn;25% around the mid estimate to reflect assumption uncertainty.
+    </p>
+
+    <button
+      class="cta-btn"
+      onclick="
+        window.location.href = 'mailto:hello@colorbrain.co?subject=Savings estimate follow-up'
+      "
+    >
+      Talk to us about your actual numbers
+    </button>
+
+    <div class="disclaimer">
+      This is a planning estimate built on adjustable assumptions, not a quote or guarantee. Every
+      input above can be changed to match your operation &mdash; we'd rather work through the real
+      numbers with you directly than have you rely on defaults. Figures are illustrative until
+      validated against pilot data.
+    </div>
+
+    <script>
+      let editOrder = ["revenue", "price"];
+
+      function track(field) {
+        editOrder = editOrder.filter((f) => f !== field);
+        editOrder.push(field);
+        if (editOrder.length > 2) editOrder.shift();
+      }
+
+      function deriveThird() {
+        const all = ["revenue", "volume", "price"];
+        const derived = all.find((f) => !editOrder.includes(f));
+        const revenue = parseFloat(document.getElementById("revenue").value) || 0;
+        const volume = parseFloat(document.getElementById("volume").value) || 0;
+        const price = parseFloat(document.getElementById("price").value) || 0;
+
+        if (derived === "volume" && price > 0) {
+          document.getElementById("volume").value = Math.round(revenue / price);
+        } else if (derived === "price" && volume > 0) {
+          document.getElementById("price").value = (revenue / volume).toFixed(2);
+        } else if (derived === "revenue") {
+          document.getElementById("revenue").value = Math.round(volume * price);
+        }
+      }
+
+      function fmt(n) {
+        return "$" + Math.round(n).toLocaleString();
+      }
+
+      function calc() {
+        const volume = parseFloat(document.getElementById("volume").value) || 0;
+        const price = parseFloat(document.getElementById("price").value) || 0;
+        const rftC = parseFloat(document.getElementById("rftCurrent").value) || 0;
+        const rftT = parseFloat(document.getElementById("rftTarget").value) || 0;
+        const addrPct = parseFloat(document.getElementById("addrPct").value) || 0;
+        const reworkPct = parseFloat(document.getElementById("reworkPct").value) || 0;
+        const correctPct = parseFloat(document.getElementById("correctPct").value) || 0;
+
+        document.getElementById("addrPctOut").textContent = addrPct + "%";
+        document.getElementById("reworkPctOut").textContent = reworkPct + "%";
+        document.getElementById("correctPctOut").textContent = correctPct + "%";
+
+        const addressableVolume = volume * (addrPct / 100);
+        const rftDeltaPts = Math.max(0, rftT - rftC);
+        const reworkCostPerKg = price * (reworkPct / 100) * (correctPct / 100);
+        const mid = addressableVolume * (rftDeltaPts / 100) * reworkCostPerKg;
+        const low = mid * 0.75;
+        const high = mid * 1.25;
+
+        document.getElementById("lowOut").textContent = fmt(low);
+        document.getElementById("midOut").textContent = fmt(mid);
+        document.getElementById("highOut").textContent = fmt(high);
+      }
+
+      ["revenue", "volume", "price"].forEach((id) => {
+        document.getElementById(id).addEventListener("input", () => {
+          track(id);
+          deriveThird();
+          calc();
+        });
+      });
+
+      ["rftCurrent", "rftTarget", "addrPct", "reworkPct", "correctPct"].forEach((id) => {
+        document.getElementById(id).addEventListener("input", calc);
+      });
+
+      document.querySelectorAll(".tier-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          document.getElementById("revenue").value = btn.dataset.revenue;
+          track("revenue");
+          deriveThird();
+          calc();
+        });
+      });
+
+      calc();
+    </script>
+  </body>
+</html>
