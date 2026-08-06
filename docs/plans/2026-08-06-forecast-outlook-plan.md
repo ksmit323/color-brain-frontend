@@ -11,7 +11,7 @@ scope: Standard
 
 ## Goal Capsule
 
-**Objective:** Add a separate, shareable page that lets an operations leader understand the potential savings from Color Brain in their own terms and take the next step to book a pilot. The page must feel AI-native and futuristic (not a generic "calculator"), live at its own URL, and be reachable from the primary nav.
+**Objective:** Add a separate, shareable page to the **landing site** (`landing/`, Astro at `https://colorbrain.co`) — not the WASM app (`app/`, Dioxus) — that lets an operations leader understand the potential savings from Color Brain in their own terms and take the next step to book a pilot. The page must feel AI-native and futuristic (not a generic "calculator"), live at its own URL, and be reachable from the primary nav.
 
 **Product authority:** This plan is the source of product behavior for the Forecast page. `ce-plan` will add the HOW (component layout, state, calculation detail, styling tokens) without inventing new product behavior.
 
@@ -52,9 +52,10 @@ scope: Standard
 ### Naming & Routing (Settled)
 
 - **Customer-facing name:** "Forecast" or "Savings Outlook". Nav label: **Forecast** (short, fits nav, pairs with Color Brain's prediction positioning; avoids ambiguity of "Calculator").
-- **URL:** `/forecast` (canonical). Alternatives considered: `/outlook`, `/impact`, `/savings`. Decision: `/forecast` is verb-aligned with Color Brain's core ("first-attempt forecast") and matches the chosen "Savings Outlook / Forecast" framing. Keep `/outlook` as optional redirect if marketing prefers later.
-- **Repo-relative routing:** Extend `app/src/main.rs:17` `Route` enum from single `#[route("/")] Home` to add `#[route("/forecast")] Forecast`. Introduce layout `NavBar` with `Outlet<Route>` so both `/` and `/forecast` share navigation. New view file: `app/src/views/forecast.rs` (and export from `app/src/views/mod.rs:1-3`).
-- **Nav:** Text link "Forecast" in primary nav, active-state styling. Direct URL must render without prior navigation (router sync, not anchor).
+- **URL:** `/forecast` (canonical, on the landing site). Alternatives considered: `/outlook`, `/impact`, `/savings`. Decision: `/forecast` is verb-aligned with Color Brain's core ("first-attempt forecast") and matches the chosen "Savings Outlook / Forecast" framing. Keep `/outlook` as optional redirect if marketing prefers later.
+- **Site:** **Landing site (`landing/`) — Astro, NOT the app (`app/` Dioxus).** Verified: `landing/src/pages/index.astro:1-126` is the single-page landing at `https://colorbrain.co`, `landing/src/components/Nav.astro:1-26` is the floating glass pill nav, `landing/astro.config.mjs:3-5` defines `site`. The WASM operator app lives in `app/` and is out of scope.
+- **Repo-relative routing:** Add `landing/src/pages/forecast.astro` as a new Astro page (file-based routing gives `/forecast` automatically). No Dioxus `Route` change. Share `landing/src/components/Nav.astro` — add a "Forecast" link there (alongside `#how-it-works`, `#proof`, etc.) and ensure the same nav renders on both `/` and `/forecast`. Preserve existing hash anchors for the single-page sections.
+- **Nav:** Text link "Forecast" in primary nav (`landing/src/components/Nav.astro:15-20`), active-state styling (e.g., holo accent like existing hover). Direct URL navigation and refresh must render correctly (Astro static page, no SPA sync needed).
 
 ### User Flows
 
@@ -76,7 +77,7 @@ scope: Standard
 
 **Functional:**
 
-1. Page is routable at `/forecast` and appears in the site nav on every route (via shared layout). Direct navigation and refresh must render correctly.
+1. Page is routable at `/forecast` on the **landing site** and appears in the nav on both `/` and `/forecast` (shared `Nav.astro`). Direct navigation and refresh must render correctly.
 2. Wizard is guided, not free-form: presets collapse choice, then allow tuning. Presets define sensible defaults for all 6-8 inputs so a user can accept defaults and still get a result.
 3. Inputs: batches/month, current rework % (or first-attempt %), avg cost per rework (currency), dye, water, energy, cycle time (minutes). Currency defaults to user's locale; calculation uses a single currency symbol for display in v1.
 4. Calculation is pure client-side (no network call). Must produce three numbers: conservative / expected / optimistic annual savings, plus breakdown by category. Formula is provisional until ops validates; plan must note it is assumption-backed.
@@ -87,8 +88,8 @@ scope: Standard
 
 **Non-functional / Visual:**
 
-9. Visual language: **AI, futuristic** — dark/glass, subtle grid, neon accent on active inputs and result numbers, monospaced numerals with animated count-up on reveal, no "shitty" generic calculator card styling from the mock. Must still inherit `app/assets/styling/color_brain.css` tokens (fonts: Space Grotesk / IBM Plex Sans / Mono already loaded in `app/src/main.rs:47`) and not introduce a conflicting theme for the rest of the site.
-10. Performance: instant interaction (no async `use_resource` needed); calculation is synchronous `use_memo` from signals.
+9. Visual language: **AI, futuristic** — dark/glass, subtle grid, `--holo: #7fd8e8` accent on active inputs and result numbers, monospaced numerals with animated count-up on reveal, no "shitty" generic calculator card styling from the mock. Must still inherit `landing/src/styles/global.css` tokens (Clash Display / Satoshi via Fontshare + `IBM Plex Mono`, `--container`, `--holo` glass pill already in `landing/src/components/Nav.astro:28-42` and `landing/src/styles/global.css:77-80`) and not introduce a conflicting theme for the rest of the landing.
+10. Performance: instant interaction; pure client-side calc (Astro island or inline script, no backend call), synchronous from inputs.
 11. Accessibility: keyboard-navigable wizard, labels for all inputs, range values announced.
 12. SEO: `/forecast` has distinct title/meta ("Savings Forecast — Color Brain") and is not blocked from indexing unless marketing decides otherwise.
 
@@ -112,9 +113,9 @@ Recommendation: **B** for v1. It satisfies ops-leader credibility (range + metho
 
 ### How This Work Fits Together
 
-- Current site is single-route (`/`) Dioxus app (verified: `app/src/main.rs:14-20`, `app/Cargo.toml:10` `dioxus = { version = "0.7.1", features = ["router"] }`). This work adds the second route and the first shared layout.
-- The HTML mock (uninspected due to `bwrap` sandbox probe failure and zero `search` hits for "calculator") is treated as inspiration for fields only, not styling. `ce-plan` should locate the mock file manually if still needed.
-- No dependency on `color-brain-backend` (verified: backend hosts `first_attempt` model). Forecast is standalone client calc; pilot booking reuses existing contact.
+- Current landing is Astro single-page at `https://colorbrain.co` (`landing/src/pages/index.astro:1-126`, `landing/src/components/Nav.astro:1-26`, `landing/astro.config.mjs:3-5`). This work adds the **second landing page** `landing/src/pages/forecast.astro` (gives `/forecast` via file-based routing) and reuses the existing glass `Nav` + `global.css` tokens. No change to the WASM app (`app/src/main.rs:14-20` single `Route::Home`, Dioxus) — that app is out of scope.
+- The HTML mock (uninspected due to earlier `bwrap` probe failure and zero `search` hits for "calculator") is treated as inspiration for fields only, not styling. `ce-plan` should locate the mock file manually if still needed.
+- No dependency on `color-brain-backend` (verified: backend hosts `first_attempt` model). Forecast is standalone client calc; pilot booking reuses existing landing contact (`#contact` / `Request a Pilot` CTA in `Nav`).
 - Future candidates not in this plan: PDF one-pager, fleet benchmark, persisted/shareable forecasts beyond URL query, localization of currency.
 
 ### Outstanding Questions
