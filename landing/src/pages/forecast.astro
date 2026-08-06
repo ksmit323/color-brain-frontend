@@ -1,0 +1,784 @@
+---
+/**
+ * Savings Forecast — shareable ops outlook page at /forecast.
+ *
+ * Guided wizard (preset → tune → reveal). Pure client-side calculation.
+ * Customer-facing name is Forecast / Savings Outlook — never "calculator".
+ */
+import "../styles/global.css";
+import Nav from "../components/Nav.astro";
+import Footer from "../components/Footer.astro";
+import { PRESETS, REWORK_REDUCTION, TIME_RATE_PER_MINUTE } from "../lib/forecast/model";
+
+const SITE_TITLE = "Savings Forecast — Color Brain";
+const SITE_DESCRIPTION =
+  "Estimate the annual savings range Color Brain could unlock for your mill — rework, dye, water, energy, and time — then book a pilot.";
+const SITE_URL = "https://colorbrain.co/forecast";
+
+const FONTSHARE_CSS =
+  "https://api.fontshare.com/v2/css?f[]=clash-display@500,600&f[]=satoshi@400,500,700&display=swap";
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{SITE_TITLE}</title>
+    <meta name="description" content={SITE_DESCRIPTION} />
+    <meta property="og:title" content={SITE_TITLE} />
+    <meta property="og:description" content={SITE_DESCRIPTION} />
+    <meta property="og:url" content={SITE_URL} />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Color Brain" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={SITE_TITLE} />
+    <meta name="twitter:description" content={SITE_DESCRIPTION} />
+    <meta name="theme-color" content="#0a0b10" />
+    <link rel="canonical" href={SITE_URL} />
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="preconnect" href="https://cdn.fontshare.com" crossorigin />
+    <link rel="preload" as="style" href={FONTSHARE_CSS} />
+    <link
+      rel="stylesheet"
+      href={FONTSHARE_CSS}
+      media="print"
+      onload="this.media='all'"
+    />
+    <noscript><link rel="stylesheet" href={FONTSHARE_CSS} /></noscript>
+    <link
+      rel="preload"
+      href="/fonts/IBMPlexMono-Medium.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+  </head>
+  <body id="top" class="forecast-page">
+    <Nav path="/forecast" />
+
+    <main class="forecast">
+      <div class="container forecast__shell">
+        <header class="forecast__hero">
+          <p class="eyebrow">Savings outlook</p>
+          <h1 class="forecast__title">What could Color Brain save your mill?</h1>
+          <p class="lede forecast__lede">
+            Pick a profile that fits your operation, tune the numbers that matter,
+            and see a credible annual range — not a single sales figure. Built for
+            dyehouse and mill ops leaders deciding whether a pilot is worth it.
+          </p>
+        </header>
+
+        <div
+          id="forecast-wizard"
+          class="forecast__wizard"
+          data-step="1"
+          aria-label="Savings forecast wizard"
+        >
+          <!-- Progress -->
+          <ol class="forecast__steps" aria-label="Wizard progress">
+            <li class="forecast__step is-active" data-step-indicator="1">
+              <span class="forecast__step-num">01</span>
+              <span class="forecast__step-label">Profile</span>
+            </li>
+            <li class="forecast__step" data-step-indicator="2">
+              <span class="forecast__step-num">02</span>
+              <span class="forecast__step-label">Tune</span>
+            </li>
+            <li class="forecast__step" data-step-indicator="3">
+              <span class="forecast__step-num">03</span>
+              <span class="forecast__step-label">Outlook</span>
+            </li>
+          </ol>
+
+          <!-- Step 1: Preset -->
+          <section
+            class="forecast__panel"
+            data-step-panel="1"
+            aria-labelledby="step1-title"
+          >
+            <h2 id="step1-title" class="forecast__panel-title">Choose your mill profile</h2>
+            <p class="forecast__panel-lede">
+              Presets prefill every input with a starting point. You can override
+              any value on the next step.
+            </p>
+            <div class="forecast__presets" role="group" aria-label="Mill size presets">
+              {
+                PRESETS.map((p) => (
+                  <button
+                    type="button"
+                    class="forecast__preset"
+                    data-preset={p.id}
+                    aria-pressed="false"
+                  >
+                    <span class="forecast__preset-label">{p.label}</span>
+                    <span class="forecast__preset-hint">{p.hint}</span>
+                  </button>
+                ))
+              }
+            </div>
+            <div class="forecast__actions">
+              <button type="button" class="btn btn--primary" data-goto-2>
+                Continue with this profile
+              </button>
+            </div>
+          </section>
+
+          <!-- Step 2: Tune -->
+          <section
+            class="forecast__panel"
+            data-step-panel="2"
+            hidden
+            aria-hidden="true"
+            aria-labelledby="step2-title"
+          >
+            <div class="forecast__panel-head">
+              <div>
+                <h2 id="step2-title" class="forecast__panel-title">Tune your numbers</h2>
+                <p class="forecast__panel-lede">
+                  All figures are yours to edit. Currency is USD for this outlook.
+                </p>
+              </div>
+              <div class="forecast__preview" aria-live="polite">
+                <span class="forecast__preview-label">Expected annual</span>
+                <span class="forecast__preview-value" data-preview-value>$0</span>
+              </div>
+            </div>
+
+            <div class="forecast__fields">
+              <label class="forecast__field" for="batchesPerMonth">
+                <span>Batches per month</span>
+                <input
+                  id="batchesPerMonth"
+                  name="batchesPerMonth"
+                  type="number"
+                  min="0"
+                  max="10000"
+                  step="1"
+                  inputmode="numeric"
+                />
+              </label>
+              <label class="forecast__field" for="reworkPct">
+                <span>Current rework rate (%)</span>
+                <input
+                  id="reworkPct"
+                  name="reworkPct"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.5"
+                  inputmode="decimal"
+                />
+              </label>
+              <label class="forecast__field" for="costPerRework">
+                <span>Avg. cost per rework ($)</span>
+                <input
+                  id="costPerRework"
+                  name="costPerRework"
+                  type="number"
+                  min="0"
+                  step="10"
+                  inputmode="decimal"
+                />
+              </label>
+              <label class="forecast__field" for="dyePerRework">
+                <span>Dye cost per rework ($)</span>
+                <input
+                  id="dyePerRework"
+                  name="dyePerRework"
+                  type="number"
+                  min="0"
+                  step="5"
+                  inputmode="decimal"
+                />
+              </label>
+              <label class="forecast__field" for="waterPerRework">
+                <span>Water cost per rework ($)</span>
+                <input
+                  id="waterPerRework"
+                  name="waterPerRework"
+                  type="number"
+                  min="0"
+                  step="1"
+                  inputmode="decimal"
+                />
+              </label>
+              <label class="forecast__field" for="energyPerRework">
+                <span>Energy cost per rework ($)</span>
+                <input
+                  id="energyPerRework"
+                  name="energyPerRework"
+                  type="number"
+                  min="0"
+                  step="1"
+                  inputmode="decimal"
+                />
+              </label>
+              <label class="forecast__field" for="cycleMinutes">
+                <span>Cycle time per rework (min)</span>
+                <input
+                  id="cycleMinutes"
+                  name="cycleMinutes"
+                  type="number"
+                  min="0"
+                  step="5"
+                  inputmode="numeric"
+                />
+              </label>
+            </div>
+
+            <div class="forecast__actions">
+              <button type="button" class="btn btn--ghost" data-back-1>Back</button>
+              <button type="button" class="btn btn--primary" data-goto-3>
+                Reveal outlook
+              </button>
+            </div>
+          </section>
+
+          <!-- Step 3: Reveal -->
+          <section
+            class="forecast__panel forecast__panel--reveal"
+            data-step-panel="3"
+            hidden
+            aria-hidden="true"
+            aria-labelledby="step3-title"
+          >
+            <h2 id="step3-title" class="forecast__panel-title">Your annual savings outlook</h2>
+            <p class="forecast__panel-lede" data-out-meta>
+              Estimate based on your inputs.
+            </p>
+
+            <div class="forecast__range" role="group" aria-label="Annual savings range">
+              <div class="forecast__range-card">
+                <p class="forecast__range-label">Conservative</p>
+                <p class="forecast__range-value" data-out-conservative>$0</p>
+              </div>
+              <div class="forecast__range-card forecast__range-card--expected">
+                <p class="forecast__range-label">Expected</p>
+                <p class="forecast__range-value" data-out-expected>$0</p>
+              </div>
+              <div class="forecast__range-card">
+                <p class="forecast__range-label">Optimistic</p>
+                <p class="forecast__range-value" data-out-optimistic>$0</p>
+              </div>
+            </div>
+
+            <h3 class="forecast__subhead">Expected breakdown</h3>
+            <ul class="forecast__breakdown">
+              <li>
+                <span>Rework overhead avoided</span>
+                <span class="forecast__breakdown-val" data-out-cat="rework">$0</span>
+              </li>
+              <li>
+                <span>Dye</span>
+                <span class="forecast__breakdown-val" data-out-cat="dye">$0</span>
+              </li>
+              <li>
+                <span>Water</span>
+                <span class="forecast__breakdown-val" data-out-cat="water">$0</span>
+              </li>
+              <li>
+                <span>Energy</span>
+                <span class="forecast__breakdown-val" data-out-cat="energy">$0</span>
+              </li>
+              <li>
+                <span>Time (cycle opportunity)</span>
+                <span class="forecast__breakdown-val" data-out-cat="time">$0</span>
+              </li>
+            </ul>
+
+            <details class="forecast__method">
+              <summary>How we calculate</summary>
+              <div class="forecast__method-body">
+                <p>
+                  Annual batches = batches/month × 12. Current rework volume =
+                  annual batches × rework %. For each scenario we assume Color Brain
+                  avoids a share of that rework:
+                </p>
+                <p data-method-reduction>
+                  Conservative {(REWORK_REDUCTION.conservative * 100).toFixed(0)}% ·
+                  Expected {(REWORK_REDUCTION.expected * 100).toFixed(0)}% ·
+                  Optimistic {(REWORK_REDUCTION.optimistic * 100).toFixed(0)}% of
+                  current rework volume avoided.
+                </p>
+                <p>
+                  Cost per rework event = avg. rework cost + dye + water + energy +
+                  (cycle minutes × provisional time rate). Time rate:
+                  <span data-method-rate>${TIME_RATE_PER_MINUTE.toFixed(2)} / minute (provisional).</span>
+                </p>
+                <p>
+                  Category breakdown multiplies avoided reworks (expected scenario)
+                  by each cost component. All coefficients are provisional planning
+                  assumptions until validated against pilot data — not a quote or
+                  guarantee.
+                </p>
+              </div>
+            </details>
+
+            <p class="forecast__disclaimer">
+              Estimate based on your inputs and provisional improvement assumptions.
+              Actual results vary by product mix, addressable history, and plant
+              conditions. This is a planning outlook, not a commercial commitment.
+            </p>
+
+            <div class="forecast__actions forecast__actions--cta">
+              <a
+                class="btn btn--primary"
+                href="/#contact"
+                data-cta-pilot
+              >Book a pilot</a>
+              <button type="button" class="btn btn--ghost" data-cta-copy>
+                Copy link
+              </button>
+              <button type="button" class="btn btn--ghost" data-back-2>
+                Adjust numbers
+              </button>
+            </div>
+            <p class="forecast__tertiary">
+              <a href="/">Back to Color Brain</a>
+            </p>
+          </section>
+        </div>
+      </div>
+    </main>
+
+    <Footer />
+
+    <script>
+      import { initForecastWizard } from "../lib/forecast/wizard";
+
+      const root = document.getElementById("forecast-wizard");
+      if (root) initForecastWizard(root);
+    </script>
+  </body>
+</html>
+
+<style>
+  .forecast-page {
+    background:
+      radial-gradient(
+        circle at 18% 0%,
+        rgba(127, 216, 232, 0.07),
+        transparent 32rem
+      ),
+      radial-gradient(
+        circle at 82% 12%,
+        rgba(78, 82, 124, 0.1),
+        transparent 28rem
+      ),
+      var(--bg);
+  }
+
+  .forecast {
+    padding-block: clamp(2.5rem, 6vw, 4.5rem) var(--section-pad);
+    min-height: 70vh;
+  }
+
+  .forecast__shell {
+    max-width: 920px;
+  }
+
+  .forecast__hero {
+    margin-bottom: 2.5rem;
+  }
+
+  .forecast__title {
+    font-size: clamp(2rem, 4.2vw, 3.1rem);
+    margin-top: 1.1rem;
+    max-width: 18ch;
+  }
+
+  .forecast__lede {
+    max-width: 52ch;
+  }
+
+  .forecast__wizard {
+    border: 1px solid color-mix(in srgb, var(--holo) 12%, var(--line));
+    border-radius: calc(var(--radius) + 4px);
+    background:
+      linear-gradient(
+        160deg,
+        color-mix(in srgb, var(--surface-raised) 88%, transparent),
+        color-mix(in srgb, var(--surface) 92%, transparent)
+      );
+    box-shadow:
+      0 24px 64px rgba(0, 0, 0, 0.35),
+      inset 0 1px 0 rgba(127, 216, 232, 0.06);
+    padding: clamp(1.4rem, 3vw, 2.25rem);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .forecast__wizard::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(127, 216, 232, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(127, 216, 232, 0.03) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: radial-gradient(ellipse at 50% 0%, #000 20%, transparent 75%);
+    pointer-events: none;
+  }
+
+  .forecast__steps {
+    position: relative;
+    z-index: 1;
+    list-style: none;
+    display: flex;
+    gap: 0.75rem;
+    padding: 0;
+    margin: 0 0 2rem;
+    flex-wrap: wrap;
+  }
+
+  .forecast__step {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.4rem 0.85rem;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    color: var(--ink-faint);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .forecast__step.is-active {
+    border-color: color-mix(in srgb, var(--holo) 55%, var(--line));
+    color: var(--holo);
+    box-shadow: 0 0 18px rgba(127, 216, 232, 0.12);
+  }
+
+  .forecast__step.is-done {
+    color: var(--ink-dim);
+    border-color: var(--line);
+  }
+
+  .forecast__step-num {
+    opacity: 0.7;
+  }
+
+  .forecast__panel {
+    position: relative;
+    z-index: 1;
+  }
+
+  .forecast__panel-title {
+    font-size: clamp(1.35rem, 2.4vw, 1.75rem);
+  }
+
+  .forecast__panel-lede {
+    margin-top: 0.65rem;
+    color: var(--ink-dim);
+    max-width: 48ch;
+  }
+
+  .forecast__panel-head {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.25rem;
+  }
+
+  .forecast__preview {
+    border: 1px solid color-mix(in srgb, var(--holo) 28%, var(--line));
+    border-radius: var(--radius);
+    padding: 0.7rem 1rem;
+    background: rgba(15, 17, 24, 0.55);
+    min-width: 10rem;
+  }
+
+  .forecast__preview-label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .forecast__preview-value {
+    display: block;
+    margin-top: 0.25rem;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 1.35rem;
+    color: var(--holo);
+    text-shadow: 0 0 18px rgba(127, 216, 232, 0.25);
+  }
+
+  .forecast__presets {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 0.9rem;
+    margin-top: 1.75rem;
+  }
+
+  .forecast__preset {
+    text-align: left;
+    padding: 1.15rem 1.1rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--line);
+    background: rgba(15, 17, 24, 0.6);
+    transition:
+      border-color 160ms ease,
+      box-shadow 160ms ease,
+      background 160ms ease;
+  }
+
+  .forecast__preset:hover {
+    border-color: var(--ink-faint);
+  }
+
+  .forecast__preset.is-selected {
+    border-color: color-mix(in srgb, var(--holo) 60%, var(--line));
+    background: color-mix(in srgb, var(--holo) 8%, rgba(15, 17, 24, 0.75));
+    box-shadow: 0 0 24px rgba(127, 216, 232, 0.1);
+  }
+
+  .forecast__preset-label {
+    display: block;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.05rem;
+  }
+
+  .forecast__preset-hint {
+    display: block;
+    margin-top: 0.35rem;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.04em;
+  }
+
+  .forecast__fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem 1.15rem;
+    margin-top: 1.75rem;
+  }
+
+  .forecast__field {
+    display: grid;
+    gap: 0.4rem;
+    font-size: 0.88rem;
+    color: var(--ink-dim);
+  }
+
+  .forecast__field input {
+    font: inherit;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 0.7em 0.85em;
+    transition: border-color 160ms ease, box-shadow 160ms ease;
+  }
+
+  .forecast__field input:focus-visible {
+    outline: none;
+    border-color: color-mix(in srgb, var(--holo) 55%, var(--line));
+    box-shadow: 0 0 0 3px rgba(127, 216, 232, 0.12);
+  }
+
+  .forecast__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 2rem;
+  }
+
+  .forecast__actions--cta {
+    margin-top: 1.75rem;
+  }
+
+  .forecast__range {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.85rem;
+    margin-top: 1.75rem;
+  }
+
+  @media (max-width: 640px) {
+    .forecast__range {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .forecast__range-card {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 1.1rem 1rem;
+    background: rgba(15, 17, 24, 0.55);
+  }
+
+  .forecast__range-card--expected {
+    border-color: color-mix(in srgb, var(--holo) 50%, var(--line));
+    box-shadow: 0 0 28px rgba(127, 216, 232, 0.1);
+    background: color-mix(in srgb, var(--holo) 6%, rgba(15, 17, 24, 0.7));
+  }
+
+  .forecast__range-label {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 0;
+  }
+
+  .forecast__range-value {
+    margin: 0.4rem 0 0;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-weight: 500;
+    font-size: clamp(1.4rem, 2.8vw, 1.9rem);
+    line-height: 1.15;
+    color: var(--ink);
+  }
+
+  .forecast__range-card--expected .forecast__range-value {
+    color: var(--holo);
+    text-shadow: 0 0 20px rgba(127, 216, 232, 0.28);
+  }
+
+  .forecast__subhead {
+    margin-top: 2rem;
+    font-size: 1rem;
+    font-family: var(--font-mono);
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+  }
+
+  .forecast__breakdown {
+    list-style: none;
+    padding: 0;
+    margin: 0.9rem 0 0;
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .forecast__breakdown li {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--line-soft);
+    color: var(--ink-dim);
+    font-size: 0.92rem;
+  }
+
+  .forecast__breakdown li:last-child {
+    border-bottom: 0;
+  }
+
+  .forecast__breakdown-val {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+  }
+
+  .forecast__method {
+    margin-top: 1.5rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: rgba(15, 17, 24, 0.4);
+  }
+
+  .forecast__method summary {
+    cursor: pointer;
+    padding: 0.9rem 1.1rem;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    list-style: none;
+  }
+
+  .forecast__method summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .forecast__method summary::before {
+    content: "▸ ";
+    color: var(--holo);
+  }
+
+  .forecast__method[open] summary::before {
+    content: "▾ ";
+  }
+
+  .forecast__method-body {
+    padding: 0 1.1rem 1.1rem;
+    color: var(--ink-dim);
+    font-size: 0.9rem;
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .forecast__disclaimer {
+    margin-top: 1.25rem;
+    font-size: 0.82rem;
+    color: var(--ink-faint);
+    line-height: 1.55;
+    max-width: 62ch;
+  }
+
+  .forecast__tertiary {
+    margin-top: 1.25rem;
+    font-size: 0.9rem;
+  }
+
+  .forecast__tertiary a {
+    color: var(--ink-dim);
+    text-decoration: none;
+  }
+
+  .forecast__tertiary a:hover {
+    color: var(--ink);
+  }
+
+  /* Reveal entrance */
+  .forecast__panel--reveal.is-revealed .forecast__range-card {
+    animation: forecast-rise 700ms ease both;
+  }
+
+  .forecast__panel--reveal.is-revealed .forecast__range-card:nth-child(1) {
+    animation-delay: 40ms;
+  }
+  .forecast__panel--reveal.is-revealed .forecast__range-card:nth-child(2) {
+    animation-delay: 120ms;
+  }
+  .forecast__panel--reveal.is-revealed .forecast__range-card:nth-child(3) {
+    animation-delay: 200ms;
+  }
+
+  @keyframes forecast-rise {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .forecast__panel--reveal.is-revealed .forecast__range-card {
+      animation: none;
+    }
+  }
+</style>
