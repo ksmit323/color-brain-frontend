@@ -1,13 +1,15 @@
 ---
 /**
  * Footer: brand, site links, founders, contact.
+ * Root-absolute section links so the footer works on `/` and `/forecast`.
  */
 const LINKS = [
-  { href: "#how-it-works", label: "How It Works" },
-  { href: "#proof", label: "Proof" },
-  { href: "#case-studies", label: "Case Studies" },
-  { href: "#who-its-for", label: "Who It's For" },
-  { href: "#contact", label: "Request a Pilot" },
+  { href: "/#how-it-works", label: "How It Works" },
+  { href: "/#proof", label: "Proof" },
+  { href: "/#case-studies", label: "Case Studies" },
+  { href: "/#who-its-for", label: "Who It's For" },
+  { href: "/forecast", label: "Forecast" },
+  { href: "/#contact", label: "Request a Pilot" },
   { href: "https://app.colorbrain.co", label: "Open the App" },
 ];
 
@@ -21,7 +23,7 @@ const FOUNDERS = [
 <footer class="footer">
   <div class="container footer__inner">
     <div class="footer__brand">
-      <a class="footer__logo" href="#top">
+      <a class="footer__logo" href="/">
         <img src="/cb_logo.svg" alt="" width="30" height="31" />
         <span>Color Brain</span>
       </a>

@@ -2,25 +2,44 @@
 /**
  * Floating glass navigation pill. Middle links collapse away on small screens
  * (the page is a single scroll — the CTAs are what matter on mobile).
+ *
+ * Works on both `/` and `/forecast`: section anchors use root-absolute paths
+ * so they resolve from any page; Forecast gets active-state styling when current.
  */
+interface Props {
+  /** Current path for active nav state, e.g. "/" or "/forecast". */
+  path?: string;
+}
+const { path = "/" } = Astro.props;
+const isHome = path === "/";
+const isForecast = path === "/forecast";
+/** Hash on home (smooth-scroll); root-absolute elsewhere. */
+const section = (hash: string) => (isHome ? hash : `/${hash}`);
+const brandHref = isHome ? "#top" : "/";
+const pilotHref = section("#contact");
 ---
 
 <header class="nav">
   <div class="container nav__inner">
-    <a class="nav__brand" href="#top">
+    <a class="nav__brand" href={brandHref}>
       <img src="/cb_logo.svg" alt="" width="26" height="27" />
       <span>Color Brain</span>
       <em>AI</em>
     </a>
-    <nav class="nav__links" aria-label="Sections">
-      <a href="#how-it-works">How It Works</a>
-      <a href="#proof">Proof</a>
-      <a href="#case-studies">Case Studies</a>
-      <a href="#who-its-for">Who It's For</a>
+    <nav class="nav__links" aria-label="Primary">
+      <a href={section("#how-it-works")}>How It Works</a>
+      <a href={section("#proof")}>Proof</a>
+      <a href={section("#case-studies")}>Case Studies</a>
+      <a href={section("#who-its-for")}>Who It's For</a>
+      <a
+        href="/forecast"
+        class:list={[{ "is-active": isForecast }]}
+        aria-current={isForecast ? "page" : undefined}
+      >Forecast</a>
     </nav>
     <div class="nav__actions">
       <a class="nav__ghost" href="https://app.colorbrain.co">Open the App</a>
-      <a class="btn btn--primary nav__cta" href="#contact">Request a Pilot</a>
+      <a class="btn btn--primary nav__cta" href={pilotHref}>Request a Pilot</a>
     </div>
   </div>
 </header>
@@ -103,14 +122,20 @@
       transform 160ms ease;
   }
 
-  .nav__links a:hover {
+  .nav__links a:hover,
+  .nav__links a.is-active {
     color: var(--ink);
     text-shadow: 0 0 14px rgba(127, 216, 232, 0.35);
   }
 
-  .nav__links a:hover::before {
+  .nav__links a:hover::before,
+  .nav__links a.is-active::before {
     opacity: 1;
     transform: none;
+  }
+
+  .nav__links a.is-active {
+    color: var(--holo);
   }
 
   .nav__actions {
