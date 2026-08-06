@@ -4,13 +4,13 @@
  */
 
 import {
+  type CategoryBreakdown,
   type ForecastInputs,
   type PresetId,
   calculateForecast,
+  DEFAULT_PRESET_ID,
   formatUsd,
   getPreset,
-  REWORK_REDUCTION,
-  TIME_RATE_PER_MINUTE,
 } from "./model";
 
 type Step = 1 | 2 | 3;
@@ -23,11 +23,18 @@ const INPUT_IDS = [
   "waterPerRework",
   "energyPerRework",
   "cycleMinutes",
-] as const;
+] as const satisfies readonly (keyof ForecastInputs)[];
 
-type InputId = (typeof INPUT_IDS)[number];
+/** Breakdown keys that have matching `[data-out-cat]` nodes (excludes total). */
+const BREAKDOWN_CATS = [
+  "rework",
+  "dye",
+  "water",
+  "energy",
+  "time",
+] as const satisfies readonly (keyof CategoryBreakdown)[];
 
-/** Fire analytics to dataLayer when present; always console-debug in dev. */
+/** Fire analytics to dataLayer when present. */
 function track(event: string, props: Record<string, unknown> = {}): void {
   const payload = { event, ...props };
   const w = window as Window & { dataLayer?: Record<string, unknown>[] };
@@ -45,34 +52,30 @@ function $all(sel: string, root: ParentNode = document): HTMLElement[] {
 }
 
 function readInputs(root: HTMLElement): ForecastInputs {
-  const num = (id: InputId): number => {
+  const out = {} as ForecastInputs;
+  for (const id of INPUT_IDS) {
     const el = root.querySelector<HTMLInputElement>(`#${id}`);
-    return el ? parseFloat(el.value) || 0 : 0;
-  };
-  return {
-    batchesPerMonth: num("batchesPerMonth"),
-    reworkPct: num("reworkPct"),
-    costPerRework: num("costPerRework"),
-    dyePerRework: num("dyePerRework"),
-    waterPerRework: num("waterPerRework"),
-    energyPerRework: num("energyPerRework"),
-    cycleMinutes: num("cycleMinutes"),
-  };
+    out[id] = el ? parseFloat(el.value) || 0 : 0;
+  }
+  return out;
 }
 
 function writeInputs(root: HTMLElement, inputs: ForecastInputs): void {
-  const map: Record<InputId, number> = {
-    batchesPerMonth: inputs.batchesPerMonth,
-    reworkPct: inputs.reworkPct,
-    costPerRework: inputs.costPerRework,
-    dyePerRework: inputs.dyePerRework,
-    waterPerRework: inputs.waterPerRework,
-    energyPerRework: inputs.energyPerRework,
-    cycleMinutes: inputs.cycleMinutes,
-  };
   for (const id of INPUT_IDS) {
     const el = root.querySelector<HTMLInputElement>(`#${id}`);
-    if (el) el.value = String(map[id]);
+    if (el) el.value = String(inputs[id]);
+  }
+}
+
+function setText(el: HTMLElement | null, value: string): void {
+  if (el && el.textContent !== value) el.textContent = value;
+}
+
+function markPresetSelected(root: HTMLElement, id: PresetId): void {
+  for (const b of $all("[data-preset]", root)) {
+    const on = b.getAttribute("data-preset") === id;
+    b.classList.toggle("is-selected", on);
+    b.setAttribute("aria-pressed", on ? "true" : "false");
   }
 }
 
@@ -100,131 +103,146 @@ function setStep(root: HTMLElement, step: Step): void {
   focusable?.focus({ preventScroll: true });
 }
 
+const animFrames = new WeakMap<HTMLElement, number>();
+
 function animateValue(
   el: HTMLElement,
   target: number,
   reduced: boolean,
 ): void {
+  const prev = animFrames.get(el);
+  if (prev != null) cancelAnimationFrame(prev);
+
   if (reduced) {
-    el.textContent = formatUsd(target);
+    setText(el, formatUsd(target));
+    animFrames.delete(el);
     return;
   }
+
   const duration = 900;
   const start = performance.now();
-  const from = 0;
   const tick = (now: number) => {
     const t = Math.min(1, (now - start) / duration);
-    // ease-out cubic
     const eased = 1 - Math.pow(1 - t, 3);
-    el.textContent = formatUsd(from + (target - from) * eased);
-    if (t < 1) requestAnimationFrame(tick);
+    el.textContent = formatUsd(target * eased);
+    if (t < 1) {
+      animFrames.set(el, requestAnimationFrame(tick));
+    } else {
+      animFrames.delete(el);
+      // Snap to final formatted value (avoids float-easing drift at t=1).
+      el.textContent = formatUsd(target);
+    }
   };
-  requestAnimationFrame(tick);
+  animFrames.set(el, requestAnimationFrame(tick));
 }
 
-function renderResult(root: HTMLElement, inputs: ForecastInputs): void {
+function updatePreview(root: HTMLElement, inputs: ForecastInputs): void {
   const result = calculateForecast(inputs);
-  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  setText($("[data-preview-value]", root), formatUsd(result.annual.expected));
+}
+
+function renderResult(
+  root: HTMLElement,
+  inputs: ForecastInputs,
+  opts: { animate: boolean; reduced: boolean },
+): void {
+  const result = calculateForecast(inputs);
 
   const cons = $("[data-out-conservative]", root);
   const exp = $("[data-out-expected]", root);
   const opt = $("[data-out-optimistic]", root);
-  if (cons) animateValue(cons, result.annual.conservative, reduced);
-  if (exp) animateValue(exp, result.annual.expected, reduced);
-  if (opt) animateValue(opt, result.annual.optimistic, reduced);
-
-  const setCat = (key: string, value: number) => {
-    const el = $(`[data-out-cat="${key}"]`, root);
-    if (el) el.textContent = formatUsd(value);
-  };
-  setCat("rework", result.breakdown.rework);
-  setCat("dye", result.breakdown.dye);
-  setCat("water", result.breakdown.water);
-  setCat("energy", result.breakdown.energy);
-  setCat("time", result.breakdown.time);
-
-  const meta = $("[data-out-meta]", root);
-  if (meta) {
-    meta.textContent = `${Math.round(result.annualBatches).toLocaleString("en-US")} batches/yr · ~${Math.round(result.currentReworkBatches).toLocaleString("en-US")} reworks today · ~${Math.round(result.avoidedReworkExpected).toLocaleString("en-US")} avoided (expected)`;
+  if (opts.animate) {
+    if (cons) animateValue(cons, result.annual.conservative, opts.reduced);
+    if (exp) animateValue(exp, result.annual.expected, opts.reduced);
+    if (opt) animateValue(opt, result.annual.optimistic, opts.reduced);
+  } else {
+    setText(cons, formatUsd(result.annual.conservative));
+    setText(exp, formatUsd(result.annual.expected));
+    setText(opt, formatUsd(result.annual.optimistic));
   }
 
-  // Live preview chip on step 2
-  const preview = $("[data-preview-value]", root);
-  if (preview) preview.textContent = formatUsd(result.annual.expected);
+  for (const key of BREAKDOWN_CATS) {
+    setText($(`[data-out-cat="${key}"]`, root), formatUsd(result.breakdown[key]));
+  }
+
+  setText(
+    $("[data-out-meta]", root),
+    `${Math.round(result.annualBatches).toLocaleString("en-US")} batches/yr · ~${Math.round(result.currentReworkBatches).toLocaleString("en-US")} reworks today · ~${Math.round(result.avoidedReworkExpected).toLocaleString("en-US")} avoided (expected)`,
+  );
+
+  setText($("[data-preview-value]", root), formatUsd(result.annual.expected));
 }
 
 export function initForecastWizard(root: HTMLElement): void {
-  let step: Step = 1;
-  let selectedPreset: PresetId = "medium";
+  let selectedPreset: PresetId = DEFAULT_PRESET_ID;
+  const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
+  let prefersReduced = reducedMotion.matches;
+  reducedMotion.addEventListener("change", () => {
+    prefersReduced = reducedMotion.matches;
+  });
 
-  // Prefill medium by default so accept-defaults path works.
-  writeInputs(root, getPreset("medium").inputs);
-  renderResult(root, readInputs(root));
+  const defaultInputs = getPreset(DEFAULT_PRESET_ID).inputs;
+  writeInputs(root, defaultInputs);
+  renderResult(root, defaultInputs, { animate: false, reduced: prefersReduced });
   setStep(root, 1);
 
   track("forecast_view", { path: "/forecast" });
 
-  // Preset cards
   for (const btn of $all("[data-preset]", root)) {
+    const id = btn.getAttribute("data-preset") as PresetId;
+    const on = id === DEFAULT_PRESET_ID;
+    btn.classList.toggle("is-selected", on);
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+
     btn.addEventListener("click", () => {
-      const id = btn.getAttribute("data-preset") as PresetId;
       selectedPreset = id;
       const preset = getPreset(id);
       writeInputs(root, preset.inputs);
-      renderResult(root, readInputs(root));
-      for (const b of $all("[data-preset]", root)) {
-        const on = b.getAttribute("data-preset") === id;
-        b.classList.toggle("is-selected", on);
-        b.setAttribute("aria-pressed", on ? "true" : "false");
-      }
+      renderResult(root, preset.inputs, {
+        animate: false,
+        reduced: prefersReduced,
+      });
+      markPresetSelected(root, id);
       track("forecast_preset_select", { preset: id });
     });
   }
-  // Mark medium selected initially
-  for (const b of $all("[data-preset]", root)) {
-    const on = b.getAttribute("data-preset") === "medium";
-    b.classList.toggle("is-selected", on);
-    b.setAttribute("aria-pressed", on ? "true" : "false");
-  }
 
-  // Input changes → live preview
+  let previewRaf: number | null = null;
   for (const id of INPUT_IDS) {
     const el = root.querySelector<HTMLInputElement>(`#${id}`);
     el?.addEventListener("input", () => {
-      renderResult(root, readInputs(root));
+      if (previewRaf != null) return;
+      previewRaf = requestAnimationFrame(() => {
+        previewRaf = null;
+        updatePreview(root, readInputs(root));
+      });
     });
   }
 
-  // Navigation
   root.querySelector("[data-goto-2]")?.addEventListener("click", () => {
-    step = 2;
-    setStep(root, step);
+    setStep(root, 2);
   });
   root.querySelector("[data-goto-3]")?.addEventListener("click", () => {
-    step = 3;
-    renderResult(root, readInputs(root));
-    setStep(root, step);
+    const inputs = readInputs(root);
+    renderResult(root, inputs, { animate: true, reduced: prefersReduced });
+    setStep(root, 3);
     track("forecast_reveal", {
       preset: selectedPreset,
-      ...readInputs(root),
+      ...inputs,
     });
-    // Kick reveal animation class
     const panel = root.querySelector("[data-step-panel='3']");
     panel?.classList.remove("is-revealed");
-    // force reflow
+    // force reflow so re-adding is-revealed restarts CSS entrance
     void (panel as HTMLElement | null)?.offsetWidth;
     panel?.classList.add("is-revealed");
   });
   root.querySelector("[data-back-1]")?.addEventListener("click", () => {
-    step = 1;
-    setStep(root, step);
+    setStep(root, 1);
   });
   root.querySelector("[data-back-2]")?.addEventListener("click", () => {
-    step = 2;
-    setStep(root, step);
+    setStep(root, 2);
   });
 
-  // CTAs
   root.querySelector("[data-cta-pilot]")?.addEventListener("click", () => {
     track("forecast_cta_click", { cta: "book_pilot" });
   });
@@ -243,18 +261,7 @@ export function initForecastWizard(root: HTMLElement): void {
         btn.textContent = prev;
       }, 1800);
     } catch {
-      // Fallback: select a transient input
       window.prompt("Copy this link:", url);
     }
   });
-
-  // Expose constants into methodology for transparency
-  const red = $("[data-method-reduction]", root);
-  if (red) {
-    red.textContent = `Conservative ${(REWORK_REDUCTION.conservative * 100).toFixed(0)}% · Expected ${(REWORK_REDUCTION.expected * 100).toFixed(0)}% · Optimistic ${(REWORK_REDUCTION.optimistic * 100).toFixed(0)}% of current rework volume avoided.`;
-  }
-  const rate = $("[data-method-rate]", root);
-  if (rate) {
-    rate.textContent = `$${TIME_RATE_PER_MINUTE.toFixed(2)} / minute (provisional).`;
-  }
 }

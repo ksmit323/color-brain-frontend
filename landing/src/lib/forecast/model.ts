@@ -113,8 +113,14 @@ export const PRESETS: PresetDef[] = [
   },
 ];
 
+/** Default mill profile used for first paint and getPreset fallback. */
+export const DEFAULT_PRESET_ID: PresetId = "medium";
+
 export function getPreset(id: PresetId): PresetDef {
-  return PRESETS.find((p) => p.id === id) ?? PRESETS[1];
+  return (
+    PRESETS.find((p) => p.id === id) ??
+    PRESETS.find((p) => p.id === DEFAULT_PRESET_ID)!
+  );
 }
 
 function clamp(n: number, min: number, max: number): number {
