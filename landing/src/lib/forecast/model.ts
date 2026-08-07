@@ -82,10 +82,13 @@ export interface PresetDef {
 }
 
 /**
- * Provisional $/minute for cycle-time opportunity cost
- * (machine + operator). Labeled as assumption in UI.
+ * Vietnam-reality $/minute for cycle-time opportunity cost (machine +
+ * operator + steam). Was $1.50 ($90/hr) — 36× Vietnam all-in labour
+ * ($1.44/hr direct, $1.78 loaded). Now $0.07 ($4.20/hr) covers 2× labour +
+ * machine opportunity at Vietnam industrial elec $0.085/kWh / water $0.32/m³.
+ * Labeled as assumption in UI.
  */
-export const TIME_RATE_PER_MINUTE = 1.5;
+export const TIME_RATE_PER_MINUTE = 0.07;
 
 /**
  * Realization of the visitor-stated RFT lift by scenario.
@@ -114,10 +117,10 @@ export const PRESETS: PresetDef[] = [
       batchesPerMonth: 250,
       currentRft: 82,
       targetRft: 90,
-      costPerRework: 800,
-      dyePerRework: 120,
-      waterPerRework: 40,
-      energyPerRework: 55,
+      costPerRework: 45,
+      dyePerRework: 22,
+      waterPerRework: 7,
+      energyPerRework: 14,
       cycleMinutes: 180,
     },
   },
@@ -129,10 +132,10 @@ export const PRESETS: PresetDef[] = [
       batchesPerMonth: 550,
       currentRft: 86,
       targetRft: 92,
-      costPerRework: 1_200,
-      dyePerRework: 180,
-      waterPerRework: 55,
-      energyPerRework: 90,
+      costPerRework: 65,
+      dyePerRework: 30,
+      waterPerRework: 9,
+      energyPerRework: 18,
       cycleMinutes: 200,
     },
   },
@@ -144,10 +147,10 @@ export const PRESETS: PresetDef[] = [
       batchesPerMonth: 1_200,
       currentRft: 88,
       targetRft: 93,
-      costPerRework: 1_500,
-      dyePerRework: 220,
-      waterPerRework: 70,
-      energyPerRework: 120,
+      costPerRework: 85,
+      dyePerRework: 38,
+      waterPerRework: 11,
+      energyPerRework: 22,
       cycleMinutes: 240,
     },
   },
