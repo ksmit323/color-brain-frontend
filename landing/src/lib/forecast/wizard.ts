@@ -171,21 +171,39 @@ function applyScenarioBreakdown(
   scenario: ScenarioId,
 ): void {
   const breakdown = result.breakdowns[scenario];
+  const total = Math.max(0, breakdown.total);
+
   for (const key of BREAKDOWN_CATS) {
-    setText($(`[data-out-cat="${key}"]`, root), formatUsd(breakdown[key]));
+    const value = breakdown[key];
+    setText($(`[data-out-cat="${key}"]`, root), formatUsd(value));
+
+    // Row bars + top stack both use share of total so lengths compose to 100%.
+    const share = total > 0 ? (value / total) * 100 : 0;
+
+    const bar = root.querySelector<HTMLElement>(`[data-bar="${key}"]`);
+    if (bar) bar.style.width = `${share}%`;
+
+    const seg = root.querySelector<HTMLElement>(`[data-stack="${key}"]`);
+    if (seg) seg.style.flexBasis = `${share}%`;
   }
 
   const label = SCENARIO_LABELS[scenario];
   setText($("[data-breakdown-title]", root), `${label} breakdown`);
 
-  const lift =
+  // Structured meta spans keep one line; scenario lives on the selected card.
+  setText(
+    $("[data-meta-batches]", root),
+    `${Math.round(result.annualBatches).toLocaleString("en-US")} batches/yr`,
+  );
+  setText(
+    $("[data-meta-rft]", root),
     result.rftLiftPts > 0
       ? `RFT ${Math.round(result.currentRft)}% → ${Math.round(result.targetRft)}% (+${result.rftLiftPts.toFixed(result.rftLiftPts % 1 === 0 ? 0 : 1)} pts)`
-      : `RFT ${Math.round(result.currentRft)}% (set a higher target to model savings)`;
-  const avoided = result.avoidedByScenario[scenario];
+      : `RFT ${Math.round(result.currentRft)}%`,
+  );
   setText(
-    $("[data-out-meta]", root),
-    `${Math.round(result.annualBatches).toLocaleString("en-US")} batches/yr · ${lift} · ~${Math.round(avoided).toLocaleString("en-US")} avoided (${label.toLowerCase()})`,
+    $("[data-meta-avoided]", root),
+    Math.round(result.avoidedByScenario[scenario]).toLocaleString("en-US"),
   );
 }
 

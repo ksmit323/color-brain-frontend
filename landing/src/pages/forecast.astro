@@ -317,8 +317,14 @@ const FONTSHARE_CSS =
             aria-labelledby="step3-title"
           >
             <h2 id="step3-title" class="forecast__panel-title">Your annual savings outlook</h2>
-            <p class="forecast__panel-lede" data-out-meta>
-              Estimate based on your inputs.
+            <p class="forecast__meta" data-out-meta aria-live="polite">
+              <span data-meta-batches>—</span>
+              <span class="forecast__meta-sep" aria-hidden="true">·</span>
+              <span data-meta-rft>—</span>
+              <span class="forecast__meta-sep" aria-hidden="true">·</span>
+              <span class="forecast__meta-avoided"
+                >~<span data-meta-avoided>—</span> avoided</span
+              >
             </p>
 
             <div
@@ -363,59 +369,150 @@ const FONTSHARE_CSS =
             </div>
 
             <h3 class="forecast__subhead" data-breakdown-title>Expected breakdown</h3>
-            <ul class="forecast__breakdown">
-              <li>
-                <span>Labour &amp; overhead avoided</span>
-                <span class="forecast__breakdown-val" data-out-cat="rework">$0</span>
-              </li>
-              <li>
-                <span>Dye</span>
-                <span class="forecast__breakdown-val" data-out-cat="dye">$0</span>
-              </li>
-              <li>
-                <span>Water</span>
-                <span class="forecast__breakdown-val" data-out-cat="water">$0</span>
-              </li>
-              <li>
-                <span>Energy</span>
-                <span class="forecast__breakdown-val" data-out-cat="energy">$0</span>
-              </li>
-              <li>
-                <span>Time (cycle opportunity)</span>
-                <span class="forecast__breakdown-val" data-out-cat="time">$0</span>
-              </li>
-            </ul>
+            <div class="forecast__breakdown-wrap">
+              <div
+                class="forecast__breakdown-stack"
+                data-breakdown-stack
+                aria-hidden="true"
+                title="Share of total savings by category"
+              >
+                <span class="forecast__breakdown-seg" data-stack="rework"></span>
+                <span class="forecast__breakdown-seg" data-stack="dye"></span>
+                <span class="forecast__breakdown-seg" data-stack="water"></span>
+                <span class="forecast__breakdown-seg" data-stack="energy"></span>
+                <span class="forecast__breakdown-seg" data-stack="time"></span>
+              </div>
+              <ul class="forecast__breakdown" aria-label="Savings by category">
+                <li data-cat="rework">
+                  <div class="forecast__breakdown-head">
+                    <span class="forecast__breakdown-label">
+                      <span class="forecast__breakdown-swatch" aria-hidden="true"></span>
+                      Labour &amp; overhead avoided
+                    </span>
+                    <span class="forecast__breakdown-val" data-out-cat="rework">$0</span>
+                  </div>
+                  <div class="forecast__breakdown-track" aria-hidden="true">
+                    <div class="forecast__breakdown-bar" data-bar="rework"></div>
+                  </div>
+                </li>
+                <li data-cat="dye">
+                  <div class="forecast__breakdown-head">
+                    <span class="forecast__breakdown-label">
+                      <span class="forecast__breakdown-swatch" aria-hidden="true"></span>
+                      Dye
+                    </span>
+                    <span class="forecast__breakdown-val" data-out-cat="dye">$0</span>
+                  </div>
+                  <div class="forecast__breakdown-track" aria-hidden="true">
+                    <div class="forecast__breakdown-bar" data-bar="dye"></div>
+                  </div>
+                </li>
+                <li data-cat="water">
+                  <div class="forecast__breakdown-head">
+                    <span class="forecast__breakdown-label">
+                      <span class="forecast__breakdown-swatch" aria-hidden="true"></span>
+                      Water
+                    </span>
+                    <span class="forecast__breakdown-val" data-out-cat="water">$0</span>
+                  </div>
+                  <div class="forecast__breakdown-track" aria-hidden="true">
+                    <div class="forecast__breakdown-bar" data-bar="water"></div>
+                  </div>
+                </li>
+                <li data-cat="energy">
+                  <div class="forecast__breakdown-head">
+                    <span class="forecast__breakdown-label">
+                      <span class="forecast__breakdown-swatch" aria-hidden="true"></span>
+                      Energy
+                    </span>
+                    <span class="forecast__breakdown-val" data-out-cat="energy">$0</span>
+                  </div>
+                  <div class="forecast__breakdown-track" aria-hidden="true">
+                    <div class="forecast__breakdown-bar" data-bar="energy"></div>
+                  </div>
+                </li>
+                <li data-cat="time">
+                  <div class="forecast__breakdown-head">
+                    <span class="forecast__breakdown-label">
+                      <span class="forecast__breakdown-swatch" aria-hidden="true"></span>
+                      Time (cycle opportunity)
+                    </span>
+                    <span class="forecast__breakdown-val" data-out-cat="time">$0</span>
+                  </div>
+                  <div class="forecast__breakdown-track" aria-hidden="true">
+                    <div class="forecast__breakdown-bar" data-bar="time"></div>
+                  </div>
+                </li>
+              </ul>
+            </div>
 
             <details class="forecast__method">
-              <summary>How we calculate</summary>
+              <summary>
+                <span class="forecast__method-summary-label">How we calculate</span>
+              </summary>
               <div class="forecast__method-body">
-                <p>
-                  Annual batches = batches/month × 12. RFT lift (percentage points) =
-                  target RFT − current RFT. Full avoided batches = annual batches ×
-                  (lift ÷ 100). That is the marketing story in one line: every point
-                  of right-first-time improvement is a share of yearly production that
-                  no longer needs a correction cycle.
+                <p class="forecast__method-lede">
+                  Savings scale with your RFT lift (target − current) and the cost of
+                  each avoided rework.
                 </p>
-                <p data-method-reduction>
-                  Scenarios apply a realization band around that lift — not every miss
-                  is a full-cost rework, and some improvements overshoot:
-                  Conservative {(RFT_LIFT_REALIZATION.conservative * 100).toFixed(0)}% ·
-                  Expected {(RFT_LIFT_REALIZATION.expected * 100).toFixed(0)}% ·
-                  Optimistic {(RFT_LIFT_REALIZATION.optimistic * 100).toFixed(0)}% of the
-                  stated lift.
+
+                <p class="forecast__method-eq" data-method-rate>
+                  annual savings
+                  <span class="forecast__method-op">≈</span>
+                  batches/yr
+                  <span class="forecast__method-op">×</span>
+                  RFT lift
+                  <span class="forecast__method-op">×</span>
+                  cost / rework
                 </p>
-                <p>
-                  Cost per avoided rework = labour &amp; overhead + dye + water + energy +
-                  (minutes × provisional time rate). Time rate:
-                  <span data-method-rate
-                    >${TIME_RATE_PER_MINUTE.toFixed(2)} / minute (provisional).</span
+
+                <div class="forecast__method-band-wrap">
+                  <p class="forecast__method-band-caption">
+                    Scenarios scale how much of <em>your stated RFT lift</em> we count
+                    — not every miss is a full-cost rework, and some lifts overshoot.
+                  </p>
+                  <div
+                    class="forecast__method-band"
+                    data-method-reduction
+                    role="list"
+                    aria-label="How much of your stated RFT lift each scenario counts"
+                  >
+                    <div class="forecast__method-band-item" role="listitem">
+                      <span class="forecast__method-band-label">Conservative</span>
+                      <span class="forecast__method-band-val"
+                        >{RFT_LIFT_REALIZATION.conservative}×</span
+                      >
+                      <span class="forecast__method-band-unit">of your lift</span>
+                    </div>
+                    <div
+                      class="forecast__method-band-item forecast__method-band-item--mid"
+                      role="listitem"
+                    >
+                      <span class="forecast__method-band-label">Expected</span>
+                      <span class="forecast__method-band-val"
+                        >{RFT_LIFT_REALIZATION.expected}×</span
+                      >
+                      <span class="forecast__method-band-unit">of your lift</span>
+                    </div>
+                    <div class="forecast__method-band-item" role="listitem">
+                      <span class="forecast__method-band-label">Optimistic</span>
+                      <span class="forecast__method-band-val"
+                        >{RFT_LIFT_REALIZATION.optimistic}×</span
+                      >
+                      <span class="forecast__method-band-unit">of your lift</span>
+                    </div>
+                  </div>
+                </div>
+
+                <p class="forecast__method-note">
+                  Cost / rework = labour + dye + water + energy + time
+                  <span class="forecast__method-pill"
+                    >${TIME_RATE_PER_MINUTE.toFixed(2)}/min</span
                   >
                 </p>
-                <p>
-                  Category breakdown multiplies avoided batches for the scenario you
-                  select (Conservative / Expected / Optimistic) by each cost component.
-                  All coefficients are provisional planning assumptions until validated
-                  against pilot data — not a quote or guarantee.
+
+                <p class="forecast__method-foot">
+                  Planning estimate — not a quote. Coefficients are provisional.
                 </p>
               </div>
             </details>
@@ -579,6 +676,39 @@ const FONTSHARE_CSS =
     margin-top: 0.65rem;
     color: var(--ink-dim);
     max-width: 48ch;
+  }
+
+  /* Outlook meta strip — single line, stable width while scenario switches. */
+  .forecast__meta {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: baseline;
+    gap: 0.55rem;
+    margin: 0.7rem 0 0;
+    max-width: none;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+    color: var(--ink-dim);
+    white-space: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .forecast__meta::-webkit-scrollbar {
+    display: none;
+  }
+
+  .forecast__meta-sep {
+    color: var(--ink-faint);
+    opacity: 0.7;
+    user-select: none;
+  }
+
+  .forecast__meta-avoided {
+    /* Reserve room so 3–4 digit avoided counts don't shift the strip. */
+    min-width: 11ch;
   }
 
   .forecast__panel-head {
@@ -867,33 +997,140 @@ const FONTSHARE_CSS =
     color: var(--ink-dim);
   }
 
-  .forecast__breakdown {
-    list-style: none;
-    padding: 0;
-    margin: 0.9rem 0 0;
+  .forecast__breakdown-wrap {
+    /* Distinct category hues (not holo-tints) so stack ↔ rows are mappable. */
+    --cat-rework: #7fd8e8;
+    --cat-dye: #e8b04a;
+    --cat-water: #5b9cf5;
+    --cat-energy: #b794f6;
+    --cat-time: #46c79a;
+
+    margin-top: 0.9rem;
     border: 1px solid var(--line-soft);
     border-radius: var(--radius);
     overflow: hidden;
+    background: rgba(15, 17, 24, 0.35);
+  }
+
+  /* Composition strip — share of total savings by category. */
+  .forecast__breakdown-stack {
+    display: flex;
+    height: 0.55rem;
+    width: 100%;
+    gap: 2px;
+    background: var(--line-soft);
+  }
+
+  .forecast__breakdown-seg {
+    display: block;
+    flex: 0 0 0%;
+    min-width: 0;
+    height: 100%;
+    transition: flex-basis 420ms ease;
+  }
+
+  .forecast__breakdown-seg[data-stack="rework"] {
+    background: var(--cat-rework);
+  }
+  .forecast__breakdown-seg[data-stack="dye"] {
+    background: var(--cat-dye);
+  }
+  .forecast__breakdown-seg[data-stack="water"] {
+    background: var(--cat-water);
+  }
+  .forecast__breakdown-seg[data-stack="energy"] {
+    background: var(--cat-energy);
+  }
+  .forecast__breakdown-seg[data-stack="time"] {
+    background: var(--cat-time);
+  }
+
+  .forecast__breakdown {
+    list-style: none;
+    padding: 0;
+    margin: 0;
   }
 
   .forecast__breakdown li {
-    display: flex;
-    justify-content: space-between;
-    gap: 1rem;
-    padding: 0.75rem 1rem;
+    --cat: var(--cat-rework);
+    padding: 0.8rem 1rem 0.75rem;
     border-bottom: 1px solid var(--line-soft);
-    color: var(--ink-dim);
-    font-size: 0.92rem;
   }
 
   .forecast__breakdown li:last-child {
     border-bottom: 0;
   }
 
+  .forecast__breakdown li[data-cat="rework"] {
+    --cat: var(--cat-rework);
+  }
+  .forecast__breakdown li[data-cat="dye"] {
+    --cat: var(--cat-dye);
+  }
+  .forecast__breakdown li[data-cat="water"] {
+    --cat: var(--cat-water);
+  }
+  .forecast__breakdown li[data-cat="energy"] {
+    --cat: var(--cat-energy);
+  }
+  .forecast__breakdown li[data-cat="time"] {
+    --cat: var(--cat-time);
+  }
+
+  .forecast__breakdown-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    font-size: 0.92rem;
+    color: var(--ink-dim);
+  }
+
+  .forecast__breakdown-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+
+  .forecast__breakdown-swatch {
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 2px;
+    flex-shrink: 0;
+    background: var(--cat);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--cat) 35%, transparent);
+  }
+
   .forecast__breakdown-val {
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
     color: var(--ink);
+    flex-shrink: 0;
+  }
+
+  .forecast__breakdown-track {
+    margin-top: 0.5rem;
+    height: 0.3rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--line-soft) 80%, transparent);
+    overflow: hidden;
+  }
+
+  .forecast__breakdown-bar {
+    height: 100%;
+    width: 0%;
+    border-radius: inherit;
+    background: var(--cat);
+    box-shadow: 0 0 10px color-mix(in srgb, var(--cat) 35%, transparent);
+    transition: width 420ms ease;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .forecast__breakdown-bar,
+    .forecast__breakdown-seg {
+      transition: none;
+    }
   }
 
   .forecast__method {
@@ -906,33 +1143,170 @@ const FONTSHARE_CSS =
   .forecast__method summary {
     cursor: pointer;
     padding: 0.9rem 1.1rem;
-    font-family: var(--font-mono);
-    font-size: 0.78rem;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--ink-dim);
     list-style: none;
+    user-select: none;
   }
 
   .forecast__method summary::-webkit-details-marker {
     display: none;
   }
 
-  .forecast__method summary::before {
-    content: "▸ ";
-    color: var(--holo);
+  .forecast__method-summary-label {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
   }
 
-  .forecast__method[open] summary::before {
-    content: "▾ ";
+  .forecast__method-summary-label::before {
+    content: "▸";
+    display: inline-block;
+    margin-right: 0.55rem;
+    color: var(--holo);
+    transition: transform 160ms ease;
+  }
+
+  .forecast__method[open] .forecast__method-summary-label::before {
+    transform: rotate(90deg);
+  }
+
+  .forecast__method summary:hover .forecast__method-summary-label {
+    color: var(--ink);
   }
 
   .forecast__method-body {
-    padding: 0 1.1rem 1.1rem;
-    color: var(--ink-dim);
-    font-size: 0.9rem;
+    padding: 0 1.1rem 1.15rem;
+    border-top: 1px solid var(--line-soft);
     display: grid;
-    gap: 0.75rem;
+    gap: 0.9rem;
+  }
+
+  .forecast__method-lede {
+    margin: 0.9rem 0 0;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--ink-dim);
+  }
+
+  .forecast__method-eq {
+    margin: 0;
+    padding: 0.7rem 0.85rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--line-soft);
+    background: rgba(7, 8, 12, 0.4);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.5;
+    color: var(--ink-dim);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.3rem 0.4rem;
+  }
+
+  .forecast__method-op {
+    color: var(--holo);
+    opacity: 0.9;
+  }
+
+  .forecast__method-note {
+    margin: 0;
+    font-size: 0.8rem;
+    line-height: 1.45;
+    color: var(--ink-faint);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem 0.5rem;
+  }
+
+  .forecast__method-pill {
+    display: inline-flex;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--holo);
+    border: 1px solid color-mix(in srgb, var(--holo) 35%, var(--line));
+    border-radius: 999px;
+    padding: 0.12rem 0.5rem;
+    background: color-mix(in srgb, var(--holo) 8%, transparent);
+  }
+
+  .forecast__method-band-wrap {
+    display: grid;
+    gap: 0.55rem;
+  }
+
+  .forecast__method-band-caption {
+    margin: 0;
+    font-size: 0.8rem;
+    line-height: 1.45;
+    color: var(--ink-faint);
+  }
+
+  .forecast__method-band-caption em {
+    font-style: normal;
+    color: var(--ink-dim);
+  }
+
+  .forecast__method-band {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.4rem;
+  }
+
+  @media (max-width: 520px) {
+    .forecast__method-band {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .forecast__method-band-item {
+    display: grid;
+    gap: 0.15rem;
+    padding: 0.5rem 0.6rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--line-soft);
+    background: rgba(15, 17, 24, 0.5);
+  }
+
+  .forecast__method-band-item--mid {
+    border-color: color-mix(in srgb, var(--holo) 40%, var(--line));
+    background: color-mix(in srgb, var(--holo) 7%, rgba(15, 17, 24, 0.55));
+  }
+
+  .forecast__method-band-label {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .forecast__method-band-val {
+    font-family: var(--font-mono);
+    font-size: 1.05rem;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+  }
+
+  .forecast__method-band-item--mid .forecast__method-band-val {
+    color: var(--holo);
+  }
+
+  .forecast__method-band-unit {
+    font-size: 0.68rem;
+    color: var(--ink-faint);
+  }
+
+  .forecast__method-foot {
+    margin: 0;
+    font-size: 0.76rem;
+    line-height: 1.45;
+    color: var(--ink-faint);
   }
 
   .forecast__disclaimer {
