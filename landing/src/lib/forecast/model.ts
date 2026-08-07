@@ -1,18 +1,37 @@
 /**
  * Forecast Outlook — provisional client-side savings model.
  *
- * Coefficients and improvement deltas are assumption-backed placeholders
- * until ops validates them. Every scenario produces a range, never a single
- * guaranteed figure. See "How we calculate" on the page for the user-facing
- * explanation of these assumptions.
+ * Anchored on Right First Time (RFT) — the language mills use — not "rework %".
+ * Savings scale with the RFT lift the visitor sets (target − current).
+ * Coefficients and cost ladders are assumption-backed placeholders until ops
+ * validates them. Every scenario produces a range, never a single guaranteed
+ * figure. See "How we calculate" on the page for the user-facing explanation.
  */
 
 export type PresetId = "small" | "medium" | "large";
 
+/** Conservative / expected / optimistic realization scenarios. */
+export type ScenarioId = "conservative" | "expected" | "optimistic";
+
+export const SCENARIO_IDS = [
+  "conservative",
+  "expected",
+  "optimistic",
+] as const satisfies readonly ScenarioId[];
+
+export const SCENARIO_LABELS: Record<ScenarioId, string> = {
+  conservative: "Conservative",
+  expected: "Expected",
+  optimistic: "Optimistic",
+};
+
 /** Ops inputs collected by the wizard (all currency in USD for v1). */
 export interface ForecastInputs {
   batchesPerMonth: number;
-  reworkPct: number;
+  /** Current right-first-time rate, 0–100. */
+  currentRft: number;
+  /** Target right-first-time rate with better first-attempt support, 0–100. */
+  targetRft: number;
   costPerRework: number;
   dyePerRework: number;
   waterPerRework: number;
@@ -38,11 +57,21 @@ export interface CategoryBreakdown {
 
 export interface ForecastResult {
   annual: ScenarioSavings;
-  /** Breakdown of the expected scenario only (UI cards). */
+  /** Category breakdown for every scenario (UI can switch without re-calc). */
+  breakdowns: Record<ScenarioId, CategoryBreakdown>;
+  /** Convenience alias for breakdowns.expected. */
   breakdown: CategoryBreakdown;
   annualBatches: number;
-  currentReworkBatches: number;
+  /** Batches that miss RFT today (100 − currentRft). */
+  currentMissBatches: number;
+  /** Batches avoided under each scenario. */
+  avoidedByScenario: Record<ScenarioId, number>;
+  /** Batches avoided under the expected scenario. */
   avoidedReworkExpected: number;
+  /** Target − current, clamped ≥ 0 (percentage points). */
+  rftLiftPts: number;
+  currentRft: number;
+  targetRft: number;
 }
 
 export interface PresetDef {
@@ -59,23 +88,32 @@ export interface PresetDef {
 export const TIME_RATE_PER_MINUTE = 1.5;
 
 /**
- * Fraction of current rework volume Color Brain is assumed to avoid,
- * by scenario. Provisional until ops validates.
+ * Realization of the visitor-stated RFT lift by scenario.
+ * Expected = full stated lift; conservative / optimistic band uncertainty
+ * (not every miss is a full-cost rework; some lifts overshoot).
+ * Provisional until pilot-validated.
  */
-export const REWORK_REDUCTION = {
-  conservative: 0.25,
-  expected: 0.45,
-  optimistic: 0.65,
+export const RFT_LIFT_REALIZATION = {
+  conservative: 0.75,
+  expected: 1.0,
+  optimistic: 1.25,
 } as const;
 
+/**
+ * Mill-scale presets. Batch volumes from industry machine-capacity bands
+ * (~2 batches/machine/day × machine count × ~22 workdays) cross-checked
+ * against public dyehouse ranges. RFT anchors near Tier-2 reality
+ * (e.g. ~86% overall cited in factory questionnaire answers).
+ */
 export const PRESETS: PresetDef[] = [
   {
     id: "small",
     label: "Small mill",
-    hint: "~40 batches / month",
+    hint: "~10 batches / day · few jets",
     inputs: {
-      batchesPerMonth: 40,
-      reworkPct: 18,
+      batchesPerMonth: 250,
+      currentRft: 82,
+      targetRft: 90,
       costPerRework: 800,
       dyePerRework: 120,
       waterPerRework: 40,
@@ -86,10 +124,11 @@ export const PRESETS: PresetDef[] = [
   {
     id: "medium",
     label: "Medium mill",
-    hint: "~120 batches / month",
+    hint: "~25 batches / day · mid dyehouse",
     inputs: {
-      batchesPerMonth: 120,
-      reworkPct: 15,
+      batchesPerMonth: 550,
+      currentRft: 86,
+      targetRft: 92,
       costPerRework: 1_200,
       dyePerRework: 180,
       waterPerRework: 55,
@@ -100,10 +139,11 @@ export const PRESETS: PresetDef[] = [
   {
     id: "large",
     label: "Large mill",
-    hint: "~300 batches / month",
+    hint: "~55 batches / day · multi-shift",
     inputs: {
-      batchesPerMonth: 300,
-      reworkPct: 12,
+      batchesPerMonth: 1_200,
+      currentRft: 88,
+      targetRft: 93,
       costPerRework: 1_500,
       dyePerRework: 220,
       waterPerRework: 70,
@@ -135,15 +175,22 @@ function timeCost(cycleMinutes: number): number {
  * Pure annual savings estimate from ops inputs.
  * Formula (provisional):
  *   annual_batches = batches/mo × 12
- *   rework_batches = annual_batches × rework%
- *   avoided = rework_batches × reduction_factor[scenario]
+ *   rft_lift_pts = max(0, targetRft − currentRft)
+ *   full_avoided = annual_batches × rft_lift_pts / 100
+ *   avoided[scenario] = full_avoided × realization[scenario]
  *   cost/rework = base + dye + water + energy + (minutes × rate)
- *   annual = avoided × cost/rework
+ *   annual[scenario] = avoided[scenario] × cost/rework
  */
 export function calculateForecast(raw: ForecastInputs): ForecastResult {
-  const inputs: ForecastInputs = {
-    batchesPerMonth: clamp(raw.batchesPerMonth, 0, 10_000),
-    reworkPct: clamp(raw.reworkPct, 0, 100),
+  const currentRft = clamp(raw.currentRft, 0, 100);
+  let targetRft = clamp(raw.targetRft, 0, 100);
+  // Target cannot be below current — no "negative savings" path.
+  if (targetRft < currentRft) targetRft = currentRft;
+
+  const inputs = {
+    batchesPerMonth: clamp(raw.batchesPerMonth, 0, 50_000),
+    currentRft,
+    targetRft,
     costPerRework: clamp(raw.costPerRework, 0, 1_000_000),
     dyePerRework: clamp(raw.dyePerRework, 0, 1_000_000),
     waterPerRework: clamp(raw.waterPerRework, 0, 1_000_000),
@@ -152,7 +199,9 @@ export function calculateForecast(raw: ForecastInputs): ForecastResult {
   };
 
   const annualBatches = inputs.batchesPerMonth * 12;
-  const currentReworkBatches = annualBatches * (inputs.reworkPct / 100);
+  const rftLiftPts = inputs.targetRft - inputs.currentRft;
+  const fullAvoided = annualBatches * (rftLiftPts / 100);
+  const currentMissBatches = annualBatches * ((100 - inputs.currentRft) / 100);
   const tCost = timeCost(inputs.cycleMinutes);
 
   const costPer = {
@@ -165,28 +214,47 @@ export function calculateForecast(raw: ForecastInputs): ForecastResult {
   const totalPer =
     costPer.rework + costPer.dye + costPer.water + costPer.energy + costPer.time;
 
+  const avoidedByScenario = {
+    conservative: fullAvoided * RFT_LIFT_REALIZATION.conservative,
+    expected: fullAvoided * RFT_LIFT_REALIZATION.expected,
+    optimistic: fullAvoided * RFT_LIFT_REALIZATION.optimistic,
+  } as const satisfies Record<ScenarioId, number>;
+
   const annual: ScenarioSavings = {
-    conservative: currentReworkBatches * REWORK_REDUCTION.conservative * totalPer,
-    expected: currentReworkBatches * REWORK_REDUCTION.expected * totalPer,
-    optimistic: currentReworkBatches * REWORK_REDUCTION.optimistic * totalPer,
+    conservative: avoidedByScenario.conservative * totalPer,
+    expected: avoidedByScenario.expected * totalPer,
+    optimistic: avoidedByScenario.optimistic * totalPer,
   };
 
-  const avoidedExpected = currentReworkBatches * REWORK_REDUCTION.expected;
-  const breakdown: CategoryBreakdown = {
-    rework: avoidedExpected * costPer.rework,
-    dye: avoidedExpected * costPer.dye,
-    water: avoidedExpected * costPer.water,
-    energy: avoidedExpected * costPer.energy,
-    time: avoidedExpected * costPer.time,
-    total: annual.expected,
+  const breakdownFor = (avoided: number, total: number): CategoryBreakdown => ({
+    rework: avoided * costPer.rework,
+    dye: avoided * costPer.dye,
+    water: avoided * costPer.water,
+    energy: avoided * costPer.energy,
+    time: avoided * costPer.time,
+    total,
+  });
+
+  const breakdowns: Record<ScenarioId, CategoryBreakdown> = {
+    conservative: breakdownFor(
+      avoidedByScenario.conservative,
+      annual.conservative,
+    ),
+    expected: breakdownFor(avoidedByScenario.expected, annual.expected),
+    optimistic: breakdownFor(avoidedByScenario.optimistic, annual.optimistic),
   };
 
   return {
     annual,
-    breakdown,
+    breakdowns,
+    breakdown: breakdowns.expected,
     annualBatches,
-    currentReworkBatches,
-    avoidedReworkExpected: avoidedExpected,
+    currentMissBatches,
+    avoidedByScenario: { ...avoidedByScenario },
+    avoidedReworkExpected: avoidedByScenario.expected,
+    rftLiftPts,
+    currentRft: inputs.currentRft,
+    targetRft: inputs.targetRft,
   };
 }
 

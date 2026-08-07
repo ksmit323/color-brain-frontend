@@ -8,11 +8,15 @@
 import "../styles/global.css";
 import Nav from "../components/Nav.astro";
 import Footer from "../components/Footer.astro";
-import { PRESETS, REWORK_REDUCTION, TIME_RATE_PER_MINUTE } from "../lib/forecast/model";
+import {
+  PRESETS,
+  RFT_LIFT_REALIZATION,
+  TIME_RATE_PER_MINUTE,
+} from "../lib/forecast/model";
 
 const SITE_TITLE = "Savings Forecast — Color Brain";
 const SITE_DESCRIPTION =
-  "Estimate the annual savings range Color Brain could unlock for your mill — rework, dye, water, energy, and time — then book a pilot.";
+  "Estimate the annual savings range Color Brain could unlock for your mill by lifting right-first-time (RFT) — rework, dye, water, energy, and time — then book a pilot.";
 const SITE_URL = "https://colorbrain.co/forecast";
 
 const FONTSHARE_CSS =
@@ -134,9 +138,10 @@ const FONTSHARE_CSS =
           >
             <div class="forecast__panel-head">
               <div>
-                <h2 id="step2-title" class="forecast__panel-title">Tune your numbers</h2>
+                <h2 id="step2-title" class="forecast__panel-title">Tune your operation</h2>
                 <p class="forecast__panel-lede">
-                  All figures are yours to edit. Currency is USD for this outlook.
+                  Prefills come from your preset — adjust any of them. The outlook
+                  updates instantly; no network call. Currency is USD.
                 </p>
               </div>
               <div class="forecast__preview" aria-live="polite">
@@ -147,22 +152,55 @@ const FONTSHARE_CSS =
 
             <div class="forecast__fields">
               <label class="forecast__field" for="batchesPerMonth">
-                <span>Batches per month</span>
+                <span class="forecast__field-top">
+                  <span
+                    class="forecast__field-name"
+                    tabindex="0"
+                    data-tip="Production dye lots you run each month"
+                  >Batches / month</span>
+                  <span class="forecast__field-tag">batches</span>
+                </span>
                 <input
                   id="batchesPerMonth"
                   name="batchesPerMonth"
                   type="number"
                   min="0"
-                  max="10000"
+                  max="50000"
                   step="1"
                   inputmode="numeric"
                 />
               </label>
-              <label class="forecast__field" for="reworkPct">
-                <span>Current rework rate (%)</span>
+              <label class="forecast__field" for="currentRft">
+                <span class="forecast__field-top">
+                  <span
+                    class="forecast__field-name"
+                    tabindex="0"
+                    data-tip="Share of batches that pass on the first attempt today"
+                  >Current RFT</span>
+                  <span class="forecast__field-tag">right first time</span>
+                </span>
                 <input
-                  id="reworkPct"
-                  name="reworkPct"
+                  id="currentRft"
+                  name="currentRft"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.5"
+                  inputmode="decimal"
+                />
+              </label>
+              <label class="forecast__field" for="targetRft">
+                <span class="forecast__field-top">
+                  <span
+                    class="forecast__field-name"
+                    tabindex="0"
+                    data-tip="Where first-attempt yield could land — savings scale with this lift"
+                  >Target RFT</span>
+                  <span class="forecast__field-tag">with Color Brain</span>
+                </span>
+                <input
+                  id="targetRft"
+                  name="targetRft"
                   type="number"
                   min="0"
                   max="100"
@@ -171,7 +209,14 @@ const FONTSHARE_CSS =
                 />
               </label>
               <label class="forecast__field" for="costPerRework">
-                <span>Avg. cost per rework ($)</span>
+                <span class="forecast__field-top">
+                  <span
+                    class="forecast__field-name"
+                    tabindex="0"
+                    data-tip="Labour and overhead per correction, excluding dye, water, and energy"
+                  >Cost per rework</span>
+                  <span class="forecast__field-tag">labour &amp; overhead</span>
+                </span>
                 <input
                   id="costPerRework"
                   name="costPerRework"
@@ -182,7 +227,14 @@ const FONTSHARE_CSS =
                 />
               </label>
               <label class="forecast__field" for="dyePerRework">
-                <span>Dye cost per rework ($)</span>
+                <span class="forecast__field-top">
+                  <span
+                    class="forecast__field-name"
+                    tabindex="0"
+                    data-tip="Dye and chemicals for one correction cycle"
+                  >Dye cost</span>
+                  <span class="forecast__field-tag">per rework</span>
+                </span>
                 <input
                   id="dyePerRework"
                   name="dyePerRework"
@@ -193,7 +245,14 @@ const FONTSHARE_CSS =
                 />
               </label>
               <label class="forecast__field" for="waterPerRework">
-                <span>Water cost per rework ($)</span>
+                <span class="forecast__field-top">
+                  <span
+                    class="forecast__field-name"
+                    tabindex="0"
+                    data-tip="Water and effluent for one correction cycle"
+                  >Water cost</span>
+                  <span class="forecast__field-tag">per rework</span>
+                </span>
                 <input
                   id="waterPerRework"
                   name="waterPerRework"
@@ -204,7 +263,14 @@ const FONTSHARE_CSS =
                 />
               </label>
               <label class="forecast__field" for="energyPerRework">
-                <span>Energy cost per rework ($)</span>
+                <span class="forecast__field-top">
+                  <span
+                    class="forecast__field-name"
+                    tabindex="0"
+                    data-tip="Steam and power for one correction cycle"
+                  >Energy cost</span>
+                  <span class="forecast__field-tag">per rework</span>
+                </span>
                 <input
                   id="energyPerRework"
                   name="energyPerRework"
@@ -215,7 +281,14 @@ const FONTSHARE_CSS =
                 />
               </label>
               <label class="forecast__field" for="cycleMinutes">
-                <span>Cycle time per rework (min)</span>
+                <span class="forecast__field-top">
+                  <span
+                    class="forecast__field-name"
+                    tabindex="0"
+                    data-tip="Machine and lab time tied up per correction"
+                  >Time per rework</span>
+                  <span class="forecast__field-tag">minutes</span>
+                </span>
                 <input
                   id="cycleMinutes"
                   name="cycleMinutes"
@@ -248,25 +321,51 @@ const FONTSHARE_CSS =
               Estimate based on your inputs.
             </p>
 
-            <div class="forecast__range" role="group" aria-label="Annual savings range">
-              <div class="forecast__range-card">
-                <p class="forecast__range-label">Conservative</p>
-                <p class="forecast__range-value" data-out-conservative>$0</p>
-              </div>
-              <div class="forecast__range-card forecast__range-card--expected">
-                <p class="forecast__range-label">Expected</p>
-                <p class="forecast__range-value" data-out-expected>$0</p>
-              </div>
-              <div class="forecast__range-card">
-                <p class="forecast__range-label">Optimistic</p>
-                <p class="forecast__range-value" data-out-optimistic>$0</p>
-              </div>
+            <div
+              class="forecast__range"
+              role="radiogroup"
+              aria-label="Annual savings range — choose a scenario"
+              data-scenario-group
+            >
+              <button
+                type="button"
+                class="forecast__range-card"
+                data-scenario="conservative"
+                role="radio"
+                aria-checked="false"
+                tabindex="-1"
+              >
+                <span class="forecast__range-label">Conservative</span>
+                <span class="forecast__range-value" data-out-conservative>$0</span>
+              </button>
+              <button
+                type="button"
+                class="forecast__range-card is-selected"
+                data-scenario="expected"
+                role="radio"
+                aria-checked="true"
+                tabindex="0"
+              >
+                <span class="forecast__range-label">Expected</span>
+                <span class="forecast__range-value" data-out-expected>$0</span>
+              </button>
+              <button
+                type="button"
+                class="forecast__range-card"
+                data-scenario="optimistic"
+                role="radio"
+                aria-checked="false"
+                tabindex="-1"
+              >
+                <span class="forecast__range-label">Optimistic</span>
+                <span class="forecast__range-value" data-out-optimistic>$0</span>
+              </button>
             </div>
 
-            <h3 class="forecast__subhead">Expected breakdown</h3>
+            <h3 class="forecast__subhead" data-breakdown-title>Expected breakdown</h3>
             <ul class="forecast__breakdown">
               <li>
-                <span>Rework overhead avoided</span>
+                <span>Labour &amp; overhead avoided</span>
                 <span class="forecast__breakdown-val" data-out-cat="rework">$0</span>
               </li>
               <li>
@@ -291,32 +390,38 @@ const FONTSHARE_CSS =
               <summary>How we calculate</summary>
               <div class="forecast__method-body">
                 <p>
-                  Annual batches = batches/month × 12. Current rework volume =
-                  annual batches × rework %. For each scenario we assume Color Brain
-                  avoids a share of that rework:
+                  Annual batches = batches/month × 12. RFT lift (percentage points) =
+                  target RFT − current RFT. Full avoided batches = annual batches ×
+                  (lift ÷ 100). That is the marketing story in one line: every point
+                  of right-first-time improvement is a share of yearly production that
+                  no longer needs a correction cycle.
                 </p>
                 <p data-method-reduction>
-                  Conservative {(REWORK_REDUCTION.conservative * 100).toFixed(0)}% ·
-                  Expected {(REWORK_REDUCTION.expected * 100).toFixed(0)}% ·
-                  Optimistic {(REWORK_REDUCTION.optimistic * 100).toFixed(0)}% of
-                  current rework volume avoided.
+                  Scenarios apply a realization band around that lift — not every miss
+                  is a full-cost rework, and some improvements overshoot:
+                  Conservative {(RFT_LIFT_REALIZATION.conservative * 100).toFixed(0)}% ·
+                  Expected {(RFT_LIFT_REALIZATION.expected * 100).toFixed(0)}% ·
+                  Optimistic {(RFT_LIFT_REALIZATION.optimistic * 100).toFixed(0)}% of the
+                  stated lift.
                 </p>
                 <p>
-                  Cost per rework event = avg. rework cost + dye + water + energy +
-                  (cycle minutes × provisional time rate). Time rate:
-                  <span data-method-rate>${TIME_RATE_PER_MINUTE.toFixed(2)} / minute (provisional).</span>
+                  Cost per avoided rework = labour &amp; overhead + dye + water + energy +
+                  (minutes × provisional time rate). Time rate:
+                  <span data-method-rate
+                    >${TIME_RATE_PER_MINUTE.toFixed(2)} / minute (provisional).</span
+                  >
                 </p>
                 <p>
-                  Category breakdown multiplies avoided reworks (expected scenario)
-                  by each cost component. All coefficients are provisional planning
-                  assumptions until validated against pilot data — not a quote or
-                  guarantee.
+                  Category breakdown multiplies avoided batches for the scenario you
+                  select (Conservative / Expected / Optimistic) by each cost component.
+                  All coefficients are provisional planning assumptions until validated
+                  against pilot data — not a quote or guarantee.
                 </p>
               </div>
             </details>
 
             <p class="forecast__disclaimer">
-              Estimate based on your inputs and provisional improvement assumptions.
+              Estimate based on your RFT lift and provisional cost assumptions.
               Actual results vary by product mix, addressable history, and plant
               conditions. This is a planning outlook, not a commercial commitment.
             </p>
@@ -566,9 +671,86 @@ const FONTSHARE_CSS =
 
   .forecast__field {
     display: grid;
-    gap: 0.4rem;
+    grid-template-rows: auto 1fr;
+    gap: 0.45rem;
     font-size: 0.88rem;
     color: var(--ink-dim);
+    align-content: start;
+  }
+
+  .forecast__field-top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.4rem 0.55rem;
+    min-height: 1.35em;
+  }
+
+  .forecast__field-name {
+    position: relative;
+    color: var(--ink);
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    cursor: help;
+    border-bottom: 1px dotted color-mix(in srgb, var(--ink-faint) 70%, transparent);
+    outline: none;
+  }
+
+  .forecast__field-name:hover,
+  .forecast__field-name:focus-visible {
+    color: color-mix(in srgb, var(--holo) 55%, var(--ink));
+    border-bottom-color: color-mix(in srgb, var(--holo) 50%, var(--ink-faint));
+  }
+
+  /* Hover/focus tip — out of flow so inputs stay aligned. Opens below the
+     name (not above) so the wizard's overflow:hidden doesn't clip it. */
+  .forecast__field-name::after {
+    content: attr(data-tip);
+    position: absolute;
+    left: 0;
+    top: calc(100% + 0.45rem);
+    z-index: 6;
+    width: max-content;
+    max-width: min(16rem, 70vw);
+    padding: 0.55rem 0.7rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--line);
+    background: color-mix(in srgb, var(--surface) 94%, #0a0c12);
+    color: var(--ink-dim);
+    font-size: 0.75rem;
+    font-weight: 400;
+    line-height: 1.4;
+    letter-spacing: 0;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-0.15rem);
+    transition:
+      opacity 140ms ease,
+      transform 140ms ease,
+      visibility 140ms ease;
+    pointer-events: none;
+  }
+
+  .forecast__field-name:hover::after,
+  .forecast__field-name:focus-visible::after {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .forecast__field-name::after {
+      transition: none;
+    }
+  }
+
+  .forecast__field-tag {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
   }
 
   .forecast__field input {
@@ -580,6 +762,7 @@ const FONTSHARE_CSS =
     border: 1px solid var(--line);
     border-radius: var(--radius-sm);
     padding: 0.7em 0.85em;
+    width: 100%;
     transition: border-color 160ms ease, box-shadow 160ms ease;
   }
 
@@ -614,19 +797,42 @@ const FONTSHARE_CSS =
   }
 
   .forecast__range-card {
+    display: block;
+    width: 100%;
+    text-align: left;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
     border: 1px solid var(--line);
     border-radius: var(--radius);
     padding: 1.1rem 1rem;
     background: rgba(15, 17, 24, 0.55);
+    transition:
+      border-color 160ms ease,
+      box-shadow 160ms ease,
+      background 160ms ease,
+      transform 160ms ease;
   }
 
-  .forecast__range-card--expected {
+  .forecast__range-card:hover {
+    border-color: color-mix(in srgb, var(--ink-faint) 55%, var(--line));
+    background: rgba(15, 17, 24, 0.72);
+  }
+
+  .forecast__range-card:focus-visible {
+    outline: none;
+    border-color: color-mix(in srgb, var(--holo) 55%, var(--line));
+    box-shadow: 0 0 0 3px rgba(127, 216, 232, 0.14);
+  }
+
+  .forecast__range-card.is-selected {
     border-color: color-mix(in srgb, var(--holo) 50%, var(--line));
     box-shadow: 0 0 28px rgba(127, 216, 232, 0.1);
     background: color-mix(in srgb, var(--holo) 6%, rgba(15, 17, 24, 0.7));
   }
 
   .forecast__range-label {
+    display: block;
     font-family: var(--font-mono);
     font-size: 0.68rem;
     letter-spacing: 0.12em;
@@ -636,6 +842,7 @@ const FONTSHARE_CSS =
   }
 
   .forecast__range-value {
+    display: block;
     margin: 0.4rem 0 0;
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
@@ -645,7 +852,7 @@ const FONTSHARE_CSS =
     color: var(--ink);
   }
 
-  .forecast__range-card--expected .forecast__range-value {
+  .forecast__range-card.is-selected .forecast__range-value {
     color: var(--holo);
     text-shadow: 0 0 20px rgba(127, 216, 232, 0.28);
   }

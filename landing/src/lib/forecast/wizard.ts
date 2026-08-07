@@ -6,18 +6,23 @@
 import {
   type CategoryBreakdown,
   type ForecastInputs,
+  type ForecastResult,
   type PresetId,
+  type ScenarioId,
   calculateForecast,
   DEFAULT_PRESET_ID,
   formatUsd,
   getPreset,
+  SCENARIO_IDS,
+  SCENARIO_LABELS,
 } from "./model";
 
 type Step = 1 | 2 | 3;
 
 const INPUT_IDS = [
   "batchesPerMonth",
-  "reworkPct",
+  "currentRft",
+  "targetRft",
   "costPerRework",
   "dyePerRework",
   "waterPerRework",
@@ -71,11 +76,24 @@ function setText(el: HTMLElement | null, value: string): void {
   if (el && el.textContent !== value) el.textContent = value;
 }
 
+function isScenarioId(v: string | null): v is ScenarioId {
+  return v === "conservative" || v === "expected" || v === "optimistic";
+}
+
 function markPresetSelected(root: HTMLElement, id: PresetId): void {
   for (const b of $all("[data-preset]", root)) {
     const on = b.getAttribute("data-preset") === id;
     b.classList.toggle("is-selected", on);
     b.setAttribute("aria-pressed", on ? "true" : "false");
+  }
+}
+
+function markScenarioSelected(root: HTMLElement, scenario: ScenarioId): void {
+  for (const card of $all("[data-scenario]", root)) {
+    const on = card.getAttribute("data-scenario") === scenario;
+    card.classList.toggle("is-selected", on);
+    card.setAttribute("aria-checked", on ? "true" : "false");
+    card.setAttribute("tabindex", on ? "0" : "-1");
   }
 }
 
@@ -147,11 +165,35 @@ function updatePreview(root: HTMLElement, inputs: ForecastInputs): void {
   setText($("[data-preview-value]", root), formatUsd(result.annual.expected));
 }
 
+function applyScenarioBreakdown(
+  root: HTMLElement,
+  result: ForecastResult,
+  scenario: ScenarioId,
+): void {
+  const breakdown = result.breakdowns[scenario];
+  for (const key of BREAKDOWN_CATS) {
+    setText($(`[data-out-cat="${key}"]`, root), formatUsd(breakdown[key]));
+  }
+
+  const label = SCENARIO_LABELS[scenario];
+  setText($("[data-breakdown-title]", root), `${label} breakdown`);
+
+  const lift =
+    result.rftLiftPts > 0
+      ? `RFT ${Math.round(result.currentRft)}% → ${Math.round(result.targetRft)}% (+${result.rftLiftPts.toFixed(result.rftLiftPts % 1 === 0 ? 0 : 1)} pts)`
+      : `RFT ${Math.round(result.currentRft)}% (set a higher target to model savings)`;
+  const avoided = result.avoidedByScenario[scenario];
+  setText(
+    $("[data-out-meta]", root),
+    `${Math.round(result.annualBatches).toLocaleString("en-US")} batches/yr · ${lift} · ~${Math.round(avoided).toLocaleString("en-US")} avoided (${label.toLowerCase()})`,
+  );
+}
+
 function renderResult(
   root: HTMLElement,
   inputs: ForecastInputs,
-  opts: { animate: boolean; reduced: boolean },
-): void {
+  opts: { animate: boolean; reduced: boolean; scenario: ScenarioId },
+): ForecastResult {
   const result = calculateForecast(inputs);
 
   const cons = $("[data-out-conservative]", root);
@@ -167,20 +209,17 @@ function renderResult(
     setText(opt, formatUsd(result.annual.optimistic));
   }
 
-  for (const key of BREAKDOWN_CATS) {
-    setText($(`[data-out-cat="${key}"]`, root), formatUsd(result.breakdown[key]));
-  }
-
-  setText(
-    $("[data-out-meta]", root),
-    `${Math.round(result.annualBatches).toLocaleString("en-US")} batches/yr · ~${Math.round(result.currentReworkBatches).toLocaleString("en-US")} reworks today · ~${Math.round(result.avoidedReworkExpected).toLocaleString("en-US")} avoided (expected)`,
-  );
-
+  markScenarioSelected(root, opts.scenario);
+  applyScenarioBreakdown(root, result, opts.scenario);
   setText($("[data-preview-value]", root), formatUsd(result.annual.expected));
+  return result;
 }
 
 export function initForecastWizard(root: HTMLElement): void {
   let selectedPreset: PresetId = DEFAULT_PRESET_ID;
+  let selectedScenario: ScenarioId = "expected";
+  let lastResult: ForecastResult | null = null;
+
   const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
   let prefersReduced = reducedMotion.matches;
   reducedMotion.addEventListener("change", () => {
@@ -189,9 +228,12 @@ export function initForecastWizard(root: HTMLElement): void {
 
   const defaultInputs = getPreset(DEFAULT_PRESET_ID).inputs;
   writeInputs(root, defaultInputs);
-  renderResult(root, defaultInputs, { animate: false, reduced: prefersReduced });
+  lastResult = renderResult(root, defaultInputs, {
+    animate: false,
+    reduced: prefersReduced,
+    scenario: selectedScenario,
+  });
   setStep(root, 1, { focus: false });
-
 
   track("forecast_view", { path: "/forecast" });
 
@@ -205,12 +247,52 @@ export function initForecastWizard(root: HTMLElement): void {
       selectedPreset = id;
       const preset = getPreset(id);
       writeInputs(root, preset.inputs);
-      renderResult(root, preset.inputs, {
+      lastResult = renderResult(root, preset.inputs, {
         animate: false,
         reduced: prefersReduced,
+        scenario: selectedScenario,
       });
       markPresetSelected(root, id);
       track("forecast_preset_select", { preset: id });
+    });
+  }
+
+  const selectScenario = (scenario: ScenarioId, opts: { track?: boolean } = {}) => {
+    if (selectedScenario === scenario && !opts.track) {
+      markScenarioSelected(root, scenario);
+      return;
+    }
+    selectedScenario = scenario;
+    markScenarioSelected(root, scenario);
+    if (lastResult) applyScenarioBreakdown(root, lastResult, scenario);
+    if (opts.track !== false) {
+      track("forecast_scenario_select", { scenario });
+    }
+  };
+
+  for (const card of $all("[data-scenario]", root)) {
+    card.addEventListener("click", () => {
+      const id = card.getAttribute("data-scenario");
+      if (isScenarioId(id)) selectScenario(id);
+    });
+    card.addEventListener("keydown", (e) => {
+      const ke = e as KeyboardEvent;
+      if (ke.key !== "ArrowLeft" && ke.key !== "ArrowRight" && ke.key !== "Home" && ke.key !== "End") {
+        return;
+      }
+      ke.preventDefault();
+      const idx = SCENARIO_IDS.indexOf(selectedScenario);
+      let next = idx;
+      if (ke.key === "ArrowLeft") next = Math.max(0, idx - 1);
+      if (ke.key === "ArrowRight") next = Math.min(SCENARIO_IDS.length - 1, idx + 1);
+      if (ke.key === "Home") next = 0;
+      if (ke.key === "End") next = SCENARIO_IDS.length - 1;
+      const nextId = SCENARIO_IDS[next]!;
+      selectScenario(nextId);
+      const nextCard = root.querySelector<HTMLElement>(
+        `[data-scenario="${nextId}"]`,
+      );
+      nextCard?.focus({ preventScroll: true });
     });
   }
 
@@ -231,10 +313,17 @@ export function initForecastWizard(root: HTMLElement): void {
   });
   root.querySelector("[data-goto-3]")?.addEventListener("click", () => {
     const inputs = readInputs(root);
-    renderResult(root, inputs, { animate: true, reduced: prefersReduced });
+    // Fresh reveal always lands on Expected so the story starts mid-range.
+    selectedScenario = "expected";
+    lastResult = renderResult(root, inputs, {
+      animate: true,
+      reduced: prefersReduced,
+      scenario: selectedScenario,
+    });
     setStep(root, 3);
     track("forecast_reveal", {
       preset: selectedPreset,
+      scenario: selectedScenario,
       ...inputs,
     });
     const panel = root.querySelector("[data-step-panel='3']");
