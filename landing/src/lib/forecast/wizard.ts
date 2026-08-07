@@ -166,10 +166,10 @@ function applyPageChrome(
   const from = opts.fromStep;
   // Tune → Outlook: hero stays collapsed — revealing shouldn't re-scroll.
   if (from === 2 && step === 3) return;
-  // Profile → Tune: hero collapses via grid 0fr (300ms). Scrolling immediately
-  // races that collapse — the wizard is measured pre-collapse, then slides up
-  // and the forced scroll hides the steps under the nav.
-  if (from === 1 && step === 2) return;
+  // Profile → Tune/Outlook: hero collapses via grid 0fr (300ms). Scrolling
+  // immediately races that collapse — the wizard is measured pre-collapse,
+  // then slides up and the forced scroll hides the steps under the nav.
+  if (from === 1 && step > 1) return;
   // Outlook → Tune (Adjust numbers): user is scrolled down in results and
   // expects to land at the top of the Tune form — allow the scroll below.
 
