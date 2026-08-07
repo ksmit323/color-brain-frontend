@@ -58,11 +58,31 @@ function $all(sel: string, root: ParentNode = document): HTMLElement[] {
   return Array.from(root.querySelectorAll(sel));
 }
 
+function parseNumericInput(value: string): number {
+  // Supports "86", "86%", "86.5 %", or empty while typing.
+  const cleaned = value.replace(/%/g, "").trim();
+  if (cleaned === "" || cleaned === "." || cleaned === "-") return 0;
+  const n = parseFloat(cleaned);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function formatPercentValue(n: number): string {
+  if (!Number.isFinite(n)) return "0%";
+  const s = Number.isInteger(n) ? String(n) : String(Math.round(n * 10) / 10);
+  return `${s}%`;
+}
+
+function isPercentField(id: string): boolean {
+  return id === "currentRft" || id === "targetRft";
+}
+
 function readInputs(root: HTMLElement): ForecastInputs {
   const out = {} as ForecastInputs;
   for (const id of INPUT_IDS) {
     const el = root.querySelector<HTMLInputElement>(`#${id}`);
-    out[id] = el ? parseFloat(el.value) || 0 : 0;
+    if (!el) continue;
+    const raw = el.value;
+    out[id] = isPercentField(id) ? parseNumericInput(raw) : parseFloat(raw) || 0;
   }
   return out;
 }
@@ -70,7 +90,9 @@ function readInputs(root: HTMLElement): ForecastInputs {
 function writeInputs(root: HTMLElement, inputs: ForecastInputs): void {
   for (const id of INPUT_IDS) {
     const el = root.querySelector<HTMLInputElement>(`#${id}`);
-    if (el) el.value = String(inputs[id]);
+    if (!el) continue;
+    const v = inputs[id];
+    el.value = isPercentField(id) ? formatPercentValue(v as number) : String(v);
   }
 }
 
@@ -524,6 +546,235 @@ export function initForecastWizard(root: HTMLElement): void {
         updatePreview(root, readInputs(root));
       });
     });
+  }
+
+  // Percent fields show “86%” at rest, but expose plain number on focus
+  // for clean editing. The % stays left-aligned with the digits — not a far-right suffix.
+  for (const id of ["currentRft", "targetRft"] as const) {
+    const el = root.querySelector<HTMLInputElement>(`#${id}`);
+    if (!el) continue;
+    el.addEventListener("focus", () => {
+      const n = parseNumericInput(el.value);
+      // Only strip if value is currently formatted with %.
+      if (el.value.endsWith("%")) {
+        const plain = Number.isInteger(n) ? String(n) : String(Math.round(n * 10) / 10);
+        el.value = plain;
+        // Select number for quick overwrite, but keep cursor if user tabbed.
+        requestAnimationFrame(() => el.select());
+      }
+    });
+    el.addEventListener("blur", () => {
+      const n = parseNumericInput(el.value);
+      const clamped = Math.min(100, Math.max(0, n));
+      el.value = formatPercentValue(clamped);
+      // Preview and calc must see the formatted value — re-read.
+      lastResult = renderResult(root, readInputs(root), {
+        animate: false,
+        reduced: prefersReduced,
+        scenario: selectedScenario,
+      });
+    });
+    el.addEventListener("keydown", (event) => {
+      const e = event as KeyboardEvent;
+      if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+      e.preventDefault();
+      const step = e.shiftKey ? 1 : 0.5;
+      const n = parseNumericInput(el.value);
+      const delta = e.key === "ArrowUp" ? step : -step;
+      const next = Math.min(100, Math.max(0, Math.round((n + delta) * 10) / 10));
+      const isFocused = document.activeElement === el;
+      el.value = isFocused ? String(next) : formatPercentValue(next);
+      if (isFocused) requestAnimationFrame(() => el.select());
+      lastResult = renderResult(root, readInputs(root), {
+        animate: false,
+        reduced: prefersReduced,
+        scenario: selectedScenario,
+      });
+    });
+
+    // Clickable stepper — mirrors native <input type=number> spinner for mouse users.
+    const pctContainer = el.closest(".forecast__percent");
+    const upBtn =
+      pctContainer?.querySelector<HTMLButtonElement>('[data-spin="up"]');
+    const downBtn =
+      pctContainer?.querySelector<HTMLButtonElement>('[data-spin="down"]');
+
+    const stepPercent = (
+      dir: 1 | -1,
+      shift: boolean,
+    ): void => {
+      const step = shift ? 1 : 0.5;
+      const n = parseNumericInput(el.value);
+      const next = Math.min(
+        100,
+        Math.max(0, Math.round((n + dir * step) * 10) / 10),
+      );
+      const isFocused = document.activeElement === el;
+      el.value = isFocused ? String(next) : formatPercentValue(next);
+      if (isFocused) requestAnimationFrame(() => el.select());
+      lastResult = renderResult(root, readInputs(root), {
+        animate: false,
+        reduced: prefersReduced,
+        scenario: selectedScenario,
+      });
+    };
+
+    const bindStepper = (
+      btn: HTMLButtonElement | null | undefined,
+      dir: 1 | -1,
+    ): void => {
+      if (!btn) return;
+      // Keep focus on the input so focus/blur formatting stays predictable.
+      btn.addEventListener("mousedown", (e) => e.preventDefault());
+      btn.addEventListener("click", (e) => {
+        const me = e as MouseEvent;
+        stepPercent(dir, me.shiftKey);
+      });
+      // Hold to repeat — like native spinner.
+      let holdTimer: number | null = null;
+      let repeatTimer: number | null = null;
+      const clearHold = (): void => {
+        if (holdTimer != null) {
+          window.clearTimeout(holdTimer);
+          holdTimer = null;
+        }
+        if (repeatTimer != null) {
+          window.clearInterval(repeatTimer);
+          repeatTimer = null;
+        }
+      };
+      btn.addEventListener("pointerdown", (e) => {
+        const pe = e as PointerEvent;
+        // Only primary button, and capture so pointerup fires even if dragged off.
+        if (pe.button !== 0) return;
+        btn.setPointerCapture(pe.pointerId);
+        // First repeat after a short hold, then faster — native-like.
+        holdTimer = window.setTimeout(() => {
+          repeatTimer = window.setInterval(
+            () => stepPercent(dir, (e as PointerEvent).shiftKey),
+            75,
+          );
+        }, 380);
+      });
+      const stop = (): void => clearHold();
+      btn.addEventListener("pointerup", stop);
+      btn.addEventListener("pointercancel", stop);
+      btn.addEventListener("pointerleave", stop);
+      // Also clear if window loses focus mid-hold.
+      window.addEventListener("blur", clearHold);
+    };
+
+    bindStepper(upBtn, 1);
+    bindStepper(downBtn, -1);
+  }
+
+  // Generic numeric steppers — same holo chrome as percent, steps from input's step attr.
+  // Covers batches, all USD costs, and cycle minutes. Keeps HTML step=1 for labor/dye.
+  for (const id of [
+    "batchesPerMonth",
+    "costPerRework",
+    "dyePerRework",
+    "waterPerRework",
+    "energyPerRework",
+    "cycleMinutes",
+  ] as const) {
+    const el = root.querySelector<HTMLInputElement>(`#${id}`);
+    if (!el) continue;
+    // Find wrapper (.forecast__number or .forecast__money) that holds the stepper.
+    const container =
+      el.closest(".forecast__number") ?? el.closest(".forecast__money");
+    const upBtn =
+      container?.querySelector<HTMLButtonElement>('[data-spin="up"]');
+    const downBtn =
+      container?.querySelector<HTMLButtonElement>('[data-spin="down"]');
+    if (!upBtn && !downBtn) continue;
+
+    const getStep = (): number => {
+      const s = el.getAttribute("step");
+      const n = s != null && s !== "" ? Number(s) : 1;
+      return Number.isFinite(n) && n > 0 ? n : 1;
+    };
+    const getMin = (): number => {
+      const a = el.getAttribute("min");
+      const n = a != null && a !== "" ? Number(a) : 0;
+      return Number.isFinite(n) ? n : 0;
+    };
+    const getMax = (): number => {
+      const a = el.getAttribute("max");
+      const n = a != null && a !== "" ? Number(a) : 1e9;
+      return Number.isFinite(n) ? n : 1e9;
+    };
+    const roundForStep = (n: number, step: number): number => {
+      // Avoid floating drift — round to step's decimal places.
+      const decimals = (String(step).split(".")[1]?.length ?? 0);
+      const factor = 10 ** decimals;
+      return Math.round(n * factor) / factor;
+    };
+    const stepNumeric = (dir: 1 | -1, shiftMult: number = 1): void => {
+      const step = getStep() * shiftMult;
+      const min = getMin();
+      const max = getMax();
+      const cur = parseFloat(el.value) || 0;
+      const nextRaw = cur + dir * step;
+      const next = Math.min(max, Math.max(min, roundForStep(nextRaw, step)));
+      // Preserve integer formatting when step is integer.
+      const decimals = (String(step).split(".")[1]?.length ?? 0);
+      el.value = decimals === 0 ? String(Math.round(next)) : String(next);
+      // Dispatch input so preview RAF and native listeners see the change.
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+      lastResult = renderResult(root, readInputs(root), {
+        animate: false,
+        reduced: prefersReduced,
+        scenario: selectedScenario,
+      });
+      // Keep focus on the input for repeated spins.
+      if (document.activeElement !== el) {
+        // Don't steal focus if user is on stepper — but keep el focusable for keyboard repeat.
+      }
+    };
+    const bindNumericStepper = (
+      btn: HTMLButtonElement | null | undefined,
+      dir: 1 | -1,
+    ): void => {
+      if (!btn) return;
+      btn.addEventListener("mousedown", (e) => e.preventDefault());
+      btn.addEventListener("click", (e) => {
+        const me = e as MouseEvent;
+        // Shift accelerates 5× for large jumps, like native shift stepping.
+        const mult = me.shiftKey ? 5 : 1;
+        stepNumeric(dir, mult);
+      });
+      let holdTimer: number | null = null;
+      let repeatTimer: number | null = null;
+      const clearHold = (): void => {
+        if (holdTimer != null) {
+          window.clearTimeout(holdTimer);
+          holdTimer = null;
+        }
+        if (repeatTimer != null) {
+          window.clearInterval(repeatTimer);
+          repeatTimer = null;
+        }
+      };
+      btn.addEventListener("pointerdown", (e) => {
+        const pe = e as PointerEvent;
+        if (pe.button !== 0) return;
+        btn.setPointerCapture(pe.pointerId);
+        holdTimer = window.setTimeout(() => {
+          repeatTimer = window.setInterval(
+            () => stepNumeric(dir, pe.shiftKey ? 5 : 1),
+            70,
+          );
+        }, 380);
+      });
+      const stop = (): void => clearHold();
+      btn.addEventListener("pointerup", stop);
+      btn.addEventListener("pointercancel", stop);
+      btn.addEventListener("pointerleave", stop);
+      window.addEventListener("blur", clearHold);
+    };
+    bindNumericStepper(upBtn, 1);
+    bindNumericStepper(downBtn, -1);
   }
 
   const goToStep = (

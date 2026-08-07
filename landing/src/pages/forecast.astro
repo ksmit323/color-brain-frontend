@@ -66,10 +66,11 @@ const FONTSHARE_CSS =
         <div class="forecast__hero-slot" data-forecast-hero-slot>
           <header class="forecast__hero" data-forecast-hero>
             <p class="eyebrow">Savings outlook</p>
-            <h1 class="forecast__title">What could Color Brain save your mill?</h1>
+            <!-- Keep Color Brain on the same line -->
+            <h1 class="forecast__title">What could <span class="nowrap">Color&nbsp;Brain</span> save your mill?</h1>
             <p class="lede forecast__lede">
               Pick a profile that fits your operation, tune the numbers that matter,
-              and see a credible annual range.
+              and see a credible annual savings range.
             </p>
           </header>
         </div>
@@ -147,7 +148,7 @@ const FONTSHARE_CSS =
             </div>
             <div class="forecast__actions">
               <button type="button" class="btn btn--primary" data-goto-2>
-                Continue with this profile
+                Continue
               </button>
             </div>
           </section>
@@ -184,15 +185,21 @@ const FONTSHARE_CSS =
                   >Batches / month</span>
                   <span class="forecast__field-tag">batches</span>
                 </span>
-                <input
-                  id="batchesPerMonth"
-                  name="batchesPerMonth"
-                  type="number"
-                  min="0"
-                  max="50000"
-                  step="1"
-                  inputmode="numeric"
-                />
+                <span class="forecast__number">
+                  <input
+                    id="batchesPerMonth"
+                    name="batchesPerMonth"
+                    type="number"
+                    min="0"
+                    max="50000"
+                    step="1"
+                    inputmode="numeric"
+                  />
+                  <span class="forecast__stepper" aria-hidden="true">
+                    <button type="button" class="forecast__stepper-btn forecast__stepper-btn--up" data-spin="up" tabindex="-1" aria-label="Increase batches per month"><svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M6 3.2 10.2 8.4H1.8L6 3.2Z" fill="currentColor"/></svg></button>
+                    <button type="button" class="forecast__stepper-btn forecast__stepper-btn--down" data-spin="down" tabindex="-1" aria-label="Decrease batches per month"><svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M6 8.8 1.8 3.6h8.4L6 8.8Z" fill="currentColor"/></svg></button>
+                  </span>
+                </span>
               </label>
               <label class="forecast__field" for="currentRft">
                 <span class="forecast__field-top">
@@ -201,17 +208,22 @@ const FONTSHARE_CSS =
                     tabindex="0"
                     data-tip="Share of batches that pass on the first attempt today"
                   >Current RFT</span>
-                  <span class="forecast__field-tag">right first time</span>
+                  <span class="forecast__field-tag">% · right first time</span>
                 </span>
-                <input
-                  id="currentRft"
-                  name="currentRft"
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.5"
-                  inputmode="decimal"
-                />
+                <span class="forecast__percent">
+                  <input
+                    id="currentRft"
+                    name="currentRft"
+                    type="text"
+                    inputmode="decimal"
+                    autocomplete="off"
+                    aria-label="Current RFT in percent"
+                  />
+                  <span class="forecast__stepper" aria-hidden="true">
+                    <button type="button" class="forecast__stepper-btn forecast__stepper-btn--up" data-spin="up" tabindex="-1" aria-label="Increase Current RFT"><svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M6 3.2 10.2 8.4H1.8L6 3.2Z" fill="currentColor"/></svg></button>
+                    <button type="button" class="forecast__stepper-btn forecast__stepper-btn--down" data-spin="down" tabindex="-1" aria-label="Decrease Current RFT"><svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M6 8.8 1.8 3.6h8.4L6 8.8Z" fill="currentColor"/></svg></button>
+                  </span>
+                </span>
               </label>
               <label class="forecast__field" for="targetRft">
                 <span class="forecast__field-top">
@@ -220,17 +232,22 @@ const FONTSHARE_CSS =
                     tabindex="0"
                     data-tip="Where first-attempt yield could land — savings scale with this lift"
                   >Target RFT</span>
-                  <span class="forecast__field-tag">with Color Brain</span>
+                  <span class="forecast__field-tag">% · with Color Brain</span>
                 </span>
-                <input
-                  id="targetRft"
-                  name="targetRft"
-                  type="number"
-                  min="0"
-                  max="100"
-                  step="0.5"
-                  inputmode="decimal"
-                />
+                <span class="forecast__percent">
+                  <input
+                    id="targetRft"
+                    name="targetRft"
+                    type="text"
+                    inputmode="decimal"
+                    autocomplete="off"
+                    aria-label="Target RFT in percent"
+                  />
+                  <span class="forecast__stepper" aria-hidden="true">
+                    <button type="button" class="forecast__stepper-btn forecast__stepper-btn--up" data-spin="up" tabindex="-1" aria-label="Increase Target RFT"><svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M6 3.2 10.2 8.4H1.8L6 3.2Z" fill="currentColor"/></svg></button>
+                    <button type="button" class="forecast__stepper-btn forecast__stepper-btn--down" data-spin="down" tabindex="-1" aria-label="Decrease Target RFT"><svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M6 8.8 1.8 3.6h8.4L6 8.8Z" fill="currentColor"/></svg></button>
+                  </span>
+                </span>
               </label>
             </div>
 
@@ -256,12 +273,14 @@ const FONTSHARE_CSS =
                 <div class="forecast__costs-panel-inner">
                 <div class="forecast__costs-body">
                 <p class="forecast__costs-lede">
-                  Most ops leads skip this. Defaults are typical fully-loaded costs for
+                  Defaults are typical fully-loaded costs for
                   your profile — swap in real numbers only if you have them.
                 </p>
                 <div class="forecast__fields forecast__fields--costs">
                   <label class="forecast__field" for="costPerRework">
                     <span class="forecast__field-top">
+                      <!-- Fix the tooltip over the numerical text box and 0 to 10 values -->
+                      <!-- fix the arrows in the text box -->
                       <span
                         class="forecast__field-name"
                         tabindex="0"
@@ -276,10 +295,14 @@ const FONTSHARE_CSS =
                         name="costPerRework"
                         type="number"
                         min="0"
-                        step="10"
+                        step="1"
                         inputmode="decimal"
                         aria-label="Labor cost per rework in US dollars"
                       />
+                      <span class="forecast__stepper" aria-hidden="true">
+                        <button type="button" class="forecast__stepper-btn forecast__stepper-btn--up" data-spin="up" tabindex="-1" aria-label="Increase labor cost"><svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M6 3.2 10.2 8.4H1.8L6 3.2Z" fill="currentColor"/></svg></button>
+                        <button type="button" class="forecast__stepper-btn forecast__stepper-btn--down" data-spin="down" tabindex="-1" aria-label="Decrease labor cost"><svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M6 8.8 1.8 3.6h8.4L6 8.8Z" fill="currentColor"/></svg></button>
+                      </span>
                     </span>
                   </label>
                   <label class="forecast__field" for="dyePerRework">
@@ -298,10 +321,14 @@ const FONTSHARE_CSS =
                         name="dyePerRework"
                         type="number"
                         min="0"
-                        step="5"
+                        step="1"
                         inputmode="decimal"
                         aria-label="Dye cost per rework in US dollars"
                       />
+                      <span class="forecast__stepper" aria-hidden="true">
+                        <button type="button" class="forecast__stepper-btn forecast__stepper-btn--up" data-spin="up" tabindex="-1" aria-label="Increase dye cost"><svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M6 3.2 10.2 8.4H1.8L6 3.2Z" fill="currentColor"/></svg></button>
+                        <button type="button" class="forecast__stepper-btn forecast__stepper-btn--down" data-spin="down" tabindex="-1" aria-label="Decrease dye cost"><svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M6 8.8 1.8 3.6h8.4L6 8.8Z" fill="currentColor"/></svg></button>
+                      </span>
                     </span>
                   </label>
                   <label class="forecast__field" for="waterPerRework">
@@ -324,6 +351,10 @@ const FONTSHARE_CSS =
                         inputmode="decimal"
                         aria-label="Water cost per rework in US dollars"
                       />
+                      <span class="forecast__stepper" aria-hidden="true">
+                        <button type="button" class="forecast__stepper-btn forecast__stepper-btn--up" data-spin="up" tabindex="-1" aria-label="Increase water cost"><svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M6 3.2 10.2 8.4H1.8L6 3.2Z" fill="currentColor"/></svg></button>
+                        <button type="button" class="forecast__stepper-btn forecast__stepper-btn--down" data-spin="down" tabindex="-1" aria-label="Decrease water cost"><svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M6 8.8 1.8 3.6h8.4L6 8.8Z" fill="currentColor"/></svg></button>
+                      </span>
                     </span>
                   </label>
                   <label class="forecast__field" for="energyPerRework">
@@ -346,6 +377,10 @@ const FONTSHARE_CSS =
                         inputmode="decimal"
                         aria-label="Energy cost per rework in US dollars"
                       />
+                      <span class="forecast__stepper" aria-hidden="true">
+                        <button type="button" class="forecast__stepper-btn forecast__stepper-btn--up" data-spin="up" tabindex="-1" aria-label="Increase energy cost"><svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M6 3.2 10.2 8.4H1.8L6 3.2Z" fill="currentColor"/></svg></button>
+                        <button type="button" class="forecast__stepper-btn forecast__stepper-btn--down" data-spin="down" tabindex="-1" aria-label="Decrease energy cost"><svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M6 8.8 1.8 3.6h8.4L6 8.8Z" fill="currentColor"/></svg></button>
+                      </span>
                     </span>
                   </label>
                   <label class="forecast__field" for="cycleMinutes">
@@ -357,14 +392,20 @@ const FONTSHARE_CSS =
                       >Time</span>
                       <span class="forecast__field-tag">minutes</span>
                     </span>
-                    <input
-                      id="cycleMinutes"
-                      name="cycleMinutes"
-                      type="number"
-                      min="0"
-                      step="5"
-                      inputmode="numeric"
-                    />
+                    <span class="forecast__number">
+                      <input
+                        id="cycleMinutes"
+                        name="cycleMinutes"
+                        type="number"
+                        min="0"
+                        step="5"
+                        inputmode="numeric"
+                      />
+                      <span class="forecast__stepper" aria-hidden="true">
+                        <button type="button" class="forecast__stepper-btn forecast__stepper-btn--up" data-spin="up" tabindex="-1" aria-label="Increase cycle minutes"><svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M6 3.2 10.2 8.4H1.8L6 3.2Z" fill="currentColor"/></svg></button>
+                        <button type="button" class="forecast__stepper-btn forecast__stepper-btn--down" data-spin="down" tabindex="-1" aria-label="Decrease cycle minutes"><svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M6 8.8 1.8 3.6h8.4L6 8.8Z" fill="currentColor"/></svg></button>
+                      </span>
+                    </span>
                   </label>
                 </div>
                 </div>
@@ -720,6 +761,10 @@ const FONTSHARE_CSS =
   .forecast__lede {
     max-width: 52ch;
     animation: forecast-hero-enter 560ms 160ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .nowrap {
+    white-space: nowrap;
   }
 
   .forecast__hero-slot .eyebrow {
@@ -1424,6 +1469,19 @@ const FONTSHARE_CSS =
     max-width: 100%;
   }
 
+  /* Hide native number spinners — we use the custom holo stepper everywhere. */
+  .forecast__field input[type="number"]::-webkit-outer-spin-button,
+  .forecast__field input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    appearance: none;
+    margin: 0;
+  }
+
+  .forecast__field input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+
   .forecast__field input {
     box-sizing: border-box;
     font: inherit;
@@ -1448,6 +1506,42 @@ const FONTSHARE_CSS =
     outline: none;
     border-color: color-mix(in srgb, var(--holo) 55%, var(--line));
     box-shadow: 0 0 0 3px rgba(127, 216, 232, 0.12);
+  }
+
+  /* Bare number inputs now wrapped like percent/money — same control chrome. */
+  .forecast__number {
+    display: flex;
+    align-items: stretch;
+    width: 100%;
+    min-width: 0;
+    height: 2.65rem;
+    flex: 0 0 2.65rem;
+    margin-top: auto;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    overflow: hidden;
+    transition: border-color 160ms ease, box-shadow 160ms ease;
+  }
+
+  .forecast__number:focus-within {
+    border-color: color-mix(in srgb, var(--holo) 55%, var(--line));
+    box-shadow: 0 0 0 3px rgba(127, 216, 232, 0.12);
+  }
+
+  .forecast__number input {
+    margin-top: 0;
+    flex: 1 1 auto;
+    height: 100%;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .forecast__number input:focus-visible {
+    border: 0;
+    box-shadow: none;
   }
 
   /* USD cost inputs — $ prefix inside the control. */
@@ -1498,6 +1592,114 @@ const FONTSHARE_CSS =
   .forecast__money input:focus-visible {
     border: 0;
     box-shadow: none;
+  }
+
+  /* RFT percent inputs — % suffix inside the control. */
+  .forecast__percent {
+    display: flex;
+    align-items: stretch;
+    width: 100%;
+    min-width: 0;
+    height: 2.65rem;
+    flex: 0 0 2.65rem;
+    margin-top: auto;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    overflow: hidden;
+    transition: border-color 160ms ease, box-shadow 160ms ease;
+  }
+
+  .forecast__percent:focus-within {
+    border-color: color-mix(in srgb, var(--holo) 55%, var(--line));
+    box-shadow: 0 0 0 3px rgba(127, 216, 232, 0.12);
+  }
+
+  .forecast__percent input {
+    margin-top: 0;
+    flex: 1 1 auto;
+    height: 100%;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    padding-right: 0.85em;
+  }
+
+  .forecast__percent input:focus-visible {
+    border: 0;
+    box-shadow: none;
+  }
+
+  .forecast__stepper {
+    display: flex;
+    flex-direction: column;
+    flex: 0 0 2rem;
+    align-items: stretch;
+    border-left: 1px solid var(--line);
+    background: color-mix(in srgb, var(--surface-raised) 38%, var(--surface));
+    user-select: none;
+  }
+
+  .forecast__stepper-btn {
+    flex: 1 1 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    color: var(--ink-dim);
+    cursor: pointer;
+    transition:
+      background 120ms ease,
+      color 120ms ease,
+      filter 120ms ease;
+  }
+
+  .forecast__stepper-btn--up {
+    border-bottom: 1px solid var(--line);
+  }
+
+  .forecast__stepper-btn svg {
+    display: block;
+    width: 11px;
+    height: 11px;
+    filter: drop-shadow(0 0 6px rgba(127, 216, 232, 0.22));
+    opacity: 0.96;
+  }
+
+  .forecast__stepper-btn:hover {
+    background: color-mix(in srgb, var(--holo) 14%, transparent);
+    color: var(--holo);
+  }
+
+  .forecast__stepper-btn:hover svg {
+    opacity: 1;
+    filter: drop-shadow(0 0 9px rgba(127, 216, 232, 0.38));
+  }
+
+  .forecast__stepper-btn:active {
+    background: color-mix(in srgb, var(--holo) 22%, transparent);
+    color: var(--holo);
+  }
+
+  .forecast__stepper-btn:focus-visible {
+    outline: none;
+    background: color-mix(in srgb, var(--holo) 14%, transparent);
+    color: var(--holo);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--holo) 40%, transparent);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .forecast__stepper-btn {
+      transition: none;
+    }
+  }
+
+  .forecast__percent-suffix {
+    display: none;
   }
 
   .forecast__actions {
