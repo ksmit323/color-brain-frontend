@@ -109,7 +109,7 @@ export const PRESETS: PresetDef[] = [
   {
     id: "small",
     label: "Small mill",
-    hint: "~10 batches / day · few jets",
+    hint: "~10 batches / day",
     inputs: {
       batchesPerMonth: 250,
       currentRft: 82,
@@ -124,7 +124,7 @@ export const PRESETS: PresetDef[] = [
   {
     id: "medium",
     label: "Medium mill",
-    hint: "~25 batches / day · mid dyehouse",
+    hint: "~25 batches / day",
     inputs: {
       batchesPerMonth: 550,
       currentRft: 86,
@@ -139,7 +139,7 @@ export const PRESETS: PresetDef[] = [
   {
     id: "large",
     label: "Large mill",
-    hint: "~55 batches / day · multi-shift",
+    hint: "~55 batches / day",
     inputs: {
       batchesPerMonth: 1_200,
       currentRft: 88,
@@ -212,7 +212,11 @@ export function calculateForecast(raw: ForecastInputs): ForecastResult {
     time: tCost,
   };
   const totalPer =
-    costPer.rework + costPer.dye + costPer.water + costPer.energy + costPer.time;
+    costPer.rework +
+    costPer.dye +
+    costPer.water +
+    costPer.energy +
+    costPer.time;
 
   const avoidedByScenario = {
     conservative: fullAvoided * RFT_LIFT_REALIZATION.conservative,
