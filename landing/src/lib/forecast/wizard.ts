@@ -97,34 +97,128 @@ function markScenarioSelected(root: HTMLElement, scenario: ScenarioId): void {
   }
 }
 
-function setStep(
-  root: HTMLElement,
-  step: Step,
-  opts: { focus?: boolean } = {},
-): void {
-  root.dataset.step = String(step);
-  for (const panel of $all("[data-step-panel]", root)) {
-    const n = Number(panel.getAttribute("data-step-panel"));
-    const active = n === step;
-    panel.hidden = !active;
-    panel.setAttribute("aria-hidden", active ? "false" : "true");
-  }
+const PANEL_TRANSITION_MS = 400;
+const PANEL_ANIM_CLASSES = [
+  "is-exit",
+  "is-enter",
+  "is-exit-forward",
+  "is-exit-back",
+  "is-enter-forward",
+  "is-enter-back",
+] as const;
+
+function clearPanelAnim(panel: HTMLElement): void {
+  panel.classList.remove(...PANEL_ANIM_CLASSES);
+}
+
+function focusFirstIn(panel: HTMLElement): void {
+  const focusable = panel.querySelector<HTMLElement>(
+    'button:not([disabled]), input:not([disabled]), [href], summary, [tabindex]:not([tabindex="-1"])',
+  );
+  focusable?.focus({ preventScroll: true });
+}
+
+function updateStepIndicators(root: HTMLElement, step: Step): void {
   for (const pill of $all("[data-step-indicator]", root)) {
     const n = Number(pill.getAttribute("data-step-indicator"));
     pill.classList.toggle("is-active", n === step);
     pill.classList.toggle("is-done", n < step);
     pill.setAttribute("aria-current", n === step ? "step" : "false");
   }
-  // Focus first focusable when the user moves steps (keyboard flow). Skip on
-  // initial load so the default preset is not outlined until they interact.
-  if (opts.focus === false) return;
-  const panel = root.querySelector<HTMLElement>(
-    `[data-step-panel="${step}"]:not([hidden])`,
-  );
-  const focusable = panel?.querySelector<HTMLElement>(
-    'button:not([disabled]), input:not([disabled]), [href], summary, [tabindex]:not([tabindex="-1"])',
-  );
-  focusable?.focus({ preventScroll: true });
+}
+
+/** Active panel transition — rejects concurrent navigations until done. */
+let stepLock: Promise<void> | null = null;
+
+function setStep(
+  root: HTMLElement,
+  step: Step,
+  opts: { focus?: boolean; instant?: boolean } = {},
+): Promise<void> {
+  const run = async () => {
+    const prevStep = Number(root.dataset.step || "1") as Step;
+    const panels = $all("[data-step-panel]", root) as HTMLElement[];
+    const prev =
+      panels.find((p) => p.classList.contains("is-active")) ??
+      panels.find((p) => !p.hidden) ??
+      null;
+    const next = root.querySelector<HTMLElement>(`[data-step-panel="${step}"]`);
+    if (!next) return;
+
+    root.dataset.step = String(step);
+    updateStepIndicators(root, step);
+
+    const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const instant = opts.instant === true || reduced || !prev || prev === next;
+
+    if (instant) {
+      for (const p of panels) {
+        const active = p === next;
+        clearPanelAnim(p);
+        p.classList.toggle("is-active", active);
+        p.hidden = !active;
+        p.setAttribute("aria-hidden", active ? "false" : "true");
+      }
+      const stage = root.querySelector<HTMLElement>("[data-step-stage]");
+      if (stage) stage.style.height = "";
+      if (opts.focus !== false) focusFirstIn(next);
+      return;
+    }
+
+    const forward = step > prevStep;
+    const stage = root.querySelector<HTMLElement>("[data-step-stage]");
+    const fromH = prev.offsetHeight;
+
+    // Measure destination height without flashing content.
+    next.hidden = false;
+    next.setAttribute("aria-hidden", "false");
+    next.classList.add("is-enter");
+    next.style.visibility = "hidden";
+    next.style.position = "absolute";
+    next.style.inset = "0 auto auto 0";
+    next.style.width = "100%";
+    const toH = next.offsetHeight;
+    next.style.visibility = "";
+    next.style.position = "";
+    next.style.inset = "";
+    next.style.width = "";
+
+    if (stage) {
+      stage.style.height = `${fromH}px`;
+      void stage.offsetHeight;
+      stage.style.height = `${toH}px`;
+    }
+
+    clearPanelAnim(prev);
+    prev.classList.remove("is-active");
+    prev.classList.add("is-exit", forward ? "is-exit-forward" : "is-exit-back");
+    prev.setAttribute("aria-hidden", "true");
+
+    clearPanelAnim(next);
+    next.classList.add(
+      "is-active",
+      "is-enter",
+      forward ? "is-enter-forward" : "is-enter-back",
+    );
+
+    await new Promise<void>((resolve) => {
+      window.setTimeout(resolve, PANEL_TRANSITION_MS);
+    });
+
+    prev.hidden = true;
+    clearPanelAnim(prev);
+    clearPanelAnim(next);
+    next.classList.add("is-active");
+    if (stage) {
+      // Release fixed height after layout settles on the active panel.
+      stage.style.height = "";
+    }
+    if (opts.focus !== false) focusFirstIn(next);
+  };
+
+  const done = (stepLock ?? Promise.resolve()).then(run, run);
+  stepLock = done.catch(() => {}).then(() => undefined);
+  return done;
 }
 
 const animFrames = new WeakMap<HTMLElement, number>();
@@ -251,7 +345,7 @@ export function initForecastWizard(root: HTMLElement): void {
     reduced: prefersReduced,
     scenario: selectedScenario,
   });
-  setStep(root, 1, { focus: false });
+  void setStep(root, 1, { focus: false, instant: true });
 
   track("forecast_view", { path: "/forecast" });
 
@@ -326,36 +420,60 @@ export function initForecastWizard(root: HTMLElement): void {
     });
   }
 
+  const goToStep = (
+    step: Step,
+    opts: { animateReveal?: boolean; via?: "step_tab" | "cta" | "back" } = {},
+  ) => {
+    const current = Number(root.dataset.step || "1") as Step;
+    if (step === current) return;
+
+    if (step === 3) {
+      const inputs = readInputs(root);
+      const fromCta = opts.via === "cta" || opts.animateReveal === true;
+      // CTA “Reveal outlook” resets to Expected; step tabs keep selection.
+      if (fromCta) selectedScenario = "expected";
+      lastResult = renderResult(root, inputs, {
+        animate: fromCta,
+        reduced: prefersReduced,
+        scenario: selectedScenario,
+      });
+      track("forecast_reveal", {
+        preset: selectedPreset,
+        scenario: selectedScenario,
+        via: opts.via ?? "cta",
+        ...inputs,
+      });
+      void setStep(root, 3);
+      return;
+    }
+
+    void setStep(root, step);
+    if (opts.via) {
+      track("forecast_step_nav", { step, from: current, via: opts.via });
+    }
+  };
+
   root.querySelector("[data-goto-2]")?.addEventListener("click", () => {
-    setStep(root, 2);
+    goToStep(2, { via: "cta" });
   });
   root.querySelector("[data-goto-3]")?.addEventListener("click", () => {
-    const inputs = readInputs(root);
-    // Fresh reveal always lands on Expected so the story starts mid-range.
-    selectedScenario = "expected";
-    lastResult = renderResult(root, inputs, {
-      animate: true,
-      reduced: prefersReduced,
-      scenario: selectedScenario,
-    });
-    setStep(root, 3);
-    track("forecast_reveal", {
-      preset: selectedPreset,
-      scenario: selectedScenario,
-      ...inputs,
-    });
-    const panel = root.querySelector("[data-step-panel='3']");
-    panel?.classList.remove("is-revealed");
-    // force reflow so re-adding is-revealed restarts CSS entrance
-    void (panel as HTMLElement | null)?.offsetWidth;
-    panel?.classList.add("is-revealed");
+    goToStep(3, { via: "cta", animateReveal: true });
   });
   root.querySelector("[data-back-1]")?.addEventListener("click", () => {
-    setStep(root, 1);
+    goToStep(1, { via: "back" });
   });
   root.querySelector("[data-back-2]")?.addEventListener("click", () => {
-    setStep(root, 2);
+    goToStep(2, { via: "back" });
   });
+
+  for (const tab of $all("[data-goto-step]", root)) {
+    tab.addEventListener("click", () => {
+      const n = Number(tab.getAttribute("data-goto-step"));
+      if (n === 1 || n === 2 || n === 3) {
+        goToStep(n as Step, { via: "step_tab", animateReveal: false });
+      }
+    });
+  }
 
   root.querySelector("[data-cta-pilot]")?.addEventListener("click", () => {
     track("forecast_cta_click", { cta: "book_pilot" });

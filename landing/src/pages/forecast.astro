@@ -78,25 +78,48 @@ const FONTSHARE_CSS =
           data-step="1"
           aria-label="Savings forecast wizard"
         >
-          <!-- Progress -->
-          <ol class="forecast__steps" aria-label="Wizard progress">
-            <li class="forecast__step is-active" data-step-indicator="1">
-              <span class="forecast__step-num">01</span>
-              <span class="forecast__step-label">Profile</span>
+          <!-- Progress — also clickable step nav -->
+          <ol class="forecast__steps" aria-label="Wizard steps">
+            <li>
+              <button
+                type="button"
+                class="forecast__step is-active"
+                data-step-indicator="1"
+                data-goto-step="1"
+                aria-current="step"
+              >
+                <span class="forecast__step-num">01</span>
+                <span class="forecast__step-label">Profile</span>
+              </button>
             </li>
-            <li class="forecast__step" data-step-indicator="2">
-              <span class="forecast__step-num">02</span>
-              <span class="forecast__step-label">Tune</span>
+            <li>
+              <button
+                type="button"
+                class="forecast__step"
+                data-step-indicator="2"
+                data-goto-step="2"
+              >
+                <span class="forecast__step-num">02</span>
+                <span class="forecast__step-label">Tune</span>
+              </button>
             </li>
-            <li class="forecast__step" data-step-indicator="3">
-              <span class="forecast__step-num">03</span>
-              <span class="forecast__step-label">Outlook</span>
+            <li>
+              <button
+                type="button"
+                class="forecast__step"
+                data-step-indicator="3"
+                data-goto-step="3"
+              >
+                <span class="forecast__step-num">03</span>
+                <span class="forecast__step-label">Outlook</span>
+              </button>
             </li>
           </ol>
 
+          <div class="forecast__stage" data-step-stage>
           <!-- Step 1: Preset -->
           <section
-            class="forecast__panel"
+            class="forecast__panel is-active"
             data-step-panel="1"
             aria-labelledby="step1-title"
           >
@@ -309,7 +332,7 @@ const FONTSHARE_CSS =
 
           <!-- Step 3: Reveal -->
           <section
-            class="forecast__panel forecast__panel--reveal"
+            class="forecast__panel"
             data-step-panel="3"
             hidden
             aria-hidden="true"
@@ -539,6 +562,7 @@ const FONTSHARE_CSS =
               <a href="/">Back to Color Brain</a>
             </p>
           </section>
+          </div>
         </div>
       </div>
     </main>
@@ -633,6 +657,12 @@ const FONTSHARE_CSS =
     flex-wrap: wrap;
   }
 
+  .forecast__steps > li {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
   .forecast__step {
     display: inline-flex;
     align-items: center;
@@ -641,16 +671,41 @@ const FONTSHARE_CSS =
     border-radius: 999px;
     border: 1px solid var(--line);
     color: var(--ink-faint);
+    font: inherit;
     font-family: var(--font-mono);
     font-size: 0.72rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
+    background: transparent;
+    cursor: pointer;
+    transition:
+      border-color 280ms ease,
+      color 280ms ease,
+      box-shadow 280ms ease,
+      background 280ms ease;
+  }
+
+  .forecast__step:hover {
+    border-color: color-mix(in srgb, var(--ink-faint) 50%, var(--line));
+    color: var(--ink-dim);
+  }
+
+  .forecast__step:focus-visible {
+    outline: none;
+    border-color: color-mix(in srgb, var(--holo) 55%, var(--line));
+    box-shadow: 0 0 0 3px rgba(127, 216, 232, 0.14);
   }
 
   .forecast__step.is-active {
     border-color: color-mix(in srgb, var(--holo) 55%, var(--line));
     color: var(--holo);
     box-shadow: 0 0 18px rgba(127, 216, 232, 0.12);
+    cursor: default;
+  }
+
+  .forecast__step.is-active:hover {
+    color: var(--holo);
+    border-color: color-mix(in srgb, var(--holo) 55%, var(--line));
   }
 
   .forecast__step.is-done {
@@ -662,9 +717,107 @@ const FONTSHARE_CSS =
     opacity: 0.7;
   }
 
+  /* Step stage — soft crossfade + light slide; height eases between panels. */
+  .forecast__stage {
+    position: relative;
+    overflow: hidden;
+    transition: height 400ms cubic-bezier(0.25, 0.1, 0.25, 1);
+  }
+
   .forecast__panel {
     position: relative;
     z-index: 1;
+  }
+
+  .forecast__panel:not(.is-active):not(.is-exit):not(.is-enter) {
+    display: none;
+  }
+
+  .forecast__panel.is-exit {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  .forecast__panel.is-enter {
+    position: relative;
+    z-index: 2;
+  }
+
+  .forecast__panel.is-exit-forward {
+    animation: forecast-panel-exit-forward 360ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+
+  .forecast__panel.is-exit-back {
+    animation: forecast-panel-exit-back 360ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+
+  .forecast__panel.is-enter-forward {
+    animation: forecast-panel-enter-forward 400ms cubic-bezier(0.25, 0.1, 0.25, 1) both;
+  }
+
+  .forecast__panel.is-enter-back {
+    animation: forecast-panel-enter-back 400ms cubic-bezier(0.25, 0.1, 0.25, 1) both;
+  }
+
+  @keyframes forecast-panel-exit-forward {
+    from {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+    to {
+      opacity: 0;
+      transform: translate3d(-0.65rem, 0, 0);
+    }
+  }
+
+  @keyframes forecast-panel-exit-back {
+    from {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+    to {
+      opacity: 0;
+      transform: translate3d(0.65rem, 0, 0);
+    }
+  }
+
+  @keyframes forecast-panel-enter-forward {
+    from {
+      opacity: 0;
+      transform: translate3d(0.75rem, 0, 0);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  @keyframes forecast-panel-enter-back {
+    from {
+      opacity: 0;
+      transform: translate3d(-0.75rem, 0, 0);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .forecast__stage {
+      transition: none;
+    }
+
+    .forecast__panel.is-exit-forward,
+    .forecast__panel.is-exit-back,
+    .forecast__panel.is-enter-forward,
+    .forecast__panel.is-enter-back {
+      animation: none;
+    }
   }
 
   .forecast__panel-title {
@@ -1330,35 +1483,4 @@ const FONTSHARE_CSS =
     color: var(--ink);
   }
 
-  /* Reveal entrance */
-  .forecast__panel--reveal.is-revealed .forecast__range-card {
-    animation: forecast-rise 700ms ease both;
-  }
-
-  .forecast__panel--reveal.is-revealed .forecast__range-card:nth-child(1) {
-    animation-delay: 40ms;
-  }
-  .forecast__panel--reveal.is-revealed .forecast__range-card:nth-child(2) {
-    animation-delay: 120ms;
-  }
-  .forecast__panel--reveal.is-revealed .forecast__range-card:nth-child(3) {
-    animation-delay: 200ms;
-  }
-
-  @keyframes forecast-rise {
-    from {
-      opacity: 0;
-      transform: translateY(14px);
-    }
-    to {
-      opacity: 1;
-      transform: none;
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .forecast__panel--reveal.is-revealed .forecast__range-card {
-      animation: none;
-    }
-  }
 </style>
