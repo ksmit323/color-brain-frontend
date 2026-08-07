@@ -82,7 +82,9 @@ function readInputs(root: HTMLElement): ForecastInputs {
     const el = root.querySelector<HTMLInputElement>(`#${id}`);
     if (!el) continue;
     const raw = el.value;
-    out[id] = isPercentField(id) ? parseNumericInput(raw) : parseFloat(raw) || 0;
+    out[id] = isPercentField(id)
+      ? parseNumericInput(raw)
+      : parseFloat(raw) || 0;
   }
   return out;
 }
@@ -510,7 +512,10 @@ export function initForecastWizard(root: HTMLElement): void {
       b.classList.remove("is-selected");
       b.setAttribute("aria-pressed", "false");
     }
-    track("forecast_share_hydrate", { ...initialInputs, scenario: selectedScenario });
+    track("forecast_share_hydrate", {
+      ...initialInputs,
+      scenario: selectedScenario,
+    });
   }
   // Shared links land directly on Outlook so the recipient sees the same result.
   if (hasSharedInputs) {
@@ -538,7 +543,11 @@ export function initForecastWizard(root: HTMLElement): void {
     });
   };
   bindAccordion("[data-costs]", "[data-costs-toggle]", "forecast_costs_toggle");
-  bindAccordion("[data-method]", "[data-method-toggle]", "forecast_method_toggle");
+  bindAccordion(
+    "[data-method]",
+    "[data-method-toggle]",
+    "forecast_method_toggle",
+  );
 
   for (const btn of $all("[data-preset]", root)) {
     const id = btn.getAttribute("data-preset") as PresetId;
@@ -629,7 +638,9 @@ export function initForecastWizard(root: HTMLElement): void {
       const n = parseNumericInput(el.value);
       // Only strip if value is currently formatted with %.
       if (el.value.endsWith("%")) {
-        const plain = Number.isInteger(n) ? String(n) : String(Math.round(n * 10) / 10);
+        const plain = Number.isInteger(n)
+          ? String(n)
+          : String(Math.round(n * 10) / 10);
         el.value = plain;
         // Select number for quick overwrite, but keep cursor if user tabbed.
         requestAnimationFrame(() => el.select());
@@ -653,7 +664,10 @@ export function initForecastWizard(root: HTMLElement): void {
       const step = e.shiftKey ? 1 : 0.5;
       const n = parseNumericInput(el.value);
       const delta = e.key === "ArrowUp" ? step : -step;
-      const next = Math.min(100, Math.max(0, Math.round((n + delta) * 10) / 10));
+      const next = Math.min(
+        100,
+        Math.max(0, Math.round((n + delta) * 10) / 10),
+      );
       const isFocused = document.activeElement === el;
       el.value = isFocused ? String(next) : formatPercentValue(next);
       if (isFocused) requestAnimationFrame(() => el.select());
@@ -671,10 +685,7 @@ export function initForecastWizard(root: HTMLElement): void {
     const downBtn =
       pctContainer?.querySelector<HTMLButtonElement>('[data-spin="down"]');
 
-    const stepPercent = (
-      dir: 1 | -1,
-      shift: boolean,
-    ): void => {
+    const stepPercent = (dir: 1 | -1, shift: boolean): void => {
       const step = shift ? 1 : 0.5;
       const n = parseNumericInput(el.value);
       const next = Math.min(
@@ -778,7 +789,7 @@ export function initForecastWizard(root: HTMLElement): void {
     };
     const roundForStep = (n: number, step: number): number => {
       // Avoid floating drift — round to step's decimal places.
-      const decimals = (String(step).split(".")[1]?.length ?? 0);
+      const decimals = String(step).split(".")[1]?.length ?? 0;
       const factor = 10 ** decimals;
       return Math.round(n * factor) / factor;
     };
@@ -790,7 +801,7 @@ export function initForecastWizard(root: HTMLElement): void {
       const nextRaw = cur + dir * step;
       const next = Math.min(max, Math.max(min, roundForStep(nextRaw, step)));
       // Preserve integer formatting when step is integer.
-      const decimals = (String(step).split(".")[1]?.length ?? 0);
+      const decimals = String(step).split(".")[1]?.length ?? 0;
       el.value = decimals === 0 ? String(Math.round(next)) : String(next);
       // Dispatch input so preview RAF and native listeners see the change.
       el.dispatchEvent(new Event("input", { bubbles: true }));
