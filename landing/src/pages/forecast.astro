@@ -164,8 +164,8 @@ const FONTSHARE_CSS =
               <div>
                 <h2 id="step2-title" class="forecast__panel-title">Tune your operation</h2>
                 <p class="forecast__panel-lede">
-                  Prefills come from your preset — adjust any of them.
-                  Currency is USD.
+                  Prefills are ballparks for a mill your size. Change what you know —
+                  leave the rest. Currency is USD.
                 </p>
               </div>
               <div class="forecast__preview" aria-live="polite">
@@ -174,7 +174,7 @@ const FONTSHARE_CSS =
               </div>
             </div>
 
-            <div class="forecast__fields">
+            <div class="forecast__fields forecast__fields--primary">
               <label class="forecast__field" for="batchesPerMonth">
                 <span class="forecast__field-top">
                   <span
@@ -232,96 +232,144 @@ const FONTSHARE_CSS =
                   inputmode="decimal"
                 />
               </label>
-              <label class="forecast__field" for="costPerRework">
-                <span class="forecast__field-top">
-                  <span
-                    class="forecast__field-name"
-                    tabindex="0"
-                    data-tip="Labour and overhead per correction, excluding dye, water, and energy"
-                  >Cost per rework</span>
-                  <span class="forecast__field-tag">labour &amp; overhead</span>
-                </span>
-                <input
-                  id="costPerRework"
-                  name="costPerRework"
-                  type="number"
-                  min="0"
-                  step="10"
-                  inputmode="decimal"
-                />
-              </label>
-              <label class="forecast__field" for="dyePerRework">
-                <span class="forecast__field-top">
-                  <span
-                    class="forecast__field-name"
-                    tabindex="0"
-                    data-tip="Dye and chemicals for one correction cycle"
-                  >Dye cost</span>
-                  <span class="forecast__field-tag">per rework</span>
-                </span>
-                <input
-                  id="dyePerRework"
-                  name="dyePerRework"
-                  type="number"
-                  min="0"
-                  step="5"
-                  inputmode="decimal"
-                />
-              </label>
-              <label class="forecast__field" for="waterPerRework">
-                <span class="forecast__field-top">
-                  <span
-                    class="forecast__field-name"
-                    tabindex="0"
-                    data-tip="Water and effluent for one correction cycle"
-                  >Water cost</span>
-                  <span class="forecast__field-tag">per rework</span>
-                </span>
-                <input
-                  id="waterPerRework"
-                  name="waterPerRework"
-                  type="number"
-                  min="0"
-                  step="1"
-                  inputmode="decimal"
-                />
-              </label>
-              <label class="forecast__field" for="energyPerRework">
-                <span class="forecast__field-top">
-                  <span
-                    class="forecast__field-name"
-                    tabindex="0"
-                    data-tip="Steam and power for one correction cycle"
-                  >Energy cost</span>
-                  <span class="forecast__field-tag">per rework</span>
-                </span>
-                <input
-                  id="energyPerRework"
-                  name="energyPerRework"
-                  type="number"
-                  min="0"
-                  step="1"
-                  inputmode="decimal"
-                />
-              </label>
-              <label class="forecast__field" for="cycleMinutes">
-                <span class="forecast__field-top">
-                  <span
-                    class="forecast__field-name"
-                    tabindex="0"
-                    data-tip="Machine and lab time tied up per correction"
-                  >Time per rework</span>
-                  <span class="forecast__field-tag">minutes</span>
-                </span>
-                <input
-                  id="cycleMinutes"
-                  name="cycleMinutes"
-                  type="number"
-                  min="0"
-                  step="5"
-                  inputmode="numeric"
-                />
-              </label>
+            </div>
+
+            <div class="forecast__costs" data-costs>
+              <button
+                type="button"
+                class="forecast__costs-toggle"
+                data-costs-toggle
+                aria-expanded="false"
+                aria-controls="forecast-costs-panel"
+                id="forecast-costs-toggle"
+              >
+                <span class="forecast__costs-summary-label">Cost assumptions</span>
+                <span class="forecast__costs-summary-hint">optional · preset ballparks</span>
+              </button>
+              <div
+                class="forecast__costs-panel"
+                id="forecast-costs-panel"
+                role="region"
+                aria-labelledby="forecast-costs-toggle"
+                data-costs-panel
+              >
+                <div class="forecast__costs-panel-inner">
+                <div class="forecast__costs-body">
+                <p class="forecast__costs-lede">
+                  Most ops leads skip this. Defaults are typical fully-loaded costs for
+                  your profile — swap in real numbers only if you have them.
+                </p>
+                <div class="forecast__fields forecast__fields--costs">
+                  <label class="forecast__field" for="costPerRework">
+                    <span class="forecast__field-top">
+                      <span
+                        class="forecast__field-name"
+                        tabindex="0"
+                        data-tip="Labour and overhead per correction (USD), excluding dye, water, and energy"
+                      >Labour cost</span>
+                      <span class="forecast__field-tag">USD · per rework</span>
+                    </span>
+                    <span class="forecast__money">
+                      <span class="forecast__money-prefix" aria-hidden="true">$</span>
+                      <input
+                        id="costPerRework"
+                        name="costPerRework"
+                        type="number"
+                        min="0"
+                        step="10"
+                        inputmode="decimal"
+                        aria-label="Labour cost per rework in US dollars"
+                      />
+                    </span>
+                  </label>
+                  <label class="forecast__field" for="dyePerRework">
+                    <span class="forecast__field-top">
+                      <span
+                        class="forecast__field-name"
+                        tabindex="0"
+                        data-tip="Dye and chemicals for one correction cycle (USD)"
+                      >Dye cost</span>
+                      <span class="forecast__field-tag">USD · per rework</span>
+                    </span>
+                    <span class="forecast__money">
+                      <span class="forecast__money-prefix" aria-hidden="true">$</span>
+                      <input
+                        id="dyePerRework"
+                        name="dyePerRework"
+                        type="number"
+                        min="0"
+                        step="5"
+                        inputmode="decimal"
+                        aria-label="Dye cost per rework in US dollars"
+                      />
+                    </span>
+                  </label>
+                  <label class="forecast__field" for="waterPerRework">
+                    <span class="forecast__field-top">
+                      <span
+                        class="forecast__field-name"
+                        tabindex="0"
+                        data-tip="Water and effluent for one correction cycle (USD)"
+                      >Water cost</span>
+                      <span class="forecast__field-tag">USD · per rework</span>
+                    </span>
+                    <span class="forecast__money">
+                      <span class="forecast__money-prefix" aria-hidden="true">$</span>
+                      <input
+                        id="waterPerRework"
+                        name="waterPerRework"
+                        type="number"
+                        min="0"
+                        step="1"
+                        inputmode="decimal"
+                        aria-label="Water cost per rework in US dollars"
+                      />
+                    </span>
+                  </label>
+                  <label class="forecast__field" for="energyPerRework">
+                    <span class="forecast__field-top">
+                      <span
+                        class="forecast__field-name"
+                        tabindex="0"
+                        data-tip="Steam and power for one correction cycle (USD)"
+                      >Energy cost</span>
+                      <span class="forecast__field-tag">USD · per rework</span>
+                    </span>
+                    <span class="forecast__money">
+                      <span class="forecast__money-prefix" aria-hidden="true">$</span>
+                      <input
+                        id="energyPerRework"
+                        name="energyPerRework"
+                        type="number"
+                        min="0"
+                        step="1"
+                        inputmode="decimal"
+                        aria-label="Energy cost per rework in US dollars"
+                      />
+                    </span>
+                  </label>
+                  <label class="forecast__field" for="cycleMinutes">
+                    <span class="forecast__field-top">
+                      <span
+                        class="forecast__field-name"
+                        tabindex="0"
+                        data-tip="Machine and lab time tied up per correction"
+                      >Time</span>
+                      <span class="forecast__field-tag">minutes</span>
+                    </span>
+                    <input
+                      id="cycleMinutes"
+                      name="cycleMinutes"
+                      type="number"
+                      min="0"
+                      step="5"
+                      inputmode="numeric"
+                    />
+                  </label>
+                </div>
+                </div>
+                </div>
+              </div>
             </div>
 
             <div class="forecast__actions">
@@ -470,81 +518,99 @@ const FONTSHARE_CSS =
               </ul>
             </div>
 
-            <details class="forecast__method">
-              <summary>
+            <div class="forecast__method" data-method>
+              <button
+                type="button"
+                class="forecast__method-toggle"
+                data-method-toggle
+                aria-expanded="false"
+                aria-controls="forecast-method-panel"
+                id="forecast-method-toggle"
+              >
                 <span class="forecast__method-summary-label">How we calculate</span>
-              </summary>
-              <div class="forecast__method-body">
-                <p class="forecast__method-lede">
-                  Savings scale with your RFT lift (target − current) and the cost of
-                  each avoided rework.
-                </p>
+                <span class="forecast__method-summary-hint">formula &amp; assumptions</span>
+              </button>
+              <div
+                class="forecast__method-panel"
+                id="forecast-method-panel"
+                role="region"
+                aria-labelledby="forecast-method-toggle"
+                data-method-panel
+              >
+                <div class="forecast__method-panel-inner">
+                  <div class="forecast__method-body">
+                    <p class="forecast__method-lede">
+                      Savings scale with your RFT lift (target − current) and the cost of
+                      each avoided rework.
+                    </p>
 
-                <p class="forecast__method-eq" data-method-rate>
-                  annual savings
-                  <span class="forecast__method-op">≈</span>
-                  batches/yr
-                  <span class="forecast__method-op">×</span>
-                  RFT lift
-                  <span class="forecast__method-op">×</span>
-                  cost / rework
-                </p>
+                    <p class="forecast__method-eq" data-method-rate>
+                      annual savings
+                      <span class="forecast__method-op">≈</span>
+                      batches/yr
+                      <span class="forecast__method-op">×</span>
+                      RFT lift
+                      <span class="forecast__method-op">×</span>
+                      cost / rework
+                    </p>
 
-                <div class="forecast__method-band-wrap">
-                  <p class="forecast__method-band-caption">
-                    Scenarios scale how much of <em>your stated RFT lift</em> we count
-                    — not every miss is a full-cost rework, and some lifts overshoot.
-                  </p>
-                  <div
-                    class="forecast__method-band"
-                    data-method-reduction
-                    role="list"
-                    aria-label="How much of your stated RFT lift each scenario counts"
-                  >
-                    <div class="forecast__method-band-item" role="listitem">
-                      <span class="forecast__method-band-label">Conservative</span>
-                      <span class="forecast__method-band-val"
-                        >{RFT_LIFT_REALIZATION.conservative}×</span
+                    <div class="forecast__method-band-wrap">
+                      <p class="forecast__method-band-caption">
+                        Scenarios scale how much of <em>your stated RFT lift</em> we count
+                        — not every miss is a full-cost rework, and some lifts overshoot.
+                      </p>
+                      <div
+                        class="forecast__method-band"
+                        data-method-reduction
+                        role="list"
+                        aria-label="How much of your stated RFT lift each scenario counts"
                       >
-                      <span class="forecast__method-band-unit">of your lift</span>
+                        <div class="forecast__method-band-item" role="listitem">
+                          <span class="forecast__method-band-label">Conservative</span>
+                          <span class="forecast__method-band-val"
+                            >{RFT_LIFT_REALIZATION.conservative}×</span
+                          >
+                          <span class="forecast__method-band-unit">of your lift</span>
+                        </div>
+                        <div
+                          class="forecast__method-band-item forecast__method-band-item--mid"
+                          role="listitem"
+                        >
+                          <span class="forecast__method-band-label">Expected</span>
+                          <span class="forecast__method-band-val"
+                            >{RFT_LIFT_REALIZATION.expected}×</span
+                          >
+                          <span class="forecast__method-band-unit">of your lift</span>
+                        </div>
+                        <div class="forecast__method-band-item" role="listitem">
+                          <span class="forecast__method-band-label">Optimistic</span>
+                          <span class="forecast__method-band-val"
+                            >{RFT_LIFT_REALIZATION.optimistic}×</span
+                          >
+                          <span class="forecast__method-band-unit">of your lift</span>
+                        </div>
+                      </div>
                     </div>
-                    <div
-                      class="forecast__method-band-item forecast__method-band-item--mid"
-                      role="listitem"
-                    >
-                      <span class="forecast__method-band-label">Expected</span>
-                      <span class="forecast__method-band-val"
-                        >{RFT_LIFT_REALIZATION.expected}×</span
+
+                    <p class="forecast__method-note">
+                      Cost / rework = labour + dye + water + energy + time
+                      <span class="forecast__method-pill"
+                        >${TIME_RATE_PER_MINUTE.toFixed(2)}/min</span
                       >
-                      <span class="forecast__method-band-unit">of your lift</span>
-                    </div>
-                    <div class="forecast__method-band-item" role="listitem">
-                      <span class="forecast__method-band-label">Optimistic</span>
-                      <span class="forecast__method-band-val"
-                        >{RFT_LIFT_REALIZATION.optimistic}×</span
-                      >
-                      <span class="forecast__method-band-unit">of your lift</span>
-                    </div>
+                    </p>
+
+                    <p class="forecast__method-foot">
+                      Planning estimate — not a quote. Coefficients are provisional.
+                    </p>
                   </div>
                 </div>
-
-                <p class="forecast__method-note">
-                  Cost / rework = labour + dye + water + energy + time
-                  <span class="forecast__method-pill"
-                    >${TIME_RATE_PER_MINUTE.toFixed(2)}/min</span
-                  >
-                </p>
-
-                <p class="forecast__method-foot">
-                  Planning estimate — not a quote. Coefficients are provisional.
-                </p>
               </div>
-            </details>
+            </div>
 
             <p class="forecast__disclaimer">
-              Estimate based on your RFT lift and provisional cost assumptions.
-              Actual results vary by product mix, addressable history, and plant
-              conditions. This is a planning outlook, not a commercial commitment.
+              Driven mostly by batches × RFT lift. Cost lines are preset ballparks
+              unless you edited them. Actual results vary by product mix and plant
+              conditions — a planning outlook, not a commercial commitment.
             </p>
 
             <div class="forecast__actions forecast__actions--cta">
@@ -986,67 +1052,231 @@ const FONTSHARE_CSS =
 
   .forecast__fields {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 1rem 1.15rem;
+    margin-top: 1.75rem;
+    /* Equal-height cells so inputs can pin to one baseline. */
+    align-items: stretch;
+  }
+
+  @media (max-width: 720px) {
+    .forecast__fields {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 420px) {
+    .forecast__fields {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .forecast__fields--primary {
     margin-top: 1.75rem;
   }
 
-  .forecast__field {
+  .forecast__fields--costs {
+    margin-top: 0.85rem;
+  }
+
+  .forecast__costs {
+    margin-top: 1.35rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: rgba(15, 17, 24, 0.35);
+    transition:
+      border-color 280ms ease,
+      box-shadow 320ms ease,
+      background 280ms ease;
+  }
+
+  .forecast__costs.is-open {
+    border-color: color-mix(in srgb, var(--holo) 28%, var(--line));
+    box-shadow: 0 0 24px rgba(127, 216, 232, 0.06);
+    background: color-mix(in srgb, var(--holo) 3%, rgba(15, 17, 24, 0.4));
+  }
+
+  .forecast__costs-toggle {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.45rem 0.75rem;
+    width: 100%;
+    margin: 0;
+    padding: 0.85rem 1.05rem;
+    border: 0;
+    border-radius: inherit;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .forecast__costs-toggle:focus-visible {
+    outline: none;
+    box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--holo) 45%, transparent);
+  }
+
+  .forecast__costs-summary-label {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    transition: color 200ms ease;
+  }
+
+  .forecast__costs-summary-label::before {
+    content: "▸";
+    display: inline-block;
+    margin-right: 0.5rem;
+    color: var(--holo);
+    transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .forecast__costs.is-open .forecast__costs-summary-label::before {
+    transform: rotate(90deg);
+  }
+
+  .forecast__costs-summary-hint {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .forecast__costs-toggle:hover .forecast__costs-summary-label {
+    color: var(--ink);
+  }
+
+  /* Animated open/close — grid 0fr/1fr (same trick as the hero). */
+  .forecast__costs-panel {
     display: grid;
-    grid-template-rows: auto 1fr;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    transition:
+      grid-template-rows 340ms cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 260ms ease;
+  }
+
+  .forecast__costs.is-open .forecast__costs-panel {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+
+  .forecast__costs-panel-inner {
+    overflow: hidden;
+    min-height: 0;
+  }
+
+  .forecast__costs-body {
+    padding: 0 1.05rem 1.15rem;
+    border-top: 1px solid transparent;
+    transition: border-color 280ms ease;
+  }
+
+  .forecast__costs.is-open .forecast__costs-body {
+    border-top-color: var(--line-soft);
+  }
+
+  .forecast__costs-lede {
+    margin: 0.85rem 0 0;
+    font-size: 0.84rem;
+    line-height: 1.5;
+    color: var(--ink-faint);
+    max-width: 52ch;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .forecast__costs,
+    .forecast__costs-panel,
+    .forecast__costs-summary-label::before,
+    .forecast__costs-body {
+      transition: none;
+    }
+  }
+
+  .forecast__field {
+    display: flex;
+    flex-direction: column;
     gap: 0.45rem;
     font-size: 0.88rem;
     color: var(--ink-dim);
-    align-content: start;
+    min-width: 0;
+    height: 100%;
+    position: relative;
+    overflow: visible;
+  }
+
+  .forecast__field:hover,
+  .forecast__field:focus-within {
+    z-index: 5;
   }
 
   .forecast__field-top {
     display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: 0.4rem 0.55rem;
-    min-height: 1.35em;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 0.2rem;
+    /* Always exactly two lines: name, then tag. */
+    height: 2.4rem;
+    flex: 0 0 2.4rem;
+    /* Must stay visible — overflow:hidden clipped the ::after tooltips. */
+    overflow: visible;
   }
 
   .forecast__field-name {
     position: relative;
+    /* Inline so the dotted underline only covers the label text, not the column. */
+    display: inline-block;
+    width: fit-content;
+    max-width: 100%;
     color: var(--ink);
     font-weight: 500;
     letter-spacing: 0.01em;
     cursor: help;
     border-bottom: 1px dotted color-mix(in srgb, var(--ink-faint) 70%, transparent);
     outline: none;
+    white-space: nowrap;
+    line-height: 1.2;
+    z-index: 1;
   }
 
   .forecast__field-name:hover,
   .forecast__field-name:focus-visible {
     color: color-mix(in srgb, var(--holo) 55%, var(--ink));
     border-bottom-color: color-mix(in srgb, var(--holo) 50%, var(--ink-faint));
+    z-index: 8;
   }
 
-  /* Hover/focus tip — out of flow so inputs stay aligned. Opens below the
-     name (not above) so the wizard's overflow:hidden doesn't clip it. */
+  /* Hover/focus tip. Opens below the name (over the field) — parent
+     overflow:hidden was killing these when we used it for ellipsis. */
   .forecast__field-name::after {
     content: attr(data-tip);
     position: absolute;
     left: 0;
-    top: calc(100% + 0.45rem);
-    z-index: 6;
+    top: calc(100% + 0.35rem);
+    z-index: 20;
     width: max-content;
     max-width: min(16rem, 70vw);
     padding: 0.55rem 0.7rem;
     border-radius: var(--radius-sm);
     border: 1px solid var(--line);
-    background: color-mix(in srgb, var(--surface) 94%, #0a0c12);
+    background: color-mix(in srgb, var(--surface) 96%, #0a0c12);
     color: var(--ink-dim);
     font-size: 0.75rem;
     font-weight: 400;
     line-height: 1.4;
     letter-spacing: 0;
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+    text-transform: none;
+    white-space: normal;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
     opacity: 0;
     visibility: hidden;
-    transform: translateY(-0.15rem);
+    transform: translateY(-0.12rem);
     transition:
       opacity 140ms ease,
       transform 140ms ease,
@@ -1068,23 +1298,36 @@ const FONTSHARE_CSS =
   }
 
   .forecast__field-tag {
+    display: block;
     font-family: var(--font-mono);
     font-size: 0.68rem;
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--ink-faint);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.2;
+    max-width: 100%;
   }
 
   .forecast__field input {
+    box-sizing: border-box;
     font: inherit;
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
+    font-size: 0.92rem;
+    line-height: 1.25;
     color: var(--ink);
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: var(--radius-sm);
-    padding: 0.7em 0.85em;
+    padding: 0 0.85em;
     width: 100%;
+    min-width: 0;
+    height: 2.65rem;
+    flex: 0 0 2.65rem;
+    margin-top: auto; /* pin all inputs to the same baseline in the row */
     transition: border-color 160ms ease, box-shadow 160ms ease;
   }
 
@@ -1092,6 +1335,56 @@ const FONTSHARE_CSS =
     outline: none;
     border-color: color-mix(in srgb, var(--holo) 55%, var(--line));
     box-shadow: 0 0 0 3px rgba(127, 216, 232, 0.12);
+  }
+
+  /* USD cost inputs — $ prefix inside the control. */
+  .forecast__money {
+    display: flex;
+    align-items: stretch;
+    width: 100%;
+    min-width: 0;
+    height: 2.65rem;
+    flex: 0 0 2.65rem;
+    margin-top: auto;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    overflow: hidden;
+    transition: border-color 160ms ease, box-shadow 160ms ease;
+  }
+
+  .forecast__money:focus-within {
+    border-color: color-mix(in srgb, var(--holo) 55%, var(--line));
+    box-shadow: 0 0 0 3px rgba(127, 216, 232, 0.12);
+  }
+
+  .forecast__money-prefix {
+    display: flex;
+    align-items: center;
+    flex: 0 0 auto;
+    padding: 0 0 0 0.75em;
+    font-family: var(--font-mono);
+    font-size: 0.92rem;
+    font-weight: 500;
+    color: var(--ink-faint);
+    user-select: none;
+    pointer-events: none;
+  }
+
+  .forecast__money input {
+    margin-top: 0;
+    flex: 1 1 auto;
+    height: 100%;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    padding-left: 0.35em;
+    box-shadow: none;
+  }
+
+  .forecast__money input:focus-visible {
+    border: 0;
+    box-shadow: none;
   }
 
   .forecast__actions {
@@ -1330,17 +1623,39 @@ const FONTSHARE_CSS =
     border: 1px solid var(--line);
     border-radius: var(--radius);
     background: rgba(15, 17, 24, 0.4);
+    transition:
+      border-color 280ms ease,
+      box-shadow 320ms ease,
+      background 280ms ease;
   }
 
-  .forecast__method summary {
-    cursor: pointer;
+  .forecast__method.is-open {
+    border-color: color-mix(in srgb, var(--holo) 28%, var(--line));
+    box-shadow: 0 0 24px rgba(127, 216, 232, 0.06);
+    background: color-mix(in srgb, var(--holo) 3%, rgba(15, 17, 24, 0.45));
+  }
+
+  .forecast__method-toggle {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.45rem 0.75rem;
+    width: 100%;
+    margin: 0;
     padding: 0.9rem 1.1rem;
-    list-style: none;
+    border: 0;
+    border-radius: inherit;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
     user-select: none;
   }
 
-  .forecast__method summary::-webkit-details-marker {
-    display: none;
+  .forecast__method-toggle:focus-visible {
+    outline: none;
+    box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--holo) 45%, transparent);
   }
 
   .forecast__method-summary-label {
@@ -1349,6 +1664,7 @@ const FONTSHARE_CSS =
     letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--ink-dim);
+    transition: color 200ms ease;
   }
 
   .forecast__method-summary-label::before {
@@ -1356,22 +1672,54 @@ const FONTSHARE_CSS =
     display: inline-block;
     margin-right: 0.55rem;
     color: var(--holo);
-    transition: transform 160ms ease;
+    transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
   }
 
-  .forecast__method[open] .forecast__method-summary-label::before {
+  .forecast__method.is-open .forecast__method-summary-label::before {
     transform: rotate(90deg);
   }
 
-  .forecast__method summary:hover .forecast__method-summary-label {
+  .forecast__method-summary-hint {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .forecast__method-toggle:hover .forecast__method-summary-label {
     color: var(--ink);
+  }
+
+  .forecast__method-panel {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    transition:
+      grid-template-rows 340ms cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 260ms ease;
+  }
+
+  .forecast__method.is-open .forecast__method-panel {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+
+  .forecast__method-panel-inner {
+    overflow: hidden;
+    min-height: 0;
   }
 
   .forecast__method-body {
     padding: 0 1.1rem 1.15rem;
-    border-top: 1px solid var(--line-soft);
+    border-top: 1px solid transparent;
     display: grid;
     gap: 0.9rem;
+    transition: border-color 280ms ease;
+  }
+
+  .forecast__method.is-open .forecast__method-body {
+    border-top-color: var(--line-soft);
   }
 
   .forecast__method-lede {
@@ -1379,6 +1727,15 @@ const FONTSHARE_CSS =
     font-size: 0.9rem;
     line-height: 1.5;
     color: var(--ink-dim);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .forecast__method,
+    .forecast__method-panel,
+    .forecast__method-summary-label::before,
+    .forecast__method-body {
+      transition: none;
+    }
   }
 
   .forecast__method-eq {

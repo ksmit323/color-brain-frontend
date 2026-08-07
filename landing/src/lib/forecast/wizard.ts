@@ -413,6 +413,25 @@ export function initForecastWizard(root: HTMLElement): void {
 
   track("forecast_view", { path: "/forecast" });
 
+  // Accordion panels — grid 0fr/1fr open/close (not native <details>).
+  const bindAccordion = (
+    rootSel: string,
+    toggleSel: string,
+    eventName: string,
+  ) => {
+    const panel = root.querySelector<HTMLElement>(rootSel);
+    const toggle = root.querySelector<HTMLButtonElement>(toggleSel);
+    toggle?.addEventListener("click", () => {
+      if (!panel || !toggle) return;
+      const open = !panel.classList.contains("is-open");
+      panel.classList.toggle("is-open", open);
+      toggle.setAttribute("aria-expanded", open ? "true" : "false");
+      track(eventName, { open });
+    });
+  };
+  bindAccordion("[data-costs]", "[data-costs-toggle]", "forecast_costs_toggle");
+  bindAccordion("[data-method]", "[data-method-toggle]", "forecast_method_toggle");
+
   for (const btn of $all("[data-preset]", root)) {
     const id = btn.getAttribute("data-preset") as PresetId;
     const on = id === DEFAULT_PRESET_ID;
