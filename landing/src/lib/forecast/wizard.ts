@@ -45,7 +45,9 @@ function track(event: string, props: Record<string, unknown> = {}): void {
   const w = window as Window & { dataLayer?: Record<string, unknown>[] };
   w.dataLayer = w.dataLayer ?? [];
   w.dataLayer.push(payload);
-  window.dispatchEvent(new CustomEvent("forecast:analytics", { detail: payload }));
+  window.dispatchEvent(
+    new CustomEvent("forecast:analytics", { detail: payload }),
+  );
 }
 
 function $(sel: string, root: ParentNode = document): HTMLElement | null {
@@ -97,7 +99,9 @@ function markScenarioSelected(root: HTMLElement, scenario: ScenarioId): void {
   }
 }
 
-const PANEL_TRANSITION_MS = 400;
+const PANEL_TRANSITION_MS = 320;
+/** Start hero expand before panel transition fully ends (less dead air on reverse). */
+const HERO_EXPAND_OVERLAP_MS = 140;
 const PANEL_ANIM_CLASSES = [
   "is-exit",
   "is-enter",
@@ -127,6 +131,51 @@ function updateStepIndicators(root: HTMLElement, step: Step): void {
   }
 }
 
+function setHeroA11y(step: Step): void {
+  const hero = document.querySelector<HTMLElement>("[data-forecast-hero]");
+  const slot = document.querySelector<HTMLElement>("[data-forecast-hero-slot]");
+  const hide = step !== 1;
+  if (hero) {
+    hero.setAttribute("aria-hidden", hide ? "true" : "false");
+    if (hide) hero.setAttribute("inert", "");
+    else hero.removeAttribute("inert");
+  }
+  if (slot) {
+    if (hide) slot.setAttribute("inert", "");
+    else slot.removeAttribute("inert");
+  }
+}
+
+/**
+ * Collapse/expand intro hero and re-frame the wizard.
+ * `main.dataset.step` drives CSS; can be delayed on reverse so hero expands
+ * after the panel crossfade (avoids the jumpy Tune → Profile reverse).
+ */
+function applyPageChrome(
+  root: HTMLElement,
+  step: Step,
+  opts: { instant?: boolean; scroll?: boolean } = {},
+): void {
+  const main = root.closest(".forecast");
+  if (main instanceof HTMLElement) main.dataset.step = String(step);
+  setHeroA11y(step);
+
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (opts.instant || reduced || opts.scroll === false) return;
+
+  window.requestAnimationFrame(() => {
+    if (step === 1) {
+      const hero = document.querySelector<HTMLElement>("[data-forecast-hero]");
+      (hero ?? root).scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+    root.scrollIntoView({
+      behavior: "smooth",
+      block: step === 2 ? "center" : "start",
+    });
+  });
+}
+
 /** Active panel transition — rejects concurrent navigations until done. */
 let stepLock: Promise<void> | null = null;
 
@@ -145,11 +194,21 @@ function setStep(
     const next = root.querySelector<HTMLElement>(`[data-step-panel="${step}"]`);
     if (!next) return;
 
+    const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const instant = opts.instant === true || reduced || !prev || prev === next;
+    // Expand hero only after panel swap when going back to Profile.
+    const deferHeroExpand = !instant && step === 1 && prevStep > 1;
+
     root.dataset.step = String(step);
     updateStepIndicators(root, step);
 
-    const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const instant = opts.instant === true || reduced || !prev || prev === next;
+    if (deferHeroExpand) {
+      // Keep main at previous step so the hero stays collapsed during panel anim.
+      const main = root.closest(".forecast");
+      if (main instanceof HTMLElement) main.dataset.step = String(prevStep);
+    } else {
+      applyPageChrome(root, step, { instant: opts.instant });
+    }
 
     if (instant) {
       for (const p of panels) {
@@ -201,6 +260,14 @@ function setStep(
       forward ? "is-enter-forward" : "is-enter-back",
     );
 
+    // Overlap hero expand with the tail of the panel crossfade when returning
+    // to Profile — cuts the “wait then text appears” hesitation.
+    if (deferHeroExpand) {
+      window.setTimeout(() => {
+        applyPageChrome(root, 1, { scroll: true });
+      }, HERO_EXPAND_OVERLAP_MS);
+    }
+
     await new Promise<void>((resolve) => {
       window.setTimeout(resolve, PANEL_TRANSITION_MS);
     });
@@ -213,6 +280,7 @@ function setStep(
       // Release fixed height after layout settles on the active panel.
       stage.style.height = "";
     }
+
     if (opts.focus !== false) focusFirstIn(next);
   };
 
@@ -223,11 +291,7 @@ function setStep(
 
 const animFrames = new WeakMap<HTMLElement, number>();
 
-function animateValue(
-  el: HTMLElement,
-  target: number,
-  reduced: boolean,
-): void {
+function animateValue(el: HTMLElement, target: number, reduced: boolean): void {
   const prev = animFrames.get(el);
   if (prev != null) cancelAnimationFrame(prev);
 
@@ -369,7 +433,10 @@ export function initForecastWizard(root: HTMLElement): void {
     });
   }
 
-  const selectScenario = (scenario: ScenarioId, opts: { track?: boolean } = {}) => {
+  const selectScenario = (
+    scenario: ScenarioId,
+    opts: { track?: boolean } = {},
+  ) => {
     if (selectedScenario === scenario && !opts.track) {
       markScenarioSelected(root, scenario);
       return;
@@ -389,14 +456,20 @@ export function initForecastWizard(root: HTMLElement): void {
     });
     card.addEventListener("keydown", (e) => {
       const ke = e as KeyboardEvent;
-      if (ke.key !== "ArrowLeft" && ke.key !== "ArrowRight" && ke.key !== "Home" && ke.key !== "End") {
+      if (
+        ke.key !== "ArrowLeft" &&
+        ke.key !== "ArrowRight" &&
+        ke.key !== "Home" &&
+        ke.key !== "End"
+      ) {
         return;
       }
       ke.preventDefault();
       const idx = SCENARIO_IDS.indexOf(selectedScenario);
       let next = idx;
       if (ke.key === "ArrowLeft") next = Math.max(0, idx - 1);
-      if (ke.key === "ArrowRight") next = Math.min(SCENARIO_IDS.length - 1, idx + 1);
+      if (ke.key === "ArrowRight")
+        next = Math.min(SCENARIO_IDS.length - 1, idx + 1);
       if (ke.key === "Home") next = 0;
       if (ke.key === "End") next = SCENARIO_IDS.length - 1;
       const nextId = SCENARIO_IDS[next]!;
@@ -479,21 +552,23 @@ export function initForecastWizard(root: HTMLElement): void {
     track("forecast_cta_click", { cta: "book_pilot" });
   });
 
-  root.querySelector("[data-cta-copy]")?.addEventListener("click", async (e) => {
-    e.preventDefault();
-    track("forecast_cta_click", { cta: "copy_link" });
-    const btn = e.currentTarget as HTMLButtonElement;
-    const url = window.location.href;
-    try {
-      await navigator.clipboard.writeText(url);
-      const prev = btn.textContent;
-      btn.textContent = "Link copied";
-      btn.setAttribute("aria-live", "polite");
-      setTimeout(() => {
-        btn.textContent = prev;
-      }, 1800);
-    } catch {
-      window.prompt("Copy this link:", url);
-    }
-  });
+  root
+    .querySelector("[data-cta-copy]")
+    ?.addEventListener("click", async (e) => {
+      e.preventDefault();
+      track("forecast_cta_click", { cta: "copy_link" });
+      const btn = e.currentTarget as HTMLButtonElement;
+      const url = window.location.href;
+      try {
+        await navigator.clipboard.writeText(url);
+        const prev = btn.textContent;
+        btn.textContent = "Link copied";
+        btn.setAttribute("aria-live", "polite");
+        setTimeout(() => {
+          btn.textContent = prev;
+        }, 1800);
+      } catch {
+        window.prompt("Copy this link:", url);
+      }
+    });
 }

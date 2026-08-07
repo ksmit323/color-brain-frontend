@@ -61,16 +61,18 @@ const FONTSHARE_CSS =
   <body id="top" class="forecast-page">
     <Nav path="/forecast" />
 
-    <main class="forecast">
+    <main class="forecast" data-step="1">
       <div class="container forecast__shell">
-        <header class="forecast__hero">
-          <p class="eyebrow">Savings outlook</p>
-          <h1 class="forecast__title">What could Color Brain save your mill?</h1>
-          <p class="lede forecast__lede">
-            Pick a profile that fits your operation, tune the numbers that matter,
-            and see a credible annual range.
-          </p>
-        </header>
+        <div class="forecast__hero-slot" data-forecast-hero-slot>
+          <header class="forecast__hero" data-forecast-hero>
+            <p class="eyebrow">Savings outlook</p>
+            <h1 class="forecast__title">What could Color Brain save your mill?</h1>
+            <p class="lede forecast__lede">
+              Pick a profile that fits your operation, tune the numbers that matter,
+              and see a credible annual range.
+            </p>
+          </header>
+        </div>
 
         <div
           id="forecast-wizard"
@@ -595,16 +597,51 @@ const FONTSHARE_CSS =
   }
 
   .forecast {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    /* Keep flex-start always — justify-content:center→start was the jumpy reverse. */
     padding-block: clamp(2.5rem, 6vw, 4.5rem) var(--section-pad);
-    min-height: 70vh;
+    min-height: calc(100dvh - 5.5rem);
+    transition: padding 320ms cubic-bezier(0.25, 0.1, 0.25, 1);
+  }
+
+  /* Past Profile: tighter chrome; framing comes from scroll, not justify flips. */
+  .forecast[data-step="2"],
+  .forecast[data-step="3"] {
+    padding-block: clamp(1.15rem, 3vw, 2rem) clamp(2rem, 5vw, 3.5rem);
   }
 
   .forecast__shell {
     max-width: 920px;
+    width: 100%;
   }
 
-  .forecast__hero {
+  /*
+   * Hero collapse via grid 0fr/1fr — expands/collapses true content height
+   * (max-height:22rem was approximate and felt jumpy on the way back).
+   */
+  .forecast__hero-slot {
+    display: grid;
+    grid-template-rows: 1fr;
+    opacity: 1;
+    margin-bottom: 0;
+    transition:
+      grid-template-rows 300ms cubic-bezier(0.25, 0.1, 0.25, 1),
+      opacity 200ms ease;
+  }
+
+  .forecast__hero-slot > .forecast__hero {
+    overflow: hidden;
+    min-height: 0;
     margin-bottom: 2.5rem;
+  }
+
+  .forecast[data-step="2"] .forecast__hero-slot,
+  .forecast[data-step="3"] .forecast__hero-slot {
+    grid-template-rows: 0fr;
+    opacity: 0;
+    pointer-events: none;
   }
 
   .forecast__title {
@@ -632,6 +669,7 @@ const FONTSHARE_CSS =
     padding: clamp(1.4rem, 3vw, 2.25rem);
     position: relative;
     overflow: hidden;
+    scroll-margin-top: 5.5rem;
   }
 
   .forecast__wizard::before {
@@ -721,7 +759,7 @@ const FONTSHARE_CSS =
   .forecast__stage {
     position: relative;
     overflow: hidden;
-    transition: height 400ms cubic-bezier(0.25, 0.1, 0.25, 1);
+    transition: height 320ms cubic-bezier(0.25, 0.1, 0.25, 1);
   }
 
   .forecast__panel {
@@ -748,19 +786,19 @@ const FONTSHARE_CSS =
   }
 
   .forecast__panel.is-exit-forward {
-    animation: forecast-panel-exit-forward 360ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    animation: forecast-panel-exit-forward 280ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
   }
 
   .forecast__panel.is-exit-back {
-    animation: forecast-panel-exit-back 360ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    animation: forecast-panel-exit-back 280ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
   }
 
   .forecast__panel.is-enter-forward {
-    animation: forecast-panel-enter-forward 400ms cubic-bezier(0.25, 0.1, 0.25, 1) both;
+    animation: forecast-panel-enter-forward 320ms cubic-bezier(0.25, 0.1, 0.25, 1) both;
   }
 
   .forecast__panel.is-enter-back {
-    animation: forecast-panel-enter-back 400ms cubic-bezier(0.25, 0.1, 0.25, 1) both;
+    animation: forecast-panel-enter-back 320ms cubic-bezier(0.25, 0.1, 0.25, 1) both;
   }
 
   @keyframes forecast-panel-exit-forward {
@@ -808,6 +846,8 @@ const FONTSHARE_CSS =
   }
 
   @media (prefers-reduced-motion: reduce) {
+    .forecast,
+    .forecast__hero-slot,
     .forecast__stage {
       transition: none;
     }
