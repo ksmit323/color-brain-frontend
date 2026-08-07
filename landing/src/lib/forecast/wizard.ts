@@ -154,7 +154,7 @@ function setHeroA11y(step: Step): void {
 function applyPageChrome(
   root: HTMLElement,
   step: Step,
-  opts: { instant?: boolean; scroll?: boolean } = {},
+  opts: { instant?: boolean; scroll?: boolean; fromStep?: Step } = {},
 ): void {
   const main = root.closest(".forecast");
   if (main instanceof HTMLElement) main.dataset.step = String(step);
@@ -163,15 +163,26 @@ function applyPageChrome(
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
   if (opts.instant || reduced || opts.scroll === false) return;
 
+  const from = opts.fromStep;
+  // Tune → Outlook: hero stays collapsed — revealing shouldn't re-scroll.
+  if (from === 2 && step === 3) return;
+  // Profile → Tune: hero collapses via grid 0fr (300ms). Scrolling immediately
+  // races that collapse — the wizard is measured pre-collapse, then slides up
+  // and the forced scroll hides the steps under the nav.
+  if (from === 1 && step === 2) return;
+  // Outlook → Tune (Adjust numbers): user is scrolled down in results and
+  // expects to land at the top of the Tune form — allow the scroll below.
+
   window.requestAnimationFrame(() => {
     if (step === 1) {
       const hero = document.querySelector<HTMLElement>("[data-forecast-hero]");
       (hero ?? root).scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
+    // Entering focused mode from Profile — pin wizard under the nav.
     root.scrollIntoView({
       behavior: "smooth",
-      block: step === 2 ? "center" : "start",
+      block: "start",
     });
   });
 }
@@ -207,7 +218,10 @@ function setStep(
       const main = root.closest(".forecast");
       if (main instanceof HTMLElement) main.dataset.step = String(prevStep);
     } else {
-      applyPageChrome(root, step, { instant: opts.instant });
+      applyPageChrome(root, step, {
+        instant: opts.instant,
+        fromStep: prevStep,
+      });
     }
 
     if (instant) {
