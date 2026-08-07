@@ -79,7 +79,11 @@ function markPresetSelected(root: HTMLElement, id: PresetId): void {
   }
 }
 
-function setStep(root: HTMLElement, step: Step): void {
+function setStep(
+  root: HTMLElement,
+  step: Step,
+  opts: { focus?: boolean } = {},
+): void {
   root.dataset.step = String(step);
   for (const panel of $all("[data-step-panel]", root)) {
     const n = Number(panel.getAttribute("data-step-panel"));
@@ -93,7 +97,9 @@ function setStep(root: HTMLElement, step: Step): void {
     pill.classList.toggle("is-done", n < step);
     pill.setAttribute("aria-current", n === step ? "step" : "false");
   }
-  // Focus first focusable in the newly shown panel for keyboard flow.
+  // Focus first focusable when the user moves steps (keyboard flow). Skip on
+  // initial load so the default preset is not outlined until they interact.
+  if (opts.focus === false) return;
   const panel = root.querySelector<HTMLElement>(
     `[data-step-panel="${step}"]:not([hidden])`,
   );
@@ -184,7 +190,8 @@ export function initForecastWizard(root: HTMLElement): void {
   const defaultInputs = getPreset(DEFAULT_PRESET_ID).inputs;
   writeInputs(root, defaultInputs);
   renderResult(root, defaultInputs, { animate: false, reduced: prefersReduced });
-  setStep(root, 1);
+  setStep(root, 1, { focus: false });
+
 
   track("forecast_view", { path: "/forecast" });
 
