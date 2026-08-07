@@ -96,6 +96,50 @@ function writeInputs(root: HTMLElement, inputs: ForecastInputs): void {
   }
 }
 
+/** Share URL helpers — encode every Tune input so a copied link rehydrates exactly. */
+function readInputsFromSearch(): {
+  inputs: Partial<ForecastInputs>;
+  scenario: ScenarioId | null;
+  preset: PresetId | null;
+} {
+  const params = new URLSearchParams(window.location.search);
+  const inputs: Partial<ForecastInputs> = {};
+  for (const id of INPUT_IDS) {
+    if (!params.has(id)) continue;
+    const raw = params.get(id) ?? "";
+    // Percent fields tolerate "86%" or "86" in the URL.
+    const n = isPercentField(id) ? parseNumericInput(raw) : parseFloat(raw);
+    if (Number.isFinite(n)) (inputs as Record<string, number>)[id] = n;
+  }
+  const scenarioRaw = params.get("scenario");
+  const scenario = isScenarioId(scenarioRaw) ? scenarioRaw : null;
+  const presetRaw = params.get("preset");
+  const preset: PresetId | null =
+    presetRaw === "small" || presetRaw === "medium" || presetRaw === "large"
+      ? presetRaw
+      : null;
+  return { inputs, scenario, preset };
+}
+
+function buildShareUrl(root: HTMLElement, scenario: ScenarioId): string {
+  const inputs = readInputs(root);
+  const url = new URL(window.location.href);
+  // Preserve pathname, replace search with current inputs.
+  url.search = "";
+  for (const id of INPUT_IDS) {
+    const v = inputs[id];
+    // Keep URL tidy: integers as integers, RFT with one decimal when needed.
+    const s = isPercentField(id)
+      ? Number.isInteger(v)
+        ? String(v)
+        : String(Math.round((v as number) * 10) / 10)
+      : String(v);
+    url.searchParams.set(id, s);
+  }
+  url.searchParams.set("scenario", scenario);
+  return url.toString();
+}
+
 function setText(el: HTMLElement | null, value: string): void {
   if (el && el.textContent !== value) el.textContent = value;
 }
@@ -438,14 +482,42 @@ export function initForecastWizard(root: HTMLElement): void {
     prefersReduced = reducedMotion.matches;
   });
 
-  const defaultInputs = getPreset(DEFAULT_PRESET_ID).inputs;
-  writeInputs(root, defaultInputs);
-  lastResult = renderResult(root, defaultInputs, {
+  // Hydrate from share URL if present — lets a copied link rehydrate exactly.
+  const shared = readInputsFromSearch();
+  const hasSharedInputs = Object.keys(shared.inputs).length > 0;
+  const initialInputs: ForecastInputs = hasSharedInputs
+    ? { ...getPreset(DEFAULT_PRESET_ID).inputs, ...shared.inputs }
+    : getPreset(DEFAULT_PRESET_ID).inputs;
+  // If URL carries a scenario, respect it; otherwise default stays "expected".
+  let hasHydratedScenario = false;
+  if (shared.scenario) {
+    selectedScenario = shared.scenario;
+    hasHydratedScenario = true;
+  }
+  // If URL carries custom inputs, don't pretend a preset is selected.
+  if (hasSharedInputs && shared.preset) selectedPreset = shared.preset;
+  else if (hasSharedInputs) selectedPreset = "medium"; // keep internal, but UI shows no preset as selected until user picks
+  writeInputs(root, initialInputs);
+  lastResult = renderResult(root, initialInputs, {
     animate: false,
     reduced: prefersReduced,
     scenario: selectedScenario,
   });
-  void setStep(root, 1, { focus: false, instant: true });
+  // Mark preset pills correctly when hydrating from a shared URL.
+  if (hasSharedInputs) {
+    // Clear all preset selection — inputs are custom, not a named preset.
+    for (const b of $all("[data-preset]", root)) {
+      b.classList.remove("is-selected");
+      b.setAttribute("aria-pressed", "false");
+    }
+    track("forecast_share_hydrate", { ...initialInputs, scenario: selectedScenario });
+  }
+  // Shared links land directly on Outlook so the recipient sees the same result.
+  if (hasSharedInputs) {
+    void setStep(root, 3, { focus: false, instant: true });
+  } else {
+    void setStep(root, 1, { focus: false, instant: true });
+  }
 
   track("forecast_view", { path: "/forecast" });
 
@@ -787,8 +859,14 @@ export function initForecastWizard(root: HTMLElement): void {
     if (step === 3) {
       const inputs = readInputs(root);
       const fromCta = opts.via === "cta" || opts.animateReveal === true;
-      // CTA “Reveal outlook” resets to Expected; step tabs keep selection.
-      if (fromCta) selectedScenario = "expected";
+      // CTA “Reveal outlook” resets to Expected; hydrating a shared link keeps its scenario on first reveal.
+      if (fromCta) {
+        if (hasHydratedScenario) {
+          hasHydratedScenario = false;
+        } else {
+          selectedScenario = "expected";
+        }
+      }
       lastResult = renderResult(root, inputs, {
         animate: fromCta,
         reduced: prefersReduced,
@@ -842,9 +920,13 @@ export function initForecastWizard(root: HTMLElement): void {
       e.preventDefault();
       track("forecast_cta_click", { cta: "copy_link" });
       const btn = e.currentTarget as HTMLButtonElement;
-      const url = window.location.href;
+      const shareUrl = buildShareUrl(root, selectedScenario);
+      // Keep address bar in sync so a second copy without re-click still has the latest params.
       try {
-        await navigator.clipboard.writeText(url);
+        history.replaceState(null, "", shareUrl);
+      } catch {}
+      try {
+        await navigator.clipboard.writeText(shareUrl);
         const prev = btn.textContent;
         btn.textContent = "Link copied";
         btn.setAttribute("aria-live", "polite");
@@ -852,7 +934,7 @@ export function initForecastWizard(root: HTMLElement): void {
           btn.textContent = prev;
         }, 1800);
       } catch {
-        window.prompt("Copy this link:", url);
+        window.prompt("Copy this link:", shareUrl);
       }
     });
 }
