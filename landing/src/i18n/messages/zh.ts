@@ -22,8 +22,7 @@ export const zh = {
     switchToZh: "切换到简体中文",
   },
   footer: {
-    tagline:
-      "纺织染色决策支持——推荐已验证的历史配方，证据不足时保持克制。",
+    tagline: "纺织染色决策支持——推荐已验证的历史配方，证据不足时保持克制。",
     site: "网站",
     founders: "创始团队",
     roleCeo: "首席执行官兼联合创始人",
@@ -101,8 +100,7 @@ export const zh = {
     tabsAria: "案例列表",
     prevAria: "上一个案例",
     nextAria: "下一个案例",
-    plateAria:
-      "目标色盘：Color Brain 距目标 ΔE {cb}，技术员 ΔE {tech}",
+    plateAria: "目标色盘：Color Brain 距目标 ΔE {cb}，技术员 ΔE {tech}",
     ringSpec: "ΔE 1.0 · 规格",
     keyCenter: "中心 = 精确目标",
     keyDrift: "向外色偏 = 偏差增大",
@@ -159,10 +157,9 @@ export const zh = {
     stepTune: "调参",
     stepOutlook: "展望",
     heroEyebrow: "收益展望",
-    heroTitleBefore: "Color Brain",
+    heroTitleBefore: "",
     heroTitleAfter: "能为你的染厂节省多少？",
-    heroLede:
-      "选择贴合你产线的画像，调整关键数字，得到可信的年度节省区间。",
+    heroLede: "选择贴合你产线的画像，调整关键数字，得到可信的年度节省区间。",
     step1Title: "选择染厂画像",
     step1Lede: "预设会预填全部输入。下一步可覆盖任意数值。",
     presetsAria: "染厂规模预设",
