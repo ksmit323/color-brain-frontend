@@ -73,6 +73,10 @@ const comingSoon = m.nav.comingSoon;
           aria-controls={langMenuId}
           aria-label={m.nav.langAria}
         >
+          <i class="nav__lang-bracket nav__lang-bracket--tl" aria-hidden="true"></i>
+          <i class="nav__lang-bracket nav__lang-bracket--tr" aria-hidden="true"></i>
+          <i class="nav__lang-bracket nav__lang-bracket--bl" aria-hidden="true"></i>
+          <i class="nav__lang-bracket nav__lang-bracket--br" aria-hidden="true"></i>
           <span class="nav__lang-code">{currentLabel}</span>
           <span class="nav__lang-chevron" aria-hidden="true"></span>
         </button>
@@ -84,6 +88,11 @@ const comingSoon = m.nav.comingSoon;
           hidden
           data-lang-menu
         >
+          <div class="nav__lang-scan" aria-hidden="true"></div>
+          <div class="nav__lang-menu-head" aria-hidden="true">
+            <span>// LANGUAGE</span>
+            <span class="nav__lang-menu-status">ONLINE</span>
+          </div>
           {LOCALE_MENU.map((entry) => {
             const active = entry.live && entry.id === locale;
             if (!entry.live) {
@@ -95,6 +104,7 @@ const comingSoon = m.nav.comingSoon;
                   aria-disabled="true"
                   title={comingSoon}
                 >
+                  <span class="nav__lang-opt-mark" aria-hidden="true">·</span>
                   <span class="nav__lang-opt-code">{entry.label}</span>
                   <span class="nav__lang-opt-name">
                     {entry.name}
@@ -110,12 +120,12 @@ const comingSoon = m.nav.comingSoon;
                   role="option"
                   aria-selected="true"
                 >
+                  <span class="nav__lang-opt-mark" aria-hidden="true">&gt;</span>
                   <span class="nav__lang-opt-code">{entry.label}</span>
                   <span class="nav__lang-opt-name">{entry.name}</span>
                 </span>
               );
             }
-            // live + not current — switch target
             const target = entry.id as Locale;
             const href = counterpartPath(path, locale, target);
             return (
@@ -129,6 +139,7 @@ const comingSoon = m.nav.comingSoon;
                 data-locale-target={target}
                 title={entry.name}
               >
+                <span class="nav__lang-opt-mark" aria-hidden="true">&gt;</span>
                 <span class="nav__lang-opt-code">{entry.label}</span>
                 <span class="nav__lang-opt-name">{entry.name}</span>
               </a>
@@ -277,9 +288,10 @@ const comingSoon = m.nav.comingSoon;
     margin-left: auto;
   }
 
-  /* ── Multi-locale control (far right) ─────────────────────────────── */
+  /* ── Multi-locale HUD control (far right) ─────────────────────────── */
 
   .nav__lang {
+    --lang-holo: var(--holo);
     position: relative;
     flex-shrink: 0;
     z-index: 20;
@@ -289,76 +301,138 @@ const comingSoon = m.nav.comingSoon;
     position: relative;
     display: inline-flex;
     align-items: center;
-    gap: 0.35rem;
-    min-height: 2.1rem;
-    padding: 0.28rem 0.65rem 0.28rem 0.75rem;
-    border: 1px solid color-mix(in srgb, var(--holo) 28%, var(--line));
-    border-radius: 999px;
+    gap: 0.5rem;
+    min-height: 2.25rem;
+    padding: 0.32rem 0.7rem 0.32rem 0.55rem;
+    overflow: hidden;
+    isolation: isolate;
+    border: 1px solid color-mix(in srgb, var(--lang-holo) 42%, var(--line));
+    border-radius: 4px;
     background:
       linear-gradient(
-        155deg,
-        color-mix(in srgb, var(--holo) 12%, transparent) 0%,
-        rgba(10, 12, 18, 0.78) 48%,
-        rgba(8, 10, 16, 0.9) 100%
+        145deg,
+        color-mix(in srgb, var(--lang-holo) 14%, #0a0c12) 0%,
+        #07090f 48%,
+        #05070c 100%
       );
     box-shadow:
-      inset 0 1px 0 rgba(127, 216, 232, 0.16),
-      0 0 18px rgba(127, 216, 232, 0.08);
+      0 0 0 1px rgba(0, 0, 0, 0.55),
+      0 0 20px rgba(127, 216, 232, 0.12),
+      inset 0 1px 0 rgba(127, 216, 232, 0.22),
+      inset 0 -10px 18px rgba(0, 0, 0, 0.35);
     color: var(--ink);
     font: inherit;
     cursor: pointer;
     transition:
-      border-color 160ms ease,
-      box-shadow 160ms ease;
+      border-color 180ms ease,
+      box-shadow 180ms ease,
+      transform 180ms ease;
   }
 
-  .nav__lang-trigger::before {
+  /* Fine scanline texture */
+  .nav__lang-trigger::after {
     content: "";
     position: absolute;
     inset: 0;
-    border-radius: inherit;
-    background: linear-gradient(
-      105deg,
-      transparent 0%,
-      color-mix(in srgb, var(--holo) 16%, transparent) 42%,
-      transparent 68%
+    background: repeating-linear-gradient(
+      0deg,
+      transparent 0 2px,
+      rgba(127, 216, 232, 0.035) 2px 3px
     );
-    opacity: 0.5;
+    opacity: 0.7;
     pointer-events: none;
+    z-index: 0;
   }
 
   .nav__lang-trigger:hover,
   .nav__lang.is-open .nav__lang-trigger {
-    border-color: color-mix(in srgb, var(--holo) 55%, var(--line));
+    border-color: color-mix(in srgb, var(--lang-holo) 72%, white);
     box-shadow:
-      inset 0 1px 0 rgba(127, 216, 232, 0.22),
-      0 0 22px rgba(127, 216, 232, 0.18);
+      0 0 0 1px rgba(0, 0, 0, 0.55),
+      0 0 28px rgba(127, 216, 232, 0.28),
+      0 0 2px color-mix(in srgb, var(--lang-holo) 80%, transparent),
+      inset 0 1px 0 rgba(180, 240, 250, 0.35),
+      inset 0 -10px 18px rgba(0, 0, 0, 0.3);
+    transform: translateY(-1px);
+  }
+
+  .nav__lang.is-open .nav__lang-trigger {
+    border-bottom-color: color-mix(in srgb, var(--lang-holo) 30%, transparent);
   }
 
   .nav__lang-trigger:focus-visible {
-    outline: 1px solid color-mix(in srgb, var(--holo) 70%, transparent);
-    outline-offset: 2px;
+    outline: 1px solid color-mix(in srgb, var(--lang-holo) 80%, transparent);
+    outline-offset: 3px;
+  }
+
+  /* Corner reticle brackets (loader-adjacent HUD) */
+  .nav__lang-bracket {
+    position: absolute;
+    width: 0.42rem;
+    height: 0.42rem;
+    z-index: 2;
+    pointer-events: none;
+    opacity: 0.85;
+  }
+
+  .nav__lang-bracket--tl {
+    top: 3px;
+    left: 3px;
+    border-top: 1.5px solid var(--lang-holo);
+    border-left: 1.5px solid var(--lang-holo);
+    box-shadow: -1px -1px 6px rgba(127, 216, 232, 0.35);
+  }
+
+  .nav__lang-bracket--tr {
+    top: 3px;
+    right: 3px;
+    border-top: 1.5px solid var(--lang-holo);
+    border-right: 1.5px solid var(--lang-holo);
+    box-shadow: 1px -1px 6px rgba(127, 216, 232, 0.35);
+  }
+
+  .nav__lang-bracket--bl {
+    bottom: 3px;
+    left: 3px;
+    border-bottom: 1.5px solid var(--lang-holo);
+    border-left: 1.5px solid var(--lang-holo);
+    box-shadow: -1px 1px 6px rgba(127, 216, 232, 0.35);
+  }
+
+  .nav__lang-bracket--br {
+    bottom: 3px;
+    right: 3px;
+    border-bottom: 1.5px solid var(--lang-holo);
+    border-right: 1.5px solid var(--lang-holo);
+    box-shadow: 1px 1px 6px rgba(127, 216, 232, 0.35);
   }
 
   .nav__lang-code {
     position: relative;
+    z-index: 1;
     font-family: var(--font-mono);
-    font-size: 0.64rem;
+    font-size: 0.72rem;
     font-weight: 500;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.16em;
     text-transform: uppercase;
-    text-shadow: 0 0 12px rgba(127, 216, 232, 0.35);
+    color: #e8fcff;
+    text-shadow:
+      0 0 10px rgba(127, 216, 232, 0.65),
+      0 0 22px rgba(127, 216, 232, 0.25);
   }
 
   .nav__lang-chevron {
     position: relative;
-    width: 0.45rem;
-    height: 0.45rem;
-    border-right: 1.5px solid var(--holo);
-    border-bottom: 1.5px solid var(--holo);
+    z-index: 1;
+    width: 0.4rem;
+    height: 0.4rem;
+    margin-left: 0.05rem;
+    border-right: 1.5px solid var(--lang-holo);
+    border-bottom: 1.5px solid var(--lang-holo);
     transform: rotate(45deg) translateY(-1px);
-    opacity: 0.85;
-    transition: transform 160ms ease;
+    opacity: 0.9;
+    filter: drop-shadow(0 0 4px rgba(127, 216, 232, 0.6));
+    transition: transform 180ms ease;
   }
 
   .nav__lang.is-open .nav__lang-chevron {
@@ -367,71 +441,142 @@ const comingSoon = m.nav.comingSoon;
 
   .nav__lang-menu {
     position: absolute;
-    top: calc(100% + 0.55rem);
+    top: calc(100% + 0.45rem);
     right: 0;
-    min-width: 10.5rem;
-    padding: 0.35rem;
-    border-radius: 12px;
-    border: 1px solid color-mix(in srgb, var(--holo) 22%, var(--line));
+    min-width: 12.25rem;
+    padding: 0.4rem;
+    overflow: hidden;
+    border-radius: 6px;
+    border: 1px solid color-mix(in srgb, var(--lang-holo) 38%, var(--line));
     background:
       linear-gradient(
         165deg,
-        color-mix(in srgb, var(--surface-raised) 92%, var(--holo)) 0%,
-        rgba(10, 12, 18, 0.96) 100%
+        color-mix(in srgb, #10141c 88%, var(--lang-holo)) 0%,
+        #07090f 55%,
+        #05070c 100%
       );
-    backdrop-filter: blur(18px) saturate(1.25);
-    -webkit-backdrop-filter: blur(18px) saturate(1.25);
+    backdrop-filter: blur(20px) saturate(1.35);
+    -webkit-backdrop-filter: blur(20px) saturate(1.35);
     box-shadow:
-      0 18px 40px rgba(0, 0, 0, 0.55),
-      inset 0 1px 0 rgba(127, 216, 232, 0.1),
-      0 0 0 1px rgba(0, 0, 0, 0.35);
+      0 22px 48px rgba(0, 0, 0, 0.62),
+      0 0 0 1px rgba(0, 0, 0, 0.5),
+      0 0 32px rgba(127, 216, 232, 0.12),
+      inset 0 1px 0 rgba(127, 216, 232, 0.14);
   }
 
   .nav__lang-menu[hidden] {
     display: none;
   }
 
-  .nav__lang-opt {
+  .nav__lang-scan {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: -30%;
+    height: 35%;
+    background: linear-gradient(
+      180deg,
+      transparent,
+      color-mix(in srgb, var(--lang-holo) 16%, transparent),
+      transparent
+    );
+    pointer-events: none;
+    animation: nav-lang-scan 2.8s linear infinite;
+    opacity: 0.7;
+  }
+
+  .nav__lang-menu-head {
+    position: relative;
+    z-index: 1;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 0.75rem;
+    margin-bottom: 0.35rem;
+    padding: 0.28rem 0.45rem 0.4rem;
+    border-bottom: 1px solid color-mix(in srgb, var(--lang-holo) 18%, transparent);
+    font-family: var(--font-mono);
+    font-size: 0.52rem;
+    letter-spacing: 0.14em;
+    color: color-mix(in srgb, var(--lang-holo) 70%, var(--ink-faint));
+  }
+
+  .nav__lang-menu-status {
+    color: var(--lang-holo);
+    text-shadow: 0 0 8px rgba(127, 216, 232, 0.55);
+    animation: nav-lang-pulse 1.8s ease-in-out infinite;
+  }
+
+  .nav__lang-opt {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 0.7rem 2rem 1fr;
+    align-items: center;
+    gap: 0.35rem 0.45rem;
     width: 100%;
-    padding: 0.48rem 0.65rem;
-    border-radius: 8px;
+    padding: 0.5rem 0.5rem;
+    border-radius: 4px;
     text-decoration: none;
     color: var(--ink-dim);
     transition:
       color 140ms ease,
       background-color 140ms ease,
-      box-shadow 140ms ease;
+      box-shadow 140ms ease,
+      text-shadow 140ms ease;
+  }
+
+  .nav__lang-opt-mark {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    color: var(--lang-holo);
+    opacity: 0;
+    transform: translateX(-3px);
+    transition:
+      opacity 140ms ease,
+      transform 140ms ease;
   }
 
   a.nav__lang-opt:hover {
     color: var(--ink);
-    background: color-mix(in srgb, var(--holo) 10%, transparent);
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--holo) 18%, transparent);
+    background: color-mix(in srgb, var(--lang-holo) 9%, transparent);
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--lang-holo) 22%, transparent),
+      0 0 16px rgba(127, 216, 232, 0.08);
+    text-shadow: 0 0 12px rgba(127, 216, 232, 0.2);
+  }
+
+  a.nav__lang-opt:hover .nav__lang-opt-mark {
+    opacity: 1;
+    transform: none;
   }
 
   .nav__lang-opt.is-active {
-    color: var(--bg);
+    color: #041016;
     background:
       linear-gradient(
-        180deg,
-        color-mix(in srgb, var(--holo) 92%, white) 0%,
-        var(--holo) 55%,
-        color-mix(in srgb, var(--holo) 78%, #3a9aaa) 100%
+        100deg,
+        color-mix(in srgb, var(--lang-holo) 95%, white) 0%,
+        var(--lang-holo) 42%,
+        color-mix(in srgb, var(--lang-holo) 72%, #2a8a9a) 100%
       );
     box-shadow:
-      0 0 14px rgba(127, 216, 232, 0.35),
-      inset 0 1px 0 rgba(255, 255, 255, 0.3);
+      0 0 18px rgba(127, 216, 232, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  }
+
+  .nav__lang-opt.is-active .nav__lang-opt-mark {
+    opacity: 1;
+    transform: none;
+    color: #041016;
+    text-shadow: none;
   }
 
   .nav__lang-opt-code {
     font-family: var(--font-mono);
-    font-size: 0.62rem;
+    font-size: 0.64rem;
     font-weight: 500;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.14em;
     text-transform: uppercase;
   }
 
@@ -439,30 +584,60 @@ const comingSoon = m.nav.comingSoon;
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    gap: 0.1rem;
+    gap: 0.12rem;
     font-size: 0.78rem;
     letter-spacing: 0.01em;
     line-height: 1.15;
-    opacity: 0.92;
+    opacity: 0.95;
   }
 
   .nav__lang-opt.is-active .nav__lang-opt-name {
-    opacity: 0.88;
+    opacity: 0.9;
   }
 
   .nav__lang-opt.is-placeholder {
-    opacity: 0.42;
+    opacity: 0.38;
     cursor: not-allowed;
     pointer-events: none;
   }
 
+  .nav__lang-opt.is-placeholder .nav__lang-opt-mark {
+    opacity: 0.5;
+  }
+
   .nav__lang-soon {
     font-family: var(--font-mono);
-    font-size: 0.55rem;
+    font-size: 0.52rem;
     font-style: normal;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
-    opacity: 0.85;
+    opacity: 0.9;
+  }
+
+  @keyframes nav-lang-scan {
+    0% {
+      transform: translateY(0);
+    }
+    100% {
+      transform: translateY(380%);
+    }
+  }
+
+  @keyframes nav-lang-pulse {
+    0%,
+    100% {
+      opacity: 0.55;
+    }
+    50% {
+      opacity: 1;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .nav__lang-scan,
+    .nav__lang-menu-status {
+      animation: none;
+    }
   }
 
   .nav__ghost {
@@ -506,16 +681,18 @@ const comingSoon = m.nav.comingSoon;
     }
 
     .nav__lang-trigger {
-      min-height: 1.95rem;
-      padding: 0.22rem 0.55rem 0.22rem 0.62rem;
+      min-height: 2.05rem;
+      gap: 0.4rem;
+      padding: 0.28rem 0.55rem 0.28rem 0.45rem;
     }
 
     .nav__lang-code {
-      font-size: 0.58rem;
+      font-size: 0.64rem;
+      letter-spacing: 0.12em;
     }
 
     .nav__lang-menu {
-      min-width: 9.75rem;
+      min-width: 11rem;
     }
 
     .nav__cta {
