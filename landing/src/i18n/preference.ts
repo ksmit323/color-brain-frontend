@@ -49,7 +49,7 @@ export function writePreferenceCookie(locale: Locale): void {
  * Redirects to any non-default preferred locale home when on bare `/`.
  * Built as a static string for `is:inline` (no module imports before first paint).
  *
- * Map is derived from LOCALES so menu placeholders (e.g. vi) never redirect.
+ * Map is derived from live LOCALES only so non-live menu ids never redirect.
  */
 const COOKIE_PREFIX = `${PREFERENCE_COOKIE}=`;
 const SOFT_ENTRY_REDIRECTS = Object.fromEntries(
