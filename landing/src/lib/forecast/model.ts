@@ -19,10 +19,18 @@ export const SCENARIO_IDS = [
   "optimistic",
 ] as const satisfies readonly ScenarioId[];
 
+/** English fallback labels — prefer catalog messages in the UI. */
 export const SCENARIO_LABELS: Record<ScenarioId, string> = {
   conservative: "Conservative",
   expected: "Expected",
   optimistic: "Optimistic",
+};
+
+export type FormatLocale = "en" | "zh";
+
+const INTL_LOCALE: Record<FormatLocale, string> = {
+  en: "en-US",
+  zh: "zh-CN",
 };
 
 /** Ops inputs collected by the wizard (all currency in USD for v1). */
@@ -265,11 +273,17 @@ export function calculateForecast(raw: ForecastInputs): ForecastResult {
   };
 }
 
-export function formatUsd(n: number): string {
+export function formatUsd(n: number, locale: FormatLocale = "en"): string {
   const abs = Math.abs(n);
   const rounded = Math.round(abs);
   return (
     (n < 0 ? "-$" : "$") +
-    rounded.toLocaleString("en-US", { maximumFractionDigits: 0 })
+    rounded.toLocaleString(INTL_LOCALE[locale] ?? "en-US", {
+      maximumFractionDigits: 0,
+    })
   );
+}
+
+export function formatCount(n: number, locale: FormatLocale = "en"): string {
+  return Math.round(n).toLocaleString(INTL_LOCALE[locale] ?? "en-US");
 }

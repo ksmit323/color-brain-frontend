@@ -1,0 +1,74 @@
+/**
+ * Locale-aware path helpers for marketing routes.
+ * English is unprefixed; Chinese lives under `/zh/`.
+ */
+
+import { getRelativeLocaleUrl } from "astro:i18n";
+import { DEFAULT_LOCALE, type Locale } from "./locales";
+
+/** Home path for a locale (`/` or `/zh/`). */
+export function homeHref(locale: Locale = DEFAULT_LOCALE): string {
+  return getRelativeLocaleUrl(locale, "/");
+}
+
+/** Forecast path for a locale (`/forecast` or `/zh/forecast`). */
+export function forecastHref(locale: Locale = DEFAULT_LOCALE): string {
+  return getRelativeLocaleUrl(locale, "forecast");
+}
+
+/**
+ * Section hash link. On home pages uses bare hash for smooth-scroll;
+ * elsewhere uses locale home + hash so anchors resolve from any route.
+ */
+export function sectionHref(
+  locale: Locale,
+  hash: string,
+  opts: { onHome?: boolean } = {},
+): string {
+  const normalized = hash.startsWith("#") ? hash : `#${hash}`;
+  if (opts.onHome) return normalized;
+  // Strip trailing slash: `/` → ``, `/zh/` → `/zh`.
+  const path = homeHref(locale).replace(/\/$/, "");
+  // English: `/#section`. Chinese: `/zh/#section` (works from any route).
+  if (!path) return `/${normalized}`;
+  return `${path}/${normalized}`;
+}
+
+/** True when path is the locale's home (with or without trailing slash). */
+export function isHomePath(path: string, locale: Locale): boolean {
+  const home = homeHref(locale).replace(/\/$/, "") || "/";
+  const p = path.replace(/\/$/, "") || "/";
+  return p === home;
+}
+
+/** True when path is the locale's forecast page. */
+export function isForecastPath(path: string, locale: Locale): boolean {
+  const fc = forecastHref(locale).replace(/\/$/, "");
+  const p = path.replace(/\/$/, "");
+  return p === fc;
+}
+
+/** Absolute site URL for a path (uses site origin from config). */
+export function absoluteUrl(path: string, site = "https://colorbrain.co"): string {
+  const base = site.replace(/\/$/, "");
+  if (!path || path === "/") return `${base}/`;
+  return path.startsWith("/") ? `${base}${path}` : `${base}/${path}`;
+}
+
+/** Counterpart path in the other locale (home ↔ home, forecast ↔ forecast). */
+export function counterpartPath(path: string, from: Locale): string {
+  if (isForecastPath(path, from) || path.includes("forecast")) {
+    return forecastHref(from === "en" ? "zh" : "en");
+  }
+  // Preserve hash for best-effort section landing when switching language.
+  const hashIdx = path.indexOf("#");
+  const hash = hashIdx >= 0 ? path.slice(hashIdx) : "";
+  const to = from === "en" ? "zh" : "en";
+  if (!hash) return homeHref(to);
+  return sectionHref(to, hash, { onHome: false });
+}
+
+/** Soft-entry is bare English home only (pathname `/`, empty hash). */
+export function isSoftEntry(pathname: string, hash: string): boolean {
+  return (pathname === "/" || pathname === "") && hash === "";
+}

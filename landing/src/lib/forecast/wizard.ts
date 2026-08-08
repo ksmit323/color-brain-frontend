@@ -7,17 +7,46 @@ import {
   type CategoryBreakdown,
   type ForecastInputs,
   type ForecastResult,
+  type FormatLocale,
   type PresetId,
   type ScenarioId,
   calculateForecast,
   DEFAULT_PRESET_ID,
+  formatCount,
   formatUsd,
   getPreset,
   SCENARIO_IDS,
-  SCENARIO_LABELS,
 } from "./model";
+import type { ForecastMessages } from "../../i18n/messages/types";
+import { getForecastMessages } from "../../i18n/messages";
 
 type Step = 1 | 2 | 3;
+
+export interface ForecastWizardOptions {
+  locale?: FormatLocale;
+  messages?: ForecastMessages;
+}
+
+/** Active locale/messages for the running wizard (set in init). */
+let activeLocale: FormatLocale = "en";
+let activeMessages: ForecastMessages = getForecastMessages("en");
+
+function money(n: number): string {
+  return formatUsd(n, activeLocale);
+}
+
+function scenarioLabel(id: ScenarioId): string {
+  const m = activeMessages;
+  if (id === "conservative") return m.scenarioConservative;
+  if (id === "optimistic") return m.scenarioOptimistic;
+  return m.scenarioExpected;
+}
+
+function fill(template: string, vars: Record<string, string | number>): string {
+  return template.replace(/\{(\w+)\}/g, (_, key: string) =>
+    vars[key] != null ? String(vars[key]) : "",
+  );
+}
 
 const INPUT_IDS = [
   "batchesPerMonth",
@@ -378,7 +407,7 @@ function animateValue(el: HTMLElement, target: number, reduced: boolean): void {
   if (prev != null) cancelAnimationFrame(prev);
 
   if (reduced) {
-    setText(el, formatUsd(target));
+    setText(el, money(target));
     animFrames.delete(el);
     return;
   }
@@ -388,13 +417,13 @@ function animateValue(el: HTMLElement, target: number, reduced: boolean): void {
   const tick = (now: number) => {
     const t = Math.min(1, (now - start) / duration);
     const eased = 1 - Math.pow(1 - t, 3);
-    el.textContent = formatUsd(target * eased);
+    el.textContent = money(target * eased);
     if (t < 1) {
       animFrames.set(el, requestAnimationFrame(tick));
     } else {
       animFrames.delete(el);
       // Snap to final formatted value (avoids float-easing drift at t=1).
-      el.textContent = formatUsd(target);
+      el.textContent = money(target);
     }
   };
   animFrames.set(el, requestAnimationFrame(tick));
@@ -402,7 +431,7 @@ function animateValue(el: HTMLElement, target: number, reduced: boolean): void {
 
 function updatePreview(root: HTMLElement, inputs: ForecastInputs): void {
   const result = calculateForecast(inputs);
-  setText($("[data-preview-value]", root), formatUsd(result.annual.expected));
+  setText($("[data-preview-value]", root), money(result.annual.expected));
 }
 
 function applyScenarioBreakdown(
@@ -415,7 +444,7 @@ function applyScenarioBreakdown(
 
   for (const key of BREAKDOWN_CATS) {
     const value = breakdown[key];
-    setText($(`[data-out-cat="${key}"]`, root), formatUsd(value));
+    setText($(`[data-out-cat="${key}"]`, root), money(value));
 
     // Row bars + top stack both use share of total so lengths compose to 100%.
     const share = total > 0 ? (value / total) * 100 : 0;
@@ -427,23 +456,35 @@ function applyScenarioBreakdown(
     if (seg) seg.style.flexBasis = `${share}%`;
   }
 
-  const label = SCENARIO_LABELS[scenario];
-  setText($("[data-breakdown-title]", root), `${label} breakdown`);
+  const label = scenarioLabel(scenario);
+  setText(
+    $("[data-breakdown-title]", root),
+    fill(activeMessages.breakdownTitle, { label }),
+  );
 
   // Structured meta spans keep one line; scenario lives on the selected card.
   setText(
     $("[data-meta-batches]", root),
-    `${Math.round(result.annualBatches).toLocaleString("en-US")} batches/yr`,
+    fill(activeMessages.batchesPerYear, {
+      n: formatCount(result.annualBatches, activeLocale),
+    }),
   );
+  const pts = result.rftLiftPts.toFixed(result.rftLiftPts % 1 === 0 ? 0 : 1);
   setText(
     $("[data-meta-rft]", root),
     result.rftLiftPts > 0
-      ? `RFT ${Math.round(result.currentRft)}% → ${Math.round(result.targetRft)}% (+${result.rftLiftPts.toFixed(result.rftLiftPts % 1 === 0 ? 0 : 1)} pts)`
-      : `RFT ${Math.round(result.currentRft)}%`,
+      ? fill(activeMessages.rftWithLift, {
+          from: Math.round(result.currentRft),
+          to: Math.round(result.targetRft),
+          pts,
+        })
+      : fill(activeMessages.rftOnly, {
+          pct: Math.round(result.currentRft),
+        }),
   );
   setText(
     $("[data-meta-avoided]", root),
-    Math.round(result.avoidedByScenario[scenario]).toLocaleString("en-US"),
+    formatCount(result.avoidedByScenario[scenario], activeLocale),
   );
 }
 
@@ -462,18 +503,25 @@ function renderResult(
     if (exp) animateValue(exp, result.annual.expected, opts.reduced);
     if (opt) animateValue(opt, result.annual.optimistic, opts.reduced);
   } else {
-    setText(cons, formatUsd(result.annual.conservative));
-    setText(exp, formatUsd(result.annual.expected));
-    setText(opt, formatUsd(result.annual.optimistic));
+    setText(cons, money(result.annual.conservative));
+    setText(exp, money(result.annual.expected));
+    setText(opt, money(result.annual.optimistic));
   }
 
   markScenarioSelected(root, opts.scenario);
   applyScenarioBreakdown(root, result, opts.scenario);
-  setText($("[data-preview-value]", root), formatUsd(result.annual.expected));
+  setText($("[data-preview-value]", root), money(result.annual.expected));
   return result;
 }
 
-export function initForecastWizard(root: HTMLElement): void {
+export function initForecastWizard(
+  root: HTMLElement,
+  options: ForecastWizardOptions = {},
+): void {
+  activeLocale = options.locale ?? "en";
+  activeMessages =
+    options.messages ?? getForecastMessages(activeLocale === "zh" ? "zh" : "en");
+
   let selectedPreset: PresetId = DEFAULT_PRESET_ID;
   let selectedScenario: ScenarioId = "expected";
   let lastResult: ForecastResult | null = null;
@@ -939,13 +987,13 @@ export function initForecastWizard(root: HTMLElement): void {
       try {
         await navigator.clipboard.writeText(shareUrl);
         const prev = btn.textContent;
-        btn.textContent = "Link copied";
+        btn.textContent = activeMessages.linkCopied;
         btn.setAttribute("aria-live", "polite");
         setTimeout(() => {
           btn.textContent = prev;
         }, 1800);
       } catch {
-        window.prompt("Copy this link:", shareUrl);
+        window.prompt(activeMessages.copyPrompt, shareUrl);
       }
     });
 }

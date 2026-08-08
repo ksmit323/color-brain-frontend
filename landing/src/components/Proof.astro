@@ -1,64 +1,65 @@
 ---
 /**
- * Validated holdout results — the instrument panel. Six readouts from the
- * first_attempt_v1 evaluation, stated plainly. The win rate is the only
- * number allowed a status color; abstention is slate, never red.
+ * Validated holdout results — instrument panel.
  */
+import type { Locale } from "../i18n/locales";
+import { getMessages } from "../i18n/messages";
+
+interface Props {
+  locale?: Locale;
+}
+const { locale = "en" } = Astro.props;
+const m = getMessages(locale);
 ---
 
 <section class="proof section" id="proof">
   <div class="container">
     <div class="reveal">
-      <p class="eyebrow">Validated holdout · first_attempt_v1</p>
-      <h2 class="title">Tested on jobs it had never seen.</h2>
+      <p class="eyebrow">{m.proof.eyebrow}</p>
+      <h2 class="title">{m.proof.title}</h2>
       <p class="lede">
-        Trained on 12,398 real production records, then evaluated on 2,043
-        future holdout jobs. Color Brain never invents a recipe — it retrieves
-        one your factory already ran, only on the same substrate, and only when
-        confident.
+        {m.proof.lede}
       </p>
     </div>
 
     <div class="proof__dashboard reveal">
       <article class="proof__primary">
-        <p class="proof__kicker">Recommendation quality</p>
+        <p class="proof__kicker">{m.proof.kicker}</p>
         <p class="proof__hero-value">86.7<span>%</span></p>
-        <h3>of recommendations beat the technician's first attempt.</h3>
+        <h3>{m.proof.primaryTitle}</h3>
         <div class="proof__signal" aria-hidden="true">
           <i><b></b></i>
-          <span>Validated wins</span>
+          <span>{m.proof.signalLabel}</span>
           <strong>359 / 414</strong>
         </div>
       </article>
 
       <dl class="proof__grid">
         <div class="proof__cell proof__cell--protocol">
-          <dt>Holdout protocol</dt>
-          <dd><strong>2,043</strong> future jobs</dd>
-          <dd><span>12,398</span> training records</dd>
+          <dt>{m.proof.cellProtocol}</dt>
+          <dd><strong>2,043</strong> {m.proof.cellProtocolJobs}</dd>
+          <dd><span>12,398</span> {m.proof.cellProtocolTrain}</dd>
         </div>
         <div class="proof__cell">
-          <dt>Selective coverage</dt>
+          <dt>{m.proof.cellCoverage}</dt>
           <dd><strong>20.3%</strong></dd>
-          <dd><span>414</span> recommendations</dd>
+          <dd><span>414</span> {m.proof.cellCoverageRecs}</dd>
         </div>
         <div class="proof__cell">
-          <dt>Median improvement</dt>
+          <dt>{m.proof.cellMedian}</dt>
           <dd><strong>+0.2082</strong></dd>
-          <dd>ΔE on recommended jobs</dd>
+          <dd>{m.proof.cellMedianSub}</dd>
         </div>
         <div class="proof__cell proof__cell--quiet">
-          <dt>Calibrated silence</dt>
+          <dt>{m.proof.cellSilence}</dt>
           <dd><strong>~80%</strong></dd>
-          <dd>withheld below confidence</dd>
+          <dd>{m.proof.cellSilenceSub}</dd>
         </div>
       </dl>
     </div>
 
     <p class="proof__footnote reveal">
-      On the ~80% of jobs where Color Brain abstains, it is saying the evidence
-      isn't strong enough to beat your technician's first attempt. Selectivity
-      is the point — a recommendation you can trust.
+      {m.proof.footnote}
     </p>
   </div>
 </section>

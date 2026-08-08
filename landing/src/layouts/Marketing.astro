@@ -1,0 +1,91 @@
+---
+/**
+ * Shared marketing document shell: fonts, SEO head, html lang.
+ */
+import "../styles/global.css";
+import type { Locale } from "../i18n/locales";
+import { LOCALE_HTML_LANG } from "../i18n/locales";
+import { getMessages } from "../i18n/messages";
+import {
+  canonicalFor,
+  hreflangLinks,
+  type PageKind,
+} from "../i18n/seo";
+import { SOFT_ENTRY_INLINE_SCRIPT } from "../i18n/preference";
+
+interface Props {
+  locale: Locale;
+  page: PageKind;
+  /** Inject soft-entry preference redirect (English home only). */
+  softEntry?: boolean;
+}
+
+const { locale, page, softEntry = false } = Astro.props;
+const m = getMessages(locale);
+const title = page === "home" ? m.seo.homeTitle : m.seo.forecastTitle;
+const description =
+  page === "home" ? m.seo.homeDescription : m.seo.forecastDescription;
+const canonical = canonicalFor(locale, page);
+const alternates = hreflangLinks(page);
+const htmlLang = LOCALE_HTML_LANG[locale];
+
+const FONTSHARE_CSS =
+  "https://api.fontshare.com/v2/css?f[]=clash-display@500,600&f[]=satoshi@400,500,700&display=swap";
+---
+
+<!doctype html>
+<html lang={htmlLang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={m.seo.siteName} />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="theme-color" content="#0a0b10" />
+    <link rel="canonical" href={canonical} />
+    {
+      alternates.map((a) => (
+        <link rel="alternate" hreflang={a.hreflang} href={a.href} />
+      ))
+    }
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="preconnect" href="https://cdn.fontshare.com" crossorigin />
+    <link rel="preload" as="style" href={FONTSHARE_CSS} />
+    <link
+      rel="stylesheet"
+      href={FONTSHARE_CSS}
+      media="print"
+      onload="this.media='all'"
+    />
+    <noscript><link rel="stylesheet" href={FONTSHARE_CSS} /></noscript>
+    <link
+      rel="preload"
+      href="/fonts/IBMPlexMono-Medium.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    {
+      softEntry && (
+        <script is:inline set:html={SOFT_ENTRY_INLINE_SCRIPT} />
+      )
+    }
+    {
+      page === "home" && (
+        <script is:inline>
+          document.documentElement.classList.add("has-js");
+        </script>
+      )
+    }
+  </head>
+  <body id="top" class:list={[{ "forecast-page": page === "forecast" }]}>
+    <slot />
+  </body>
+</html>

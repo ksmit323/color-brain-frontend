@@ -39,11 +39,11 @@ Site URL for absolute links / sitemap-style metadata is set in `astro.config.mjs
 
 ## What the page is
 
-One long scroll composed in `src/pages/index.astro`:
+One long scroll composed in `src/pages/index.astro` (English) and `src/pages/zh/index.astro` (简体中文):
 
 | Section | Role |
 | --- | --- |
-| Nav | Sticky chrome; CTAs to contact and the app |
+| Nav | Sticky chrome; language control; CTAs to contact and the app |
 | Hero + How it works | Share a sticky visual stage (constellation / poster) |
 | Problem | Cost of guessing / rework framing |
 | Proof | Holdout metrics (precision, coverage, abstention) |
@@ -51,6 +51,24 @@ One long scroll composed in `src/pages/index.astro`:
 | Who it’s for | Brands / suppliers / factories |
 | Contact | Pilot request form (Formspree) |
 | Footer | Site links and founders |
+
+There is also a savings **Forecast** wizard at `/forecast` and `/zh/forecast`.
+
+---
+
+## Locales (EN + 简体)
+
+| Locale | Home | Forecast | `html lang` |
+| --- | --- | --- | --- |
+| English (default) | `/` | `/forecast` | `en` |
+| Simplified Chinese | `/zh/` | `/zh/forecast` | `zh-CN` |
+
+- **Default first visit:** English. No `Accept-Language` or geo auto-detect.
+- **Remembered preference:** cookie `cb_locale` (`Path=/; SameSite=Lax; Secure` on HTTPS; host-only, no `Domain=`). Set when the visitor uses the language control.
+- **Soft entry only:** if `cb_locale=zh` and the visitor opens bare `/` with an **empty hash**, a small inline head script navigates to `/zh/`. Deep English URLs (`/forecast`, `/#contact`, etc.) always stay English.
+- **Language control:** always in primary nav actions (visible on mobile; not only in collapsed middle links). Switching language on forecast navigates to the counterpart URL and resets the wizard to step 1 (no state carry-over).
+- **App handoff:** “Open the App” still goes to `https://app.colorbrain.co` (English app) from both locales.
+- **Copy catalogs:** `src/i18n/messages/en.ts` + `zh.ts` (typed parity via `Messages`). Path helpers: `src/i18n/paths.ts`. SEO helpers: `src/i18n/seo.ts`. Sitemap: `public/sitemap.xml` (all four routes).
 
 ---
 

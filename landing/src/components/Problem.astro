@@ -1,39 +1,43 @@
 ---
 /**
- * The cost of guessing — why first-attempt accuracy matters. Sits inside the
- * scroll stage, so the constellation drifts behind it while these numbers land.
+ * The cost of guessing — why first-attempt accuracy matters.
  */
+import type { Locale } from "../i18n/locales";
+import { getMessages } from "../i18n/messages";
+
+interface Props {
+  locale?: Locale;
+}
+const { locale = "en" } = Astro.props;
+const m = getMessages(locale);
 ---
 
 <section class="problem stage-panel section" id="problem">
   <div class="container">
     <div class="reveal">
-      <p class="eyebrow">The cost of guessing</p>
+      <p class="eyebrow">{m.problem.eyebrow}</p>
       <h2 class="title">
-        Guessing is expensive. Repeating it is worse.
+        {m.problem.title}
       </h2>
       <p class="lede">
-        Most color-matching tools start from a generic model and spend months
-        correcting toward your factory — after you've paid for new hardware.
-        Color Brain starts from the recipes your factory already proved, on day
-        one.
+        {m.problem.lede}
       </p>
     </div>
     <dl class="problem__readouts reveal">
       <div>
-        <span class="problem__index">01 / Attempts</span>
+        <span class="problem__index">{m.problem.indexAttempts}</span>
         <dt class="readout__value">4–6</dt>
-        <dd class="readout__label">attempts on average to approve a new color</dd>
+        <dd class="readout__label">{m.problem.labelAttempts}</dd>
       </div>
       <div>
-        <span class="problem__index">02 / Failure</span>
+        <span class="problem__index">{m.problem.indexFailure}</span>
         <dt class="readout__value">50%</dt>
-        <dd class="readout__label">of first attempts miss the target</dd>
+        <dd class="readout__label">{m.problem.labelFailure}</dd>
       </div>
       <div>
-        <span class="problem__index">03 / Cost</span>
+        <span class="problem__index">{m.problem.indexCost}</span>
         <dt class="readout__value">$500–2K</dt>
-        <dd class="readout__label">typical cost per failed attempt</dd>
+        <dd class="readout__label">{m.problem.labelCost}</dd>
       </div>
     </dl>
   </div>
