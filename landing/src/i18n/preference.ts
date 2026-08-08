@@ -4,7 +4,12 @@
  * No Domain= attribute in v1 (host-only).
  */
 
-import { isLocale, type Locale } from "./locales";
+import {
+  DEFAULT_LOCALE,
+  isLocale,
+  softEntryHomePath,
+  type Locale,
+} from "./locales";
 
 export const PREFERENCE_COOKIE = "cb_locale";
 
@@ -40,8 +45,16 @@ export function writePreferenceCookie(locale: Locale): void {
 
 /**
  * Soft-entry pre-paint redirect (English home only).
- * Built from PREFERENCE_COOKIE so the name cannot drift; must stay a static
- * string for `is:inline` (no module imports before first paint).
+ * Redirects to any non-default preferred locale home when on bare `/`.
+ * Built as a static string for `is:inline` (no module imports before first paint).
+ *
+ * Keep locale list in sync with LOCALES (non-default only).
  */
 const COOKIE_PREFIX = `${PREFERENCE_COOKIE}=`;
-export const SOFT_ENTRY_INLINE_SCRIPT = `(function(){try{var c=document.cookie.split(";");var pref=null;var prefix=${JSON.stringify(COOKIE_PREFIX)};for(var i=0;i<c.length;i++){var p=c[i].trim();if(p.indexOf(prefix)===0){pref=decodeURIComponent(p.slice(prefix.length));break;}}if(pref==="zh"&&location.pathname==="/"&&location.hash===""){location.replace("/zh/");}}catch(e){}})();`;
+export const SOFT_ENTRY_INLINE_SCRIPT = `(function(){try{var c=document.cookie.split(";");var pref=null;var prefix=${JSON.stringify(COOKIE_PREFIX)};for(var i=0;i<c.length;i++){var p=c[i].trim();if(p.indexOf(prefix)===0){pref=decodeURIComponent(p.slice(prefix.length));break;}}var map={zh:"/zh/","zh-tw":"/zh-tw/",vi:"/vi/"};if(pref&&map[pref]&&location.pathname==="/"&&location.hash===""){location.replace(map[pref]);}}catch(e){}})();`;
+
+/** Runtime helper for tests / non-inline callers. */
+export function softEntryTarget(pref: Locale | null): string | null {
+  if (!pref || pref === DEFAULT_LOCALE) return null;
+  return softEntryHomePath(pref);
+}

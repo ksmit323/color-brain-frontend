@@ -1,6 +1,6 @@
 /**
- * Shared message catalog shape. `en` and `zh` must satisfy Messages so key
- * parity is enforced at typecheck time.
+ * Shared message catalog shape. Every locale catalog must satisfy Messages so
+ * key parity is enforced at typecheck time.
  */
 
 export interface ForecastMessages {
@@ -139,9 +139,8 @@ export interface Messages {
     caseStudies: string;
     whoItsFor: string;
     forecast: string;
+    /** Accessible name for the language menu control. */
     langAria: string;
-    switchToEn: string;
-    switchToZh: string;
   };
   footer: {
     tagline: string;

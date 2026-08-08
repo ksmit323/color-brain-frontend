@@ -14,8 +14,6 @@ export const en = {
     whoItsFor: "Who It's For",
     forecast: "Forecast",
     langAria: "Language",
-    switchToEn: "Switch to English",
-    switchToZh: "Switch to Simplified Chinese",
   },
   footer: {
     tagline:
@@ -254,7 +252,8 @@ export const en = {
     methodBandAria: "How much of your stated RFT lift each scenario counts",
     methodNote: "Cost / rework = labor + dye + water + energy + time",
     methodRatePill: "{rate}/min",
-    methodFoot: "Planning estimate — not a quote. Coefficients are provisional.",
+    methodFoot:
+      "Planning estimate — not a quote. Coefficients are provisional.",
     disclaimer:
       "Driven mostly by batches × RFT lift. Cost lines are preset ballparks unless you edited them. Actual results vary by product mix and plant conditions — a planning outlook, not a commercial commitment.",
     bookPilot: "Book a pilot",

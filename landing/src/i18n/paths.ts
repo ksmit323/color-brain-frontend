@@ -1,22 +1,22 @@
 /**
  * Locale-aware path helpers for marketing routes.
- * English is unprefixed; Chinese lives under `/zh/`.
+ * English is unprefixed; other locales live under `/{locale}/`.
  */
 
 import { getRelativeLocaleUrl } from "astro:i18n";
-import { DEFAULT_LOCALE, otherLocale, type Locale } from "./locales";
+import { DEFAULT_LOCALE, LOCALES, type Locale } from "./locales";
 
 /** Strip a trailing slash; empty or bare `/` normalizes to `/`. */
 function stripTrailingSlash(path: string): string {
   return path.replace(/\/$/, "") || "/";
 }
 
-/** Home path for a locale (`/` or `/zh/`). */
+/** Home path for a locale (`/` or `/zh/` or `/zh-tw/` or `/vi/`). */
 export function homeHref(locale: Locale = DEFAULT_LOCALE): string {
   return getRelativeLocaleUrl(locale, "/");
 }
 
-/** Forecast path for a locale (`/forecast` or `/zh/forecast`). */
+/** Forecast path for a locale. */
 export function forecastHref(locale: Locale = DEFAULT_LOCALE): string {
   return getRelativeLocaleUrl(locale, "forecast");
 }
@@ -32,9 +32,7 @@ export function sectionHref(
 ): string {
   const normalized = hash.startsWith("#") ? hash : `#${hash}`;
   if (opts.onHome) return normalized;
-  // English home is `/` → strip leaves empty; Chinese `/zh/` → `/zh`.
   const path = homeHref(locale).replace(/\/$/, "");
-  // English: `/#section`. Chinese: `/zh/#section` (works from any route).
   if (!path) return `/${normalized}`;
   return `${path}/${normalized}`;
 }
@@ -50,19 +48,28 @@ export function isForecastPath(path: string, locale: Locale): boolean {
 }
 
 /** Absolute site URL for a path (uses site origin from config). */
-export function absoluteUrl(path: string, site = "https://colorbrain.co"): string {
+export function absoluteUrl(
+  path: string,
+  site = "https://colorbrain.co",
+): string {
   const base = site.replace(/\/$/, "");
   if (!path || path === "/") return `${base}/`;
   return path.startsWith("/") ? `${base}${path}` : `${base}/${path}`;
 }
 
-/** Counterpart path in the other locale (home ↔ home, forecast ↔ forecast). */
-export function counterpartPath(path: string, from: Locale): string {
-  const to = otherLocale(from);
-  if (isForecastPath(path, "en") || isForecastPath(path, "zh")) {
-    return forecastHref(to);
-  }
-  // Preserve hash for best-effort section landing when switching language.
+/**
+ * Counterpart path for a target locale (home ↔ home, forecast ↔ forecast).
+ * Preserves hash best-effort for section landing when switching language.
+ */
+export function counterpartPath(
+  path: string,
+  _from: Locale,
+  to: Locale,
+): string {
+  const bare = path.split("#")[0] ?? path;
+  const isForecast = LOCALES.some((loc) => isForecastPath(bare, loc));
+  if (isForecast) return forecastHref(to);
+
   const hashIdx = path.indexOf("#");
   const hash = hashIdx >= 0 ? path.slice(hashIdx) : "";
   if (!hash) return homeHref(to);

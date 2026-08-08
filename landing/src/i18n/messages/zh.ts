@@ -18,8 +18,6 @@ export const zh = {
     whoItsFor: "适用对象",
     forecast: "收益预测",
     langAria: "语言",
-    switchToEn: "切换到英文",
-    switchToZh: "切换到简体中文",
   },
   footer: {
     tagline: "纺织染色决策支持——推荐已验证的历史配方，证据不足时保持克制。",

@@ -1,10 +1,17 @@
 ---
 /**
  * Floating glass navigation pill. Middle links collapse on small screens;
- * language control stays in nav__actions so it remains visible on mobile (R6).
+ * language control stays far-right in nav__actions (visible on mobile).
+ *
+ * Dropdown lists live locales plus planned placeholders (繁 / VI) disabled
+ * until those catalogs and routes ship.
  */
 import type { Locale } from "../i18n/locales";
-import { otherLocale, LOCALE_HREFLANG } from "../i18n/locales";
+import {
+  LOCALE_HREFLANG,
+  LOCALE_LABELS,
+  LOCALE_MENU,
+} from "../i18n/locales";
 import { getMessages } from "../i18n/messages";
 import {
   counterpartPath,
@@ -29,10 +36,10 @@ const section = (hash: string) =>
 const brandHref = isHome ? "#top" : homeHref(locale);
 const pilotHref = section("#contact");
 const forecastPath = forecastHref(locale);
-const alt = otherLocale(locale);
-const langHref = counterpartPath(path, locale);
-const langAria = alt === "zh" ? m.nav.switchToZh : m.nav.switchToEn;
-const langGroupAria = locale === "zh" ? "语言" : "Language";
+const currentLabel = LOCALE_LABELS[locale];
+const langMenuId = "nav-lang-menu";
+const comingSoon =
+  locale === "zh" ? "即将推出" : "Coming soon";
 ---
 
 <header class="nav">
@@ -56,43 +63,79 @@ const langGroupAria = locale === "zh" ? "语言" : "Language";
     <div class="nav__actions">
       <a class="nav__ghost" href="https://app.colorbrain.co">{m.common.openApp}</a>
       <a class="btn btn--primary nav__cta" href={pilotHref}>{m.common.requestPilot}</a>
-      {/* Far-right segmented locale control — current locale inert, other is switch */}
-      <div class="nav__lang" role="group" aria-label={langGroupAria}>
-        {locale === "en" ? (
-          <span class="nav__lang-opt is-active" aria-current="true">
-            <span class="nav__lang-code">EN</span>
-          </span>
-        ) : (
-          <a
-            class="nav__lang-opt"
-            href={langHref}
-            data-locale-switch
-            data-locale-target="en"
-            hreflang={LOCALE_HREFLANG.en}
-            aria-label={m.nav.switchToEn}
-            title={m.nav.switchToEn}
-          >
-            <span class="nav__lang-code">EN</span>
-          </a>
-        )}
-        <span class="nav__lang-divider" aria-hidden="true"></span>
-        {locale === "zh" ? (
-          <span class="nav__lang-opt is-active" aria-current="true">
-            <span class="nav__lang-code">中文</span>
-          </span>
-        ) : (
-          <a
-            class="nav__lang-opt"
-            href={langHref}
-            data-locale-switch
-            data-locale-target="zh"
-            hreflang={LOCALE_HREFLANG.zh}
-            aria-label={langAria}
-            title={langAria}
-          >
-            <span class="nav__lang-code">中文</span>
-          </a>
-        )}
+
+      <div class="nav__lang" data-lang-root>
+        <button
+          type="button"
+          class="nav__lang-trigger"
+          data-lang-trigger
+          aria-haspopup="listbox"
+          aria-expanded="false"
+          aria-controls={langMenuId}
+          aria-label={m.nav.langAria}
+        >
+          <span class="nav__lang-code">{currentLabel}</span>
+          <span class="nav__lang-chevron" aria-hidden="true"></span>
+        </button>
+        <div
+          class="nav__lang-menu"
+          id={langMenuId}
+          role="listbox"
+          aria-label={m.nav.langAria}
+          hidden
+          data-lang-menu
+        >
+          {LOCALE_MENU.map((entry) => {
+            const active = entry.live && entry.id === locale;
+            if (!entry.live) {
+              return (
+                <span
+                  class="nav__lang-opt is-placeholder"
+                  role="option"
+                  aria-selected="false"
+                  aria-disabled="true"
+                  title={comingSoon}
+                >
+                  <span class="nav__lang-opt-code">{entry.label}</span>
+                  <span class="nav__lang-opt-name">
+                    {entry.name}
+                    <em class="nav__lang-soon">{comingSoon}</em>
+                  </span>
+                </span>
+              );
+            }
+            if (active) {
+              return (
+                <span
+                  class="nav__lang-opt is-active"
+                  role="option"
+                  aria-selected="true"
+                >
+                  <span class="nav__lang-opt-code">{entry.label}</span>
+                  <span class="nav__lang-opt-name">{entry.name}</span>
+                </span>
+              );
+            }
+            // live + not current — switch target
+            const target = entry.id as Locale;
+            const href = counterpartPath(path, locale, target);
+            return (
+              <a
+                class="nav__lang-opt"
+                role="option"
+                aria-selected="false"
+                href={href}
+                hreflang={LOCALE_HREFLANG[target]}
+                data-locale-switch
+                data-locale-target={target}
+                title={entry.name}
+              >
+                <span class="nav__lang-opt-code">{entry.label}</span>
+                <span class="nav__lang-opt-name">{entry.name}</span>
+              </a>
+            );
+          })}
+        </div>
       </div>
     </div>
   </div>
@@ -106,6 +149,31 @@ const langGroupAria = locale === "zh" ? "语言" : "Language";
     el.addEventListener("click", () => {
       const target = el.getAttribute("data-locale-target");
       if (isLocale(target)) writePreferenceCookie(target);
+    });
+  });
+
+  document.querySelectorAll("[data-lang-root]").forEach((root) => {
+    const trigger = root.querySelector("[data-lang-trigger]");
+    const menu = root.querySelector("[data-lang-menu]");
+    if (!(trigger instanceof HTMLElement) || !(menu instanceof HTMLElement)) return;
+
+    const setOpen = (open: boolean) => {
+      trigger.setAttribute("aria-expanded", open ? "true" : "false");
+      menu.hidden = !open;
+      root.classList.toggle("is-open", open);
+    };
+
+    trigger.addEventListener("click", (e) => {
+      e.stopPropagation();
+      setOpen(menu.hidden);
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!root.contains(e.target as Node)) setOpen(false);
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") setOpen(false);
     });
   });
 </script>
@@ -207,37 +275,45 @@ const langGroupAria = locale === "zh" ? "语言" : "Language";
     display: flex;
     align-items: center;
     gap: 0.85rem;
-    /* Lang control stays trailing (far right) even if actions reflow. */
     margin-left: auto;
   }
 
+  /* ── Multi-locale control (far right) ─────────────────────────────── */
+
   .nav__lang {
-    --lang-pad-y: 0.28rem;
-    --lang-pad-x: 0.22rem;
+    position: relative;
+    flex-shrink: 0;
+    z-index: 20;
+  }
+
+  .nav__lang-trigger {
     position: relative;
     display: inline-flex;
-    align-items: stretch;
-    flex-shrink: 0;
-    padding: var(--lang-pad-y) var(--lang-pad-x);
-    border-radius: 999px;
+    align-items: center;
+    gap: 0.35rem;
+    min-height: 2.1rem;
+    padding: 0.28rem 0.65rem 0.28rem 0.75rem;
     border: 1px solid color-mix(in srgb, var(--holo) 28%, var(--line));
+    border-radius: 999px;
     background:
       linear-gradient(
         155deg,
-        color-mix(in srgb, var(--holo) 10%, transparent) 0%,
-        rgba(10, 12, 18, 0.72) 48%,
-        rgba(8, 10, 16, 0.88) 100%
+        color-mix(in srgb, var(--holo) 12%, transparent) 0%,
+        rgba(10, 12, 18, 0.78) 48%,
+        rgba(8, 10, 16, 0.9) 100%
       );
     box-shadow:
-      inset 0 1px 0 rgba(127, 216, 232, 0.14),
-      inset 0 0 0 1px rgba(0, 0, 0, 0.35),
-      0 0 0 1px rgba(0, 0, 0, 0.25),
-      0 0 22px rgba(127, 216, 232, 0.08);
-    isolation: isolate;
+      inset 0 1px 0 rgba(127, 216, 232, 0.16),
+      0 0 18px rgba(127, 216, 232, 0.08);
+    color: var(--ink);
+    font: inherit;
+    cursor: pointer;
+    transition:
+      border-color 160ms ease,
+      box-shadow 160ms ease;
   }
 
-  /* Soft holographic sweep across the shell */
-  .nav__lang::before {
+  .nav__lang-trigger::before {
     content: "";
     position: absolute;
     inset: 0;
@@ -245,56 +321,101 @@ const langGroupAria = locale === "zh" ? "语言" : "Language";
     background: linear-gradient(
       105deg,
       transparent 0%,
-      color-mix(in srgb, var(--holo) 14%, transparent) 42%,
+      color-mix(in srgb, var(--holo) 16%, transparent) 42%,
       transparent 68%
     );
-    opacity: 0.55;
+    opacity: 0.5;
     pointer-events: none;
-    z-index: 0;
   }
 
-  .nav__lang-opt {
-    position: relative;
-    z-index: 1;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 2.15rem;
-    min-height: 1.75rem;
-    padding: 0.15em 0.55em;
-    border-radius: 999px;
-    font-family: var(--font-mono);
-    font-size: 0.62rem;
-    font-weight: 500;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    text-decoration: none;
-    color: var(--ink-faint);
-    transition:
-      color 180ms ease,
-      text-shadow 180ms ease,
-      background-color 180ms ease,
-      box-shadow 180ms ease;
+  .nav__lang-trigger:hover,
+  .nav__lang.is-open .nav__lang-trigger {
+    border-color: color-mix(in srgb, var(--holo) 55%, var(--line));
+    box-shadow:
+      inset 0 1px 0 rgba(127, 216, 232, 0.22),
+      0 0 22px rgba(127, 216, 232, 0.18);
   }
 
-  a.nav__lang-opt {
-    cursor: pointer;
-  }
-
-  a.nav__lang-opt:hover {
-    color: var(--ink);
-    text-shadow: 0 0 12px rgba(127, 216, 232, 0.45);
-    background: color-mix(in srgb, var(--holo) 8%, transparent);
-  }
-
-  a.nav__lang-opt:focus-visible {
+  .nav__lang-trigger:focus-visible {
     outline: 1px solid color-mix(in srgb, var(--holo) 70%, transparent);
     outline-offset: 2px;
   }
 
+  .nav__lang-code {
+    position: relative;
+    font-family: var(--font-mono);
+    font-size: 0.64rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    text-shadow: 0 0 12px rgba(127, 216, 232, 0.35);
+  }
+
+  .nav__lang-chevron {
+    position: relative;
+    width: 0.45rem;
+    height: 0.45rem;
+    border-right: 1.5px solid var(--holo);
+    border-bottom: 1.5px solid var(--holo);
+    transform: rotate(45deg) translateY(-1px);
+    opacity: 0.85;
+    transition: transform 160ms ease;
+  }
+
+  .nav__lang.is-open .nav__lang-chevron {
+    transform: rotate(225deg) translateY(-1px);
+  }
+
+  .nav__lang-menu {
+    position: absolute;
+    top: calc(100% + 0.55rem);
+    right: 0;
+    min-width: 10.5rem;
+    padding: 0.35rem;
+    border-radius: 12px;
+    border: 1px solid color-mix(in srgb, var(--holo) 22%, var(--line));
+    background:
+      linear-gradient(
+        165deg,
+        color-mix(in srgb, var(--surface-raised) 92%, var(--holo)) 0%,
+        rgba(10, 12, 18, 0.96) 100%
+      );
+    backdrop-filter: blur(18px) saturate(1.25);
+    -webkit-backdrop-filter: blur(18px) saturate(1.25);
+    box-shadow:
+      0 18px 40px rgba(0, 0, 0, 0.55),
+      inset 0 1px 0 rgba(127, 216, 232, 0.1),
+      0 0 0 1px rgba(0, 0, 0, 0.35);
+  }
+
+  .nav__lang-menu[hidden] {
+    display: none;
+  }
+
+  .nav__lang-opt {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.48rem 0.65rem;
+    border-radius: 8px;
+    text-decoration: none;
+    color: var(--ink-dim);
+    transition:
+      color 140ms ease,
+      background-color 140ms ease,
+      box-shadow 140ms ease;
+  }
+
+  a.nav__lang-opt:hover {
+    color: var(--ink);
+    background: color-mix(in srgb, var(--holo) 10%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--holo) 18%, transparent);
+  }
+
   .nav__lang-opt.is-active {
     color: var(--bg);
-    letter-spacing: 0.12em;
     background:
       linear-gradient(
         180deg,
@@ -303,37 +424,46 @@ const langGroupAria = locale === "zh" ? "语言" : "Language";
         color-mix(in srgb, var(--holo) 78%, #3a9aaa) 100%
       );
     box-shadow:
-      0 0 0 1px color-mix(in srgb, var(--holo) 55%, transparent),
-      0 0 18px rgba(127, 216, 232, 0.42),
-      inset 0 1px 0 rgba(255, 255, 255, 0.35);
-    text-shadow: none;
+      0 0 14px rgba(127, 216, 232, 0.35),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3);
   }
 
-  /* 中文 is denser — slightly tighter tracking so it fits the pill */
-  .nav__lang-opt.is-active .nav__lang-code:lang(zh),
-  .nav__lang-opt .nav__lang-code {
+  .nav__lang-opt-code {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .nav__lang-opt-name {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.1rem;
+    font-size: 0.78rem;
+    letter-spacing: 0.01em;
+    line-height: 1.15;
+    opacity: 0.92;
+  }
+
+  .nav__lang-opt.is-active .nav__lang-opt-name {
+    opacity: 0.88;
+  }
+
+  .nav__lang-opt.is-placeholder {
+    opacity: 0.42;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  .nav__lang-soon {
+    font-family: var(--font-mono);
+    font-size: 0.55rem;
+    font-style: normal;
     letter-spacing: 0.08em;
-  }
-
-  .nav__lang-opt.is-active .nav__lang-code {
-    letter-spacing: 0.1em;
-  }
-
-  .nav__lang-divider {
-    position: relative;
-    z-index: 1;
-    align-self: center;
-    width: 1px;
-    height: 0.85rem;
-    margin-inline: 0.08rem;
-    background: linear-gradient(
-      180deg,
-      transparent,
-      color-mix(in srgb, var(--holo) 45%, var(--line)) 30%,
-      color-mix(in srgb, var(--holo) 45%, var(--line)) 70%,
-      transparent
-    );
-    opacity: 0.75;
+    text-transform: uppercase;
+    opacity: 0.85;
   }
 
   .nav__ghost {
@@ -376,12 +506,17 @@ const langGroupAria = locale === "zh" ? "语言" : "Language";
       white-space: nowrap;
     }
 
-    .nav__lang-opt {
-      min-width: 1.95rem;
-      min-height: 1.65rem;
-      padding: 0.12em 0.42em;
+    .nav__lang-trigger {
+      min-height: 1.95rem;
+      padding: 0.22rem 0.55rem 0.22rem 0.62rem;
+    }
+
+    .nav__lang-code {
       font-size: 0.58rem;
-      letter-spacing: 0.1em;
+    }
+
+    .nav__lang-menu {
+      min-width: 9.75rem;
     }
 
     .nav__cta {
