@@ -33,8 +33,11 @@ const presets = PRESETS.map((p) => ({ id: p.id, ...PRESET_COPY[p.id] }));
         <div class="forecast__hero-slot" data-forecast-hero-slot>
           <header class="forecast__hero" data-forecast-hero>
             <p class="eyebrow">{f.heroEyebrow}</p>
-            <!-- Keep Color Brain on the same line -->
-            <h1 class="forecast__title">{f.heroTitleBefore} <span class="nowrap">Color&nbsp;Brain</span> {f.heroTitleAfter}</h1>
+            <!-- Keep Color Brain on the same line. Brand is always the nowrap span;
+                 heroTitleBefore/After must not repeat it (ZH uses empty before). -->
+            <h1 class="forecast__title">
+              {f.heroTitleBefore ? `${f.heroTitleBefore} ` : ""}<span class="nowrap">Color&nbsp;Brain</span>{f.heroTitleAfter ? ` ${f.heroTitleAfter}` : ""}
+            </h1>
             <p class="lede forecast__lede">
               {f.heroLede}
             </p>

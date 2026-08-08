@@ -4,11 +4,7 @@
  * language control stays in nav__actions so it remains visible on mobile (R6).
  */
 import type { Locale } from "../i18n/locales";
-import {
-  otherLocale,
-  LOCALE_LABELS,
-  LOCALE_HREFLANG,
-} from "../i18n/locales";
+import { otherLocale, LOCALE_HREFLANG } from "../i18n/locales";
 import { getMessages } from "../i18n/messages";
 import {
   counterpartPath,
@@ -35,8 +31,8 @@ const pilotHref = section("#contact");
 const forecastPath = forecastHref(locale);
 const alt = otherLocale(locale);
 const langHref = counterpartPath(path, locale);
-const langLabel = LOCALE_LABELS[alt];
 const langAria = alt === "zh" ? m.nav.switchToZh : m.nav.switchToEn;
+const langGroupAria = locale === "zh" ? "语言" : "Language";
 ---
 
 <header class="nav">
@@ -58,17 +54,46 @@ const langAria = alt === "zh" ? m.nav.switchToZh : m.nav.switchToEn;
       >{m.nav.forecast}</a>
     </nav>
     <div class="nav__actions">
-      <a
-        class="nav__lang"
-        href={langHref}
-        data-locale-switch
-        data-locale-target={alt}
-        hreflang={LOCALE_HREFLANG[alt]}
-        aria-label={langAria}
-        title={langAria}
-      >{langLabel}</a>
       <a class="nav__ghost" href="https://app.colorbrain.co">{m.common.openApp}</a>
       <a class="btn btn--primary nav__cta" href={pilotHref}>{m.common.requestPilot}</a>
+      {/* Far-right segmented locale control — current locale inert, other is switch */}
+      <div class="nav__lang" role="group" aria-label={langGroupAria}>
+        {locale === "en" ? (
+          <span class="nav__lang-opt is-active" aria-current="true">
+            <span class="nav__lang-code">EN</span>
+          </span>
+        ) : (
+          <a
+            class="nav__lang-opt"
+            href={langHref}
+            data-locale-switch
+            data-locale-target="en"
+            hreflang={LOCALE_HREFLANG.en}
+            aria-label={m.nav.switchToEn}
+            title={m.nav.switchToEn}
+          >
+            <span class="nav__lang-code">EN</span>
+          </a>
+        )}
+        <span class="nav__lang-divider" aria-hidden="true"></span>
+        {locale === "zh" ? (
+          <span class="nav__lang-opt is-active" aria-current="true">
+            <span class="nav__lang-code">中文</span>
+          </span>
+        ) : (
+          <a
+            class="nav__lang-opt"
+            href={langHref}
+            data-locale-switch
+            data-locale-target="zh"
+            hreflang={LOCALE_HREFLANG.zh}
+            aria-label={langAria}
+            title={langAria}
+          >
+            <span class="nav__lang-code">中文</span>
+          </a>
+        )}
+      </div>
     </div>
   </div>
 </header>
@@ -182,32 +207,133 @@ const langAria = alt === "zh" ? m.nav.switchToZh : m.nav.switchToEn;
     display: flex;
     align-items: center;
     gap: 0.85rem;
+    /* Lang control stays trailing (far right) even if actions reflow. */
+    margin-left: auto;
   }
 
   .nav__lang {
+    --lang-pad-y: 0.28rem;
+    --lang-pad-x: 0.22rem;
+    position: relative;
+    display: inline-flex;
+    align-items: stretch;
+    flex-shrink: 0;
+    padding: var(--lang-pad-y) var(--lang-pad-x);
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--holo) 28%, var(--line));
+    background:
+      linear-gradient(
+        155deg,
+        color-mix(in srgb, var(--holo) 10%, transparent) 0%,
+        rgba(10, 12, 18, 0.72) 48%,
+        rgba(8, 10, 16, 0.88) 100%
+      );
+    box-shadow:
+      inset 0 1px 0 rgba(127, 216, 232, 0.14),
+      inset 0 0 0 1px rgba(0, 0, 0, 0.35),
+      0 0 0 1px rgba(0, 0, 0, 0.25),
+      0 0 22px rgba(127, 216, 232, 0.08);
+    isolation: isolate;
+  }
+
+  /* Soft holographic sweep across the shell */
+  .nav__lang::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(
+      105deg,
+      transparent 0%,
+      color-mix(in srgb, var(--holo) 14%, transparent) 42%,
+      transparent 68%
+    );
+    opacity: 0.55;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .nav__lang-opt {
+    position: relative;
+    z-index: 1;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 2.4rem;
-    min-height: 2.1rem;
-    padding: 0.35em 0.55em;
-    border: 1px solid var(--line);
+    min-width: 2.15rem;
+    min-height: 1.75rem;
+    padding: 0.15em 0.55em;
     border-radius: 999px;
     font-family: var(--font-mono);
-    font-size: 0.68rem;
-    letter-spacing: 0.06em;
-    color: var(--ink-dim);
+    font-size: 0.62rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
     text-decoration: none;
+    color: var(--ink-faint);
     transition:
-      color 160ms ease,
-      border-color 160ms ease,
-      background-color 160ms ease;
+      color 180ms ease,
+      text-shadow 180ms ease,
+      background-color 180ms ease,
+      box-shadow 180ms ease;
   }
 
-  .nav__lang:hover {
+  a.nav__lang-opt {
+    cursor: pointer;
+  }
+
+  a.nav__lang-opt:hover {
     color: var(--ink);
-    border-color: var(--ink-faint);
-    background: rgba(127, 216, 232, 0.06);
+    text-shadow: 0 0 12px rgba(127, 216, 232, 0.45);
+    background: color-mix(in srgb, var(--holo) 8%, transparent);
+  }
+
+  a.nav__lang-opt:focus-visible {
+    outline: 1px solid color-mix(in srgb, var(--holo) 70%, transparent);
+    outline-offset: 2px;
+  }
+
+  .nav__lang-opt.is-active {
+    color: var(--bg);
+    letter-spacing: 0.12em;
+    background:
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--holo) 92%, white) 0%,
+        var(--holo) 55%,
+        color-mix(in srgb, var(--holo) 78%, #3a9aaa) 100%
+      );
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--holo) 55%, transparent),
+      0 0 18px rgba(127, 216, 232, 0.42),
+      inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    text-shadow: none;
+  }
+
+  /* 中文 is denser — slightly tighter tracking so it fits the pill */
+  .nav__lang-opt.is-active .nav__lang-code:lang(zh),
+  .nav__lang-opt .nav__lang-code {
+    letter-spacing: 0.08em;
+  }
+
+  .nav__lang-opt.is-active .nav__lang-code {
+    letter-spacing: 0.1em;
+  }
+
+  .nav__lang-divider {
+    position: relative;
+    z-index: 1;
+    align-self: center;
+    width: 1px;
+    height: 0.85rem;
+    margin-inline: 0.08rem;
+    background: linear-gradient(
+      180deg,
+      transparent,
+      color-mix(in srgb, var(--holo) 45%, var(--line)) 30%,
+      color-mix(in srgb, var(--holo) 45%, var(--line)) 70%,
+      transparent
+    );
+    opacity: 0.75;
   }
 
   .nav__ghost {
@@ -237,12 +363,12 @@ const langAria = alt === "zh" ? m.nav.switchToZh : m.nav.switchToEn;
     }
 
     .nav__inner {
-      gap: 0.65rem;
-      padding-inline: 0.75rem;
+      gap: 0.55rem;
+      padding-inline: 0.65rem;
     }
 
     .nav__actions {
-      gap: 0.55rem;
+      gap: 0.45rem;
     }
 
     .nav__brand span,
@@ -250,10 +376,12 @@ const langAria = alt === "zh" ? m.nav.switchToZh : m.nav.switchToEn;
       white-space: nowrap;
     }
 
-    .nav__lang {
-      min-width: 2.2rem;
-      min-height: 2rem;
-      font-size: 0.64rem;
+    .nav__lang-opt {
+      min-width: 1.95rem;
+      min-height: 1.65rem;
+      padding: 0.12em 0.42em;
+      font-size: 0.58rem;
+      letter-spacing: 0.1em;
     }
 
     .nav__cta {
