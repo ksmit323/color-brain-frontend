@@ -141,7 +141,7 @@ export interface Messages {
     forecast: string;
     /** Accessible name for the language menu control. */
     langAria: string;
-    /** Label for disabled locale-menu placeholders (e.g. Vietnamese). */
+    /** Label for disabled locale-menu placeholders (planned locales). */
     comingSoon: string;
   };
   footer: {

@@ -1,5 +1,6 @@
 import type { Locale } from "../locales";
 import { en } from "./en";
+import { vi } from "./vi";
 import { zh } from "./zh";
 import { zhTw } from "./zh-tw";
 import type { ForecastMessages, Messages } from "./types";
@@ -8,6 +9,7 @@ const catalogs: Record<Locale, Messages> = {
   en,
   zh,
   "zh-tw": zhTw,
+  vi,
 };
 
 export function getMessages(locale: Locale): Messages {
@@ -19,4 +21,4 @@ export function getForecastMessages(locale: Locale): ForecastMessages {
 }
 
 export type { ForecastMessages, Messages };
-export { en, zh, zhTw };
+export { en, vi, zh, zhTw };
