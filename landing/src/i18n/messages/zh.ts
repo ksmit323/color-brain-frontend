@@ -18,6 +18,7 @@ export const zh = {
     whoItsFor: "适用对象",
     forecast: "收益预测",
     langAria: "语言",
+    comingSoon: "即将推出",
   },
   footer: {
     tagline: "纺织染色决策支持——推荐已验证的历史配方，证据不足时保持克制。",

@@ -38,12 +38,7 @@ const pilotHref = section("#contact");
 const forecastPath = forecastHref(locale);
 const currentLabel = LOCALE_LABELS[locale];
 const langMenuId = "nav-lang-menu";
-const comingSoon =
-  locale === "zh"
-    ? "即将推出"
-    : locale === "zh-tw"
-      ? "即將推出"
-      : "Coming soon";
+const comingSoon = m.nav.comingSoon;
 ---
 
 <header class="nav">

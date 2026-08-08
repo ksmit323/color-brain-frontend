@@ -41,12 +41,21 @@ export type LocaleMenuEntry = {
   live: boolean;
 };
 
-export const LOCALE_MENU: readonly LocaleMenuEntry[] = [
-  { id: "en", label: "EN", name: "English", live: true },
-  { id: "zh", label: "简", name: "简体中文", live: true },
-  { id: "zh-tw", label: "繁", name: "繁體中文", live: true },
+/** Planned locales shown disabled until catalogs + routes ship. */
+const LOCALE_MENU_PLACEHOLDERS: readonly LocaleMenuEntry[] = [
   { id: "vi", label: "VI", name: "Tiếng Việt", live: false },
-] as const;
+];
+
+/** Live rows derived from LOCALE_LABELS / LOCALE_NATIVE_NAMES; placeholders appended. */
+export const LOCALE_MENU: readonly LocaleMenuEntry[] = [
+  ...LOCALES.map((id) => ({
+    id,
+    label: LOCALE_LABELS[id],
+    name: LOCALE_NATIVE_NAMES[id],
+    live: true as const,
+  })),
+  ...LOCALE_MENU_PLACEHOLDERS,
+];
 
 /**
  * BCP 47 tags for `html lang` and hreflang (live locales only).

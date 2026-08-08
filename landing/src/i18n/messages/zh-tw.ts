@@ -19,6 +19,7 @@ export const zhTw = {
     whoItsFor: "適用對象",
     forecast: "收益預測",
     langAria: "語言",
+    comingSoon: "即將推出",
   },
   footer: {
     tagline: "紡織染色決策支援——推薦已驗證的歷史配方，證據不足時保持克制。",
