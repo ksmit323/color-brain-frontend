@@ -1,44 +1,52 @@
 ---
 /**
  * Hero: the page's thesis. Copy sits on the left; the dye-history brain
- * (or its poster fallback) fills the stage behind it. The headline is the
- * LCP element — it never waits on fonts from the network or WebGL.
+ * (or its poster fallback) fills the stage behind it.
  */
+import type { Locale } from "../i18n/locales";
+import { getMessages } from "../i18n/messages";
+import { sectionHref } from "../i18n/paths";
+
+interface Props {
+  locale?: Locale;
+}
+const { locale = "en" } = Astro.props;
+const m = getMessages(locale);
+const contactHref = sectionHref(locale, "#contact", { onHome: true });
 ---
 
 <section class="hero" id="hero">
   <div class="hero__scrim"></div>
   <div class="container hero__inner">
-    <p class="eyebrow">Production intelligence · Model 01</p>
+    <p class="eyebrow">{m.hero.eyebrow}</p>
     <h1 class="hero__headline">
-      <span data-split>The recipe already exists.</span>
-      <span class="hero__answer" data-split>We find it.</span>
+      <span data-split>{m.hero.headline1}</span>
+      <span class="hero__answer" data-split>{m.hero.headline2}</span>
     </h1>
     <p class="hero__subhead">
-      Color Brain turns your factory's dye history into a searchable memory:
-      one new target in, one proven recipe out — or calibrated silence.
+      {m.hero.subhead}
     </p>
     <div class="hero__actions">
-      <a class="btn btn--primary" href="#contact">Request a Pilot</a>
-      <a class="btn btn--ghost" href="https://app.colorbrain.co">Open the App</a>
+      <a class="btn btn--primary" href={contactHref}>{m.common.requestPilot}</a>
+      <a class="btn btn--ghost" href="https://app.colorbrain.co">{m.common.openApp}</a>
     </div>
-    <dl class="hero__metrics" aria-label="Validated model results">
+    <dl class="hero__metrics" aria-label={m.hero.metricsAria}>
       <div class="hero__metric">
-        <dt class="hero__metric-label">Recommendation precision</dt>
+        <dt class="hero__metric-label">{m.hero.metricPrecision}</dt>
         <dd class="hero__metric-value">86.7%</dd>
       </div>
       <div class="hero__metric">
-        <dt class="hero__metric-label">Validated holdout</dt>
+        <dt class="hero__metric-label">{m.hero.metricHoldout}</dt>
         <dd class="hero__metric-value">2,043</dd>
       </div>
       <div class="hero__metric">
-        <dt class="hero__metric-label">Invented recipes</dt>
+        <dt class="hero__metric-label">{m.hero.metricInvented}</dt>
         <dd class="hero__metric-value">0</dd>
       </div>
     </dl>
   </div>
   <div class="hero__cue" aria-hidden="true">
-    <span>Scroll to run inference</span>
+    <span>{m.hero.scrollCue}</span>
     <i></i>
   </div>
 </section>
@@ -51,7 +59,6 @@
     align-items: center;
   }
 
-  /* Keeps left-side copy legible while the constellation bleeds in from the right. */
   .hero__scrim {
     position: absolute;
     inset: 0;
@@ -72,8 +79,6 @@
 
   .hero__headline {
     font-size: var(--text-hero);
-    /* em, not ch: ch depends on the loaded font, so a ch-based box re-wraps
-       when the webfont swaps in — the one layout shift on this page. */
     max-width: 8.8em;
     margin-top: 1.35rem;
   }
@@ -92,7 +97,7 @@
   .hero__subhead {
     font-size: clamp(0.95rem, 1.4vw, 1.1rem);
     color: var(--ink-dim);
-    max-width: 26em; /* em, not ch — see headline */
+    max-width: 26em;
     margin-top: 1.65rem;
   }
 

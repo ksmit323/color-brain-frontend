@@ -1,22 +1,31 @@
 ---
 /**
- * Who it's for — the three roles in the color chain, one card each.
+ * Who it's for — the three roles in the color chain.
  */
+import type { Locale } from "../i18n/locales";
+import { getMessages } from "../i18n/messages";
+
+interface Props {
+  locale?: Locale;
+}
+const { locale = "en" } = Astro.props;
+const m = getMessages(locale);
+
 const ROLES = [
   {
-    tag: "Brands",
-    tagline: "Fewer rejected batches. Faster color approvals.",
-    body: "You set the standard. Color Brain helps your supply chain hit your color spec on the first attempt — fewer lab-dip rounds, faster final approval.",
+    tag: m.who.brandsTag,
+    tagline: m.who.brandsTagline,
+    body: m.who.brandsBody,
   },
   {
-    tag: "Suppliers",
-    tagline: "Hit the brand's spec. Without the guesswork.",
-    body: "You win or lose contracts on consistency. Color Brain draws on your own production history to recommend recipes more likely to pass first time, cutting rejections before they cost you.",
+    tag: m.who.suppliersTag,
+    tagline: m.who.suppliersTagline,
+    body: m.who.suppliersBody,
   },
   {
-    tag: "Factories",
-    tagline: "Less rework. More consistent output at scale.",
-    body: "At scale, every first-attempt failure multiplies. Color Brain works across your entire job volume, cutting the rework that eats into your margins.",
+    tag: m.who.factoriesTag,
+    tagline: m.who.factoriesTagline,
+    body: m.who.factoriesBody,
   },
 ];
 ---
@@ -24,8 +33,8 @@ const ROLES = [
 <section class="who section" id="who-its-for">
   <div class="container">
     <div class="reveal">
-      <p class="eyebrow">Who it's for</p>
-      <h2 class="title">Every link in the color chain.</h2>
+      <p class="eyebrow">{m.who.eyebrow}</p>
+      <h2 class="title">{m.who.title}</h2>
     </div>
     <div class="who__grid reveal">
       {

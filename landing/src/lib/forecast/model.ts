@@ -8,6 +8,8 @@
  * figure. See "How we calculate" on the page for the user-facing explanation.
  */
 
+import { LOCALE_INTL, type Locale } from "../../i18n/locales";
+
 export type PresetId = "small" | "medium" | "large";
 
 /** Conservative / expected / optimistic realization scenarios. */
@@ -19,11 +21,8 @@ export const SCENARIO_IDS = [
   "optimistic",
 ] as const satisfies readonly ScenarioId[];
 
-export const SCENARIO_LABELS: Record<ScenarioId, string> = {
-  conservative: "Conservative",
-  expected: "Expected",
-  optimistic: "Optimistic",
-};
+/** Locale used for number formatting (same as marketing Locale). */
+export type FormatLocale = Locale;
 
 /** Ops inputs collected by the wizard (all currency in USD for v1). */
 export interface ForecastInputs {
@@ -76,8 +75,6 @@ export interface ForecastResult {
 
 export interface PresetDef {
   id: PresetId;
-  label: string;
-  hint: string;
   inputs: ForecastInputs;
 }
 
@@ -111,8 +108,6 @@ export const RFT_LIFT_REALIZATION = {
 export const PRESETS: PresetDef[] = [
   {
     id: "small",
-    label: "Small mill",
-    hint: "~10 batches / day",
     inputs: {
       batchesPerMonth: 250,
       currentRft: 82,
@@ -126,8 +121,6 @@ export const PRESETS: PresetDef[] = [
   },
   {
     id: "medium",
-    label: "Medium mill",
-    hint: "~25 batches / day",
     inputs: {
       batchesPerMonth: 550,
       currentRft: 86,
@@ -141,8 +134,6 @@ export const PRESETS: PresetDef[] = [
   },
   {
     id: "large",
-    label: "Large mill",
-    hint: "~55 batches / day",
     inputs: {
       batchesPerMonth: 1_200,
       currentRft: 88,
@@ -265,11 +256,17 @@ export function calculateForecast(raw: ForecastInputs): ForecastResult {
   };
 }
 
-export function formatUsd(n: number): string {
+export function formatUsd(n: number, locale: FormatLocale = "en"): string {
   const abs = Math.abs(n);
   const rounded = Math.round(abs);
   return (
     (n < 0 ? "-$" : "$") +
-    rounded.toLocaleString("en-US", { maximumFractionDigits: 0 })
+    rounded.toLocaleString(LOCALE_INTL[locale], {
+      maximumFractionDigits: 0,
+    })
   );
+}
+
+export function formatCount(n: number, locale: FormatLocale = "en"): string {
+  return Math.round(n).toLocaleString(LOCALE_INTL[locale]);
 }

@@ -1,47 +1,56 @@
 ---
 /**
  * Footer: brand, site links, founders, contact.
- * Root-absolute section links so the footer works on `/` and `/forecast`.
+ * Locale-aware section links so the footer works on EN and ZH routes.
  */
+import type { Locale } from "../i18n/locales";
+import { getMessages } from "../i18n/messages";
+import { forecastHref, homeHref, sectionHref } from "../i18n/paths";
+
+interface Props {
+  locale?: Locale;
+}
+const { locale = "en" } = Astro.props;
+const m = getMessages(locale);
+
 const LINKS = [
-  { href: "/#how-it-works", label: "How It Works" },
-  { href: "/#proof", label: "Proof" },
-  { href: "/#case-studies", label: "Case Studies" },
-  { href: "/#who-its-for", label: "Who It's For" },
-  { href: "/forecast", label: "Forecast" },
-  { href: "/#contact", label: "Request a Pilot" },
-  { href: "https://app.colorbrain.co", label: "Open the App" },
+  { href: sectionHref(locale, "#how-it-works"), label: m.nav.howItWorks },
+  { href: sectionHref(locale, "#proof"), label: m.nav.proof },
+  { href: sectionHref(locale, "#case-studies"), label: m.nav.caseStudies },
+  { href: sectionHref(locale, "#who-its-for"), label: m.nav.whoItsFor },
+  { href: forecastHref(locale), label: m.nav.forecast },
+  { href: sectionHref(locale, "#contact"), label: m.common.requestPilot },
+  { href: "https://app.colorbrain.co", label: m.common.openApp },
 ];
 
 const FOUNDERS = [
-  { name: "Luis Aloma", role: "CEO & Cofounder" },
-  { name: "Will Sandman", role: "Chief Commercial & Cofounder" },
-  { name: "Ken Smith", role: "Chief Technical & Cofounder" },
+  { name: "Luis Aloma", role: m.footer.roleCeo },
+  { name: "Will Sandman", role: m.footer.roleCommercial },
+  { name: "Ken Smith", role: m.footer.roleTechnical },
 ];
 ---
 
 <footer class="footer">
   <div class="container footer__inner">
     <div class="footer__brand">
-      <a class="footer__logo" href="/">
+      <a class="footer__logo" href={homeHref(locale)}>
         <img src="/cb_logo.svg" alt="" width="30" height="31" />
-        <span>Color Brain</span>
+        <span>{m.common.brand}</span>
       </a>
       <p class="footer__tagline">
-        Decision support for textile coloration — recommend proven history,
-        abstain when the evidence isn't there.
+        {m.footer.tagline}
       </p>
     </div>
 
-    <nav class="footer__col" aria-label="Site">
-      <p class="footer__col-title">Site</p>
+    <nav class="footer__col" aria-label={m.footer.site}>
+      <p class="footer__col-title">{m.footer.site}</p>
       <ul>
         {LINKS.map((link) => <li><a href={link.href}>{link.label}</a></li>)}
       </ul>
     </nav>
 
     <div class="footer__col">
-      <p class="footer__col-title">Founders</p>
+      <p class="footer__col-title">{m.footer.founders}</p>
       <ul>
         {
           FOUNDERS.map((f) => (
@@ -56,7 +65,7 @@ const FOUNDERS = [
   </div>
 
   <div class="container footer__bottom">
-    <span>© 2026 Color Brain</span>
+    <span>{m.footer.copyright}</span>
     <a href="mailto:luis@colorbrain.co">luis@colorbrain.co</a>
   </div>
 </footer>

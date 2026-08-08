@@ -1,50 +1,55 @@
 ---
 /**
  * Pilot request form. Plain HTML POST to Formspree — no JS involved.
- * NOTE: the endpoint is a placeholder to swap before launch (carried over
- * from the previous site).
  */
+import type { Locale } from "../i18n/locales";
+import { getMessages } from "../i18n/messages";
+
+interface Props {
+  locale?: Locale;
+}
+const { locale = "en" } = Astro.props;
+const m = getMessages(locale);
 const FORM_ACTION = "https://formspree.io/f/mwvdjnde";
 ---
 
 <section class="contact section" id="contact">
   <div class="container contact__inner">
     <div class="reveal">
-      <p class="eyebrow">Request a pilot</p>
-      <h2 class="title">Your history already contains the answer.</h2>
+      <p class="eyebrow">{m.contact.eyebrow}</p>
+      <h2 class="title">{m.contact.title}</h2>
       <p class="lede">
-        Color Brain finds it for you. Tell us about your operation and we'll
-        follow up to scope a pilot.
+        {m.contact.lede}
       </p>
     </div>
 
     <form class="contact__form reveal" method="post" action={FORM_ACTION}>
-      <input type="hidden" name="_subject" value="Pilot request — colorbrain.co" />
+      <input type="hidden" name="_subject" value={m.contact.subject} />
       <div class="contact__row">
         <label class="contact__field">
-          <span>Name</span>
+          <span>{m.contact.name}</span>
           <input type="text" name="name" required autocomplete="name" />
         </label>
         <label class="contact__field">
-          <span>Company</span>
+          <span>{m.contact.company}</span>
           <input type="text" name="company" autocomplete="organization" />
         </label>
       </div>
       <label class="contact__field">
-        <span>Email</span>
+        <span>{m.contact.email}</span>
         <input type="email" name="email" required autocomplete="email" />
       </label>
       <label class="contact__field">
-        <span>Message</span>
+        <span>{m.contact.message}</span>
         <textarea
           name="message"
           rows="5"
           required
-          placeholder="Substrates you dye, approximate job volume, what a successful pilot would look like…"
+          placeholder={m.contact.placeholder}
         ></textarea>
       </label>
       <button class="btn btn--primary contact__submit" type="submit">
-        Request a Pilot
+        {m.contact.submit}
       </button>
     </form>
   </div>

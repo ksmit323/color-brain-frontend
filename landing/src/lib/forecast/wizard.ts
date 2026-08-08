@@ -7,17 +7,46 @@ import {
   type CategoryBreakdown,
   type ForecastInputs,
   type ForecastResult,
+  type FormatLocale,
   type PresetId,
   type ScenarioId,
   calculateForecast,
   DEFAULT_PRESET_ID,
+  formatCount,
   formatUsd,
   getPreset,
   SCENARIO_IDS,
-  SCENARIO_LABELS,
 } from "./model";
+import type { ForecastMessages } from "../../i18n/messages/types";
+import { getForecastMessages } from "../../i18n/messages";
 
 type Step = 1 | 2 | 3;
+
+export interface ForecastWizardOptions {
+  locale?: FormatLocale;
+  messages?: ForecastMessages;
+}
+
+/** Active locale/messages for the running wizard (set in init). */
+let activeLocale: FormatLocale = "en";
+let activeMessages: ForecastMessages = getForecastMessages("en");
+
+function money(n: number): string {
+  return formatUsd(n, activeLocale);
+}
+
+function scenarioLabel(id: ScenarioId): string {
+  const m = activeMessages;
+  if (id === "conservative") return m.scenarioConservative;
+  if (id === "optimistic") return m.scenarioOptimistic;
+  return m.scenarioExpected;
+}
+
+function fill(template: string, vars: Record<string, string | number>): string {
+  return template.replace(/\{(\w+)\}/g, (_, key: string) =>
+    vars[key] != null ? String(vars[key]) : "",
+  );
+}
 
 const INPUT_IDS = [
   "batchesPerMonth",
@@ -144,6 +173,61 @@ function buildShareUrl(root: HTMLElement, scenario: ScenarioId): string {
 
 function setText(el: HTMLElement | null, value: string): void {
   if (el && el.textContent !== value) el.textContent = value;
+}
+
+/** Shared hold-to-repeat spinner binding (one window blur handler per init). */
+const holdCleanups = new Set<() => void>();
+let holdBlurBound = false;
+
+function ensureHoldBlurListener(): void {
+  if (holdBlurBound) return;
+  holdBlurBound = true;
+  window.addEventListener("blur", () => {
+    for (const clear of holdCleanups) clear();
+  });
+}
+
+function bindHoldStepper(
+  btn: HTMLButtonElement | null | undefined,
+  step: (shiftKey: boolean) => void,
+  opts: { holdRepeatMs?: number } = {},
+): void {
+  if (!btn) return;
+  const holdRepeatMs = opts.holdRepeatMs ?? 75;
+  ensureHoldBlurListener();
+  // Keep focus on the input so focus/blur formatting stays predictable.
+  btn.addEventListener("mousedown", (e) => e.preventDefault());
+  btn.addEventListener("click", (e) => {
+    step((e as MouseEvent).shiftKey);
+  });
+  let holdTimer: number | null = null;
+  let repeatTimer: number | null = null;
+  const clearHold = (): void => {
+    if (holdTimer != null) {
+      window.clearTimeout(holdTimer);
+      holdTimer = null;
+    }
+    if (repeatTimer != null) {
+      window.clearInterval(repeatTimer);
+      repeatTimer = null;
+    }
+  };
+  holdCleanups.add(clearHold);
+  btn.addEventListener("pointerdown", (e) => {
+    const pe = e as PointerEvent;
+    if (pe.button !== 0) return;
+    btn.setPointerCapture(pe.pointerId);
+    holdTimer = window.setTimeout(() => {
+      repeatTimer = window.setInterval(
+        () => step(pe.shiftKey),
+        holdRepeatMs,
+      );
+    }, 380);
+  });
+  const stop = (): void => clearHold();
+  btn.addEventListener("pointerup", stop);
+  btn.addEventListener("pointercancel", stop);
+  btn.addEventListener("pointerleave", stop);
 }
 
 function isScenarioId(v: string | null): v is ScenarioId {
@@ -378,7 +462,7 @@ function animateValue(el: HTMLElement, target: number, reduced: boolean): void {
   if (prev != null) cancelAnimationFrame(prev);
 
   if (reduced) {
-    setText(el, formatUsd(target));
+    setText(el, money(target));
     animFrames.delete(el);
     return;
   }
@@ -388,13 +472,13 @@ function animateValue(el: HTMLElement, target: number, reduced: boolean): void {
   const tick = (now: number) => {
     const t = Math.min(1, (now - start) / duration);
     const eased = 1 - Math.pow(1 - t, 3);
-    el.textContent = formatUsd(target * eased);
+    el.textContent = money(target * eased);
     if (t < 1) {
       animFrames.set(el, requestAnimationFrame(tick));
     } else {
       animFrames.delete(el);
       // Snap to final formatted value (avoids float-easing drift at t=1).
-      el.textContent = formatUsd(target);
+      el.textContent = money(target);
     }
   };
   animFrames.set(el, requestAnimationFrame(tick));
@@ -402,7 +486,7 @@ function animateValue(el: HTMLElement, target: number, reduced: boolean): void {
 
 function updatePreview(root: HTMLElement, inputs: ForecastInputs): void {
   const result = calculateForecast(inputs);
-  setText($("[data-preview-value]", root), formatUsd(result.annual.expected));
+  setText($("[data-preview-value]", root), money(result.annual.expected));
 }
 
 function applyScenarioBreakdown(
@@ -415,35 +499,48 @@ function applyScenarioBreakdown(
 
   for (const key of BREAKDOWN_CATS) {
     const value = breakdown[key];
-    setText($(`[data-out-cat="${key}"]`, root), formatUsd(value));
+    setText($(`[data-out-cat="${key}"]`, root), money(value));
 
     // Row bars + top stack both use share of total so lengths compose to 100%.
     const share = total > 0 ? (value / total) * 100 : 0;
+    const shareCss = `${share}%`;
 
     const bar = root.querySelector<HTMLElement>(`[data-bar="${key}"]`);
-    if (bar) bar.style.width = `${share}%`;
+    if (bar && bar.style.width !== shareCss) bar.style.width = shareCss;
 
     const seg = root.querySelector<HTMLElement>(`[data-stack="${key}"]`);
-    if (seg) seg.style.flexBasis = `${share}%`;
+    if (seg && seg.style.flexBasis !== shareCss) seg.style.flexBasis = shareCss;
   }
 
-  const label = SCENARIO_LABELS[scenario];
-  setText($("[data-breakdown-title]", root), `${label} breakdown`);
+  const label = scenarioLabel(scenario);
+  setText(
+    $("[data-breakdown-title]", root),
+    fill(activeMessages.breakdownTitle, { label }),
+  );
 
   // Structured meta spans keep one line; scenario lives on the selected card.
   setText(
     $("[data-meta-batches]", root),
-    `${Math.round(result.annualBatches).toLocaleString("en-US")} batches/yr`,
+    fill(activeMessages.batchesPerYear, {
+      n: formatCount(result.annualBatches, activeLocale),
+    }),
   );
+  const pts = result.rftLiftPts.toFixed(result.rftLiftPts % 1 === 0 ? 0 : 1);
   setText(
     $("[data-meta-rft]", root),
     result.rftLiftPts > 0
-      ? `RFT ${Math.round(result.currentRft)}% → ${Math.round(result.targetRft)}% (+${result.rftLiftPts.toFixed(result.rftLiftPts % 1 === 0 ? 0 : 1)} pts)`
-      : `RFT ${Math.round(result.currentRft)}%`,
+      ? fill(activeMessages.rftWithLift, {
+          from: Math.round(result.currentRft),
+          to: Math.round(result.targetRft),
+          pts,
+        })
+      : fill(activeMessages.rftOnly, {
+          pct: Math.round(result.currentRft),
+        }),
   );
   setText(
     $("[data-meta-avoided]", root),
-    Math.round(result.avoidedByScenario[scenario]).toLocaleString("en-US"),
+    formatCount(result.avoidedByScenario[scenario], activeLocale),
   );
 }
 
@@ -462,18 +559,27 @@ function renderResult(
     if (exp) animateValue(exp, result.annual.expected, opts.reduced);
     if (opt) animateValue(opt, result.annual.optimistic, opts.reduced);
   } else {
-    setText(cons, formatUsd(result.annual.conservative));
-    setText(exp, formatUsd(result.annual.expected));
-    setText(opt, formatUsd(result.annual.optimistic));
+    setText(cons, money(result.annual.conservative));
+    setText(exp, money(result.annual.expected));
+    setText(opt, money(result.annual.optimistic));
   }
 
   markScenarioSelected(root, opts.scenario);
   applyScenarioBreakdown(root, result, opts.scenario);
-  setText($("[data-preview-value]", root), formatUsd(result.annual.expected));
+  setText($("[data-preview-value]", root), money(result.annual.expected));
   return result;
 }
 
-export function initForecastWizard(root: HTMLElement): void {
+export function initForecastWizard(
+  root: HTMLElement,
+  options: ForecastWizardOptions = {},
+): void {
+  activeLocale = options.locale ?? "en";
+  activeMessages =
+    options.messages ?? getForecastMessages(activeLocale);
+  // Fresh hold-to-repeat cleanups for this init (avoids stacking on re-init).
+  holdCleanups.clear();
+
   let selectedPreset: PresetId = DEFAULT_PRESET_ID;
   let selectedScenario: ScenarioId = "expected";
   let lastResult: ForecastResult | null = null;
@@ -496,35 +602,27 @@ export function initForecastWizard(root: HTMLElement): void {
     selectedScenario = shared.scenario;
     hasHydratedScenario = true;
   }
-  // If URL carries custom inputs, don't pretend a preset is selected.
+  // Shared custom inputs keep an internal default preset id but no pill selected.
   if (hasSharedInputs && shared.preset) selectedPreset = shared.preset;
-  else if (hasSharedInputs) selectedPreset = "medium"; // keep internal, but UI shows no preset as selected until user picks
+  else if (hasSharedInputs) selectedPreset = DEFAULT_PRESET_ID;
   writeInputs(root, initialInputs);
   lastResult = renderResult(root, initialInputs, {
     animate: false,
     reduced: prefersReduced,
     scenario: selectedScenario,
   });
-  // Mark preset pills correctly when hydrating from a shared URL.
+  // Shared links land directly on Outlook so the recipient sees the same result.
   if (hasSharedInputs) {
-    // Clear all preset selection — inputs are custom, not a named preset.
-    for (const b of $all("[data-preset]", root)) {
-      b.classList.remove("is-selected");
-      b.setAttribute("aria-pressed", "false");
-    }
     track("forecast_share_hydrate", {
       ...initialInputs,
       scenario: selectedScenario,
     });
-  }
-  // Shared links land directly on Outlook so the recipient sees the same result.
-  if (hasSharedInputs) {
     void setStep(root, 3, { focus: false, instant: true });
   } else {
     void setStep(root, 1, { focus: false, instant: true });
   }
 
-  track("forecast_view", { path: "/forecast" });
+  track("forecast_view", { path: window.location.pathname });
 
   // Accordion panels — grid 0fr/1fr open/close (not native <details>).
   const bindAccordion = (
@@ -549,12 +647,18 @@ export function initForecastWizard(root: HTMLElement): void {
     "forecast_method_toggle",
   );
 
+  // Initial preset UI: named pill when not a custom share hydrate; none when custom.
+  if (hasSharedInputs && !shared.preset) {
+    for (const b of $all("[data-preset]", root)) {
+      b.classList.remove("is-selected");
+      b.setAttribute("aria-pressed", "false");
+    }
+  } else {
+    markPresetSelected(root, selectedPreset);
+  }
+
   for (const btn of $all("[data-preset]", root)) {
     const id = btn.getAttribute("data-preset") as PresetId;
-    const on = id === DEFAULT_PRESET_ID;
-    btn.classList.toggle("is-selected", on);
-    btn.setAttribute("aria-pressed", on ? "true" : "false");
-
     btn.addEventListener("click", () => {
       selectedPreset = id;
       const preset = getPreset(id);
@@ -702,53 +806,8 @@ export function initForecastWizard(root: HTMLElement): void {
       });
     };
 
-    const bindStepper = (
-      btn: HTMLButtonElement | null | undefined,
-      dir: 1 | -1,
-    ): void => {
-      if (!btn) return;
-      // Keep focus on the input so focus/blur formatting stays predictable.
-      btn.addEventListener("mousedown", (e) => e.preventDefault());
-      btn.addEventListener("click", (e) => {
-        const me = e as MouseEvent;
-        stepPercent(dir, me.shiftKey);
-      });
-      // Hold to repeat — like native spinner.
-      let holdTimer: number | null = null;
-      let repeatTimer: number | null = null;
-      const clearHold = (): void => {
-        if (holdTimer != null) {
-          window.clearTimeout(holdTimer);
-          holdTimer = null;
-        }
-        if (repeatTimer != null) {
-          window.clearInterval(repeatTimer);
-          repeatTimer = null;
-        }
-      };
-      btn.addEventListener("pointerdown", (e) => {
-        const pe = e as PointerEvent;
-        // Only primary button, and capture so pointerup fires even if dragged off.
-        if (pe.button !== 0) return;
-        btn.setPointerCapture(pe.pointerId);
-        // First repeat after a short hold, then faster — native-like.
-        holdTimer = window.setTimeout(() => {
-          repeatTimer = window.setInterval(
-            () => stepPercent(dir, (e as PointerEvent).shiftKey),
-            75,
-          );
-        }, 380);
-      });
-      const stop = (): void => clearHold();
-      btn.addEventListener("pointerup", stop);
-      btn.addEventListener("pointercancel", stop);
-      btn.addEventListener("pointerleave", stop);
-      // Also clear if window loses focus mid-hold.
-      window.addEventListener("blur", clearHold);
-    };
-
-    bindStepper(upBtn, 1);
-    bindStepper(downBtn, -1);
+    bindHoldStepper(upBtn, (shift) => stepPercent(1, shift));
+    bindHoldStepper(downBtn, (shift) => stepPercent(-1, shift));
   }
 
   // Generic numeric steppers — same holo chrome as percent, steps from input's step attr.
@@ -803,61 +862,15 @@ export function initForecastWizard(root: HTMLElement): void {
       // Preserve integer formatting when step is integer.
       const decimals = String(step).split(".")[1]?.length ?? 0;
       el.value = decimals === 0 ? String(Math.round(next)) : String(next);
-      // Dispatch input so preview RAF and native listeners see the change.
-      el.dispatchEvent(new Event("input", { bubbles: true }));
+      // renderResult already updates preview — no synthetic input (avoids double calc).
       lastResult = renderResult(root, readInputs(root), {
         animate: false,
         reduced: prefersReduced,
         scenario: selectedScenario,
       });
-      // Keep focus on the input for repeated spins.
-      if (document.activeElement !== el) {
-        // Don't steal focus if user is on stepper — but keep el focusable for keyboard repeat.
-      }
     };
-    const bindNumericStepper = (
-      btn: HTMLButtonElement | null | undefined,
-      dir: 1 | -1,
-    ): void => {
-      if (!btn) return;
-      btn.addEventListener("mousedown", (e) => e.preventDefault());
-      btn.addEventListener("click", (e) => {
-        const me = e as MouseEvent;
-        // Shift accelerates 5× for large jumps, like native shift stepping.
-        const mult = me.shiftKey ? 5 : 1;
-        stepNumeric(dir, mult);
-      });
-      let holdTimer: number | null = null;
-      let repeatTimer: number | null = null;
-      const clearHold = (): void => {
-        if (holdTimer != null) {
-          window.clearTimeout(holdTimer);
-          holdTimer = null;
-        }
-        if (repeatTimer != null) {
-          window.clearInterval(repeatTimer);
-          repeatTimer = null;
-        }
-      };
-      btn.addEventListener("pointerdown", (e) => {
-        const pe = e as PointerEvent;
-        if (pe.button !== 0) return;
-        btn.setPointerCapture(pe.pointerId);
-        holdTimer = window.setTimeout(() => {
-          repeatTimer = window.setInterval(
-            () => stepNumeric(dir, pe.shiftKey ? 5 : 1),
-            70,
-          );
-        }, 380);
-      });
-      const stop = (): void => clearHold();
-      btn.addEventListener("pointerup", stop);
-      btn.addEventListener("pointercancel", stop);
-      btn.addEventListener("pointerleave", stop);
-      window.addEventListener("blur", clearHold);
-    };
-    bindNumericStepper(upBtn, 1);
-    bindNumericStepper(downBtn, -1);
+    bindHoldStepper(upBtn, (shift) => stepNumeric(1, shift ? 5 : 1));
+    bindHoldStepper(downBtn, (shift) => stepNumeric(-1, shift ? 5 : 1));
   }
 
   const goToStep = (
@@ -939,13 +952,13 @@ export function initForecastWizard(root: HTMLElement): void {
       try {
         await navigator.clipboard.writeText(shareUrl);
         const prev = btn.textContent;
-        btn.textContent = "Link copied";
+        btn.textContent = activeMessages.linkCopied;
         btn.setAttribute("aria-live", "polite");
         setTimeout(() => {
           btn.textContent = prev;
         }, 1800);
       } catch {
-        window.prompt("Copy this link:", shareUrl);
+        window.prompt(activeMessages.copyPrompt, shareUrl);
       }
     });
 }

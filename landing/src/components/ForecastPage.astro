@@ -1,0 +1,2172 @@
+---
+/**
+ * Savings Forecast wizard body — locale-aware.
+ */
+import type { Locale } from "../i18n/locales";
+import { getMessages } from "../i18n/messages";
+import {
+  PRESETS,
+  RFT_LIFT_REALIZATION,
+  TIME_RATE_PER_MINUTE,
+  type PresetId,
+} from "../lib/forecast/model";
+import { homeHref, sectionHref } from "../i18n/paths";
+
+interface Props {
+  locale: Locale;
+}
+const { locale } = Astro.props;
+const m = getMessages(locale);
+const f = m.forecast;
+const homePath = homeHref(locale);
+const pilotHref = sectionHref(locale, "#contact");
+const PRESET_COPY: Record<PresetId, { label: string; hint: string }> = {
+  small: { label: f.presetSmall, hint: f.presetSmallHint },
+  medium: { label: f.presetMedium, hint: f.presetMediumHint },
+  large: { label: f.presetLarge, hint: f.presetLargeHint },
+};
+const presets = PRESETS.map((p) => ({ id: p.id, ...PRESET_COPY[p.id] }));
+---
+
+<main class="forecast" data-step="1">
+      <div class="container forecast__shell">
+        <div class="forecast__hero-slot" data-forecast-hero-slot>
+          <header class="forecast__hero" data-forecast-hero>
+            <p class="eyebrow">{f.heroEyebrow}</p>
+            <!-- Keep Color Brain on the same line -->
+            <h1 class="forecast__title">{f.heroTitleBefore} <span class="nowrap">Color&nbsp;Brain</span> {f.heroTitleAfter}</h1>
+            <p class="lede forecast__lede">
+              {f.heroLede}
+            </p>
+          </header>
+        </div>
+
+        <div
+          id="forecast-wizard"
+          class="forecast__wizard"
+          data-step="1"
+          data-locale={locale}
+          aria-label={f.wizardAria}
+        >
+          <!-- Progress — also clickable step nav -->
+          <ol class="forecast__steps" aria-label={f.stepsAria}>
+            <li>
+              <button
+                type="button"
+                class="forecast__step is-active"
+                data-step-indicator="1"
+                data-goto-step="1"
+                aria-current="step"
+              >
+                <span class="forecast__step-num">01</span>
+                <span class="forecast__step-label">{f.stepProfile}</span>
+              </button>
+            </li>
+            <li>
+              <button
+                type="button"
+                class="forecast__step"
+                data-step-indicator="2"
+                data-goto-step="2"
+              >
+                <span class="forecast__step-num">02</span>
+                <span class="forecast__step-label">{f.stepTune}</span>
+              </button>
+            </li>
+            <li>
+              <button
+                type="button"
+                class="forecast__step"
+                data-step-indicator="3"
+                data-goto-step="3"
+              >
+                <span class="forecast__step-num">03</span>
+                <span class="forecast__step-label">{f.stepOutlook}</span>
+              </button>
+            </li>
+          </ol>
+
+          <div class="forecast__stage" data-step-stage>
+          <!-- Step 1: Preset -->
+          <section
+            class="forecast__panel is-active"
+            data-step-panel="1"
+            aria-labelledby="step1-title"
+          >
+            <h2 id="step1-title" class="forecast__panel-title">{f.step1Title}</h2>
+            <p class="forecast__panel-lede">
+              {f.step1Lede}
+            </p>
+            <div class="forecast__presets" role="group" aria-label={f.presetsAria}>
+              {
+                presets.map((p) => (
+                  <button
+                    type="button"
+                    class="forecast__preset"
+                    data-preset={p.id}
+                    aria-pressed="false"
+                  >
+                    <span class="forecast__preset-label">{p.label}</span>
+                    <span class="forecast__preset-hint">{p.hint}</span>
+                  </button>
+                ))
+              }
+            </div>
+            <div class="forecast__actions">
+              <button type="button" class="btn btn--primary" data-goto-2>
+                {f.continue}
+              </button>
+            </div>
+          </section>
+
+          <!-- Step 2: Tune -->
+          <section
+            class="forecast__panel"
+            data-step-panel="2"
+            hidden
+            aria-hidden="true"
+            aria-labelledby="step2-title"
+          >
+            <div class="forecast__panel-head">
+              <div>
+                <h2 id="step2-title" class="forecast__panel-title">{f.step2Title}</h2>
+                <p class="forecast__panel-lede">
+                  {f.step2Lede}
+                </p>
+              </div>
+              <div class="forecast__preview" aria-live="polite">
+                <span class="forecast__preview-label">{f.previewLabel}</span>
+                <span class="forecast__preview-value" data-preview-value>$0</span>
+              </div>
+            </div>
+
+            <div class="forecast__fields forecast__fields--primary">
+              <label class="forecast__field" for="batchesPerMonth">
+                <span class="forecast__field-top">
+                  <span
+                    class="forecast__field-name"
+                    tabindex="0"
+                    data-tip={f.fieldBatchesTip}
+                  >{f.fieldBatches}</span>
+                  <span class="forecast__field-tag">{f.fieldBatchesTag}</span>
+                </span>
+                <span class="forecast__number">
+                  <input
+                    id="batchesPerMonth"
+                    name="batchesPerMonth"
+                    type="number"
+                    min="0"
+                    max="50000"
+                    step="1"
+                    inputmode="numeric"
+                  />
+                  <span class="forecast__stepper" aria-hidden="true">
+                    <button type="button" class="forecast__stepper-btn forecast__stepper-btn--up" data-spin="up" tabindex="-1" aria-label={f.fieldBatchesInc}><svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M6 3.2 10.2 8.4H1.8L6 3.2Z" fill="currentColor"/></svg></button>
+                    <button type="button" class="forecast__stepper-btn forecast__stepper-btn--down" data-spin="down" tabindex="-1" aria-label={f.fieldBatchesDec}><svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M6 8.8 1.8 3.6h8.4L6 8.8Z" fill="currentColor"/></svg></button>
+                  </span>
+                </span>
+              </label>
+              <label class="forecast__field" for="currentRft">
+                <span class="forecast__field-top">
+                  <span
+                    class="forecast__field-name"
+                    tabindex="0"
+                    data-tip={f.fieldCurrentRftTip}
+                  >{f.fieldCurrentRft}</span>
+                  <span class="forecast__field-tag">{f.fieldCurrentRftTag}</span>
+                </span>
+                <span class="forecast__percent">
+                  <input
+                    id="currentRft"
+                    name="currentRft"
+                    type="text"
+                    inputmode="decimal"
+                    autocomplete="off"
+                    aria-label={f.fieldCurrentRftAria}
+                  />
+                  <span class="forecast__stepper" aria-hidden="true">
+                    <button type="button" class="forecast__stepper-btn forecast__stepper-btn--up" data-spin="up" tabindex="-1" aria-label={f.fieldCurrentRftInc}><svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M6 3.2 10.2 8.4H1.8L6 3.2Z" fill="currentColor"/></svg></button>
+                    <button type="button" class="forecast__stepper-btn forecast__stepper-btn--down" data-spin="down" tabindex="-1" aria-label={f.fieldCurrentRftDec}><svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M6 8.8 1.8 3.6h8.4L6 8.8Z" fill="currentColor"/></svg></button>
+                  </span>
+                </span>
+              </label>
+              <label class="forecast__field" for="targetRft">
+                <span class="forecast__field-top">
+                  <span
+                    class="forecast__field-name"
+                    tabindex="0"
+                    data-tip={f.fieldTargetRftTip}
+                  >{f.fieldTargetRft}</span>
+                  <span class="forecast__field-tag">{f.fieldTargetRftTag}</span>
+                </span>
+                <span class="forecast__percent">
+                  <input
+                    id="targetRft"
+                    name="targetRft"
+                    type="text"
+                    inputmode="decimal"
+                    autocomplete="off"
+                    aria-label={f.fieldTargetRftAria}
+                  />
+                  <span class="forecast__stepper" aria-hidden="true">
+                    <button type="button" class="forecast__stepper-btn forecast__stepper-btn--up" data-spin="up" tabindex="-1" aria-label={f.fieldTargetRftInc}><svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M6 3.2 10.2 8.4H1.8L6 3.2Z" fill="currentColor"/></svg></button>
+                    <button type="button" class="forecast__stepper-btn forecast__stepper-btn--down" data-spin="down" tabindex="-1" aria-label={f.fieldTargetRftDec}><svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M6 8.8 1.8 3.6h8.4L6 8.8Z" fill="currentColor"/></svg></button>
+                  </span>
+                </span>
+              </label>
+            </div>
+
+            <div class="forecast__costs" data-costs>
+              <button
+                type="button"
+                class="forecast__costs-toggle"
+                data-costs-toggle
+                aria-expanded="false"
+                aria-controls="forecast-costs-panel"
+                id="forecast-costs-toggle"
+              >
+                <span class="forecast__costs-summary-label">{f.costsToggle}</span>
+                <span class="forecast__costs-summary-hint">{f.costsHint}</span>
+              </button>
+              <div
+                class="forecast__costs-panel"
+                id="forecast-costs-panel"
+                role="region"
+                aria-labelledby="forecast-costs-toggle"
+                data-costs-panel
+              >
+                <div class="forecast__costs-panel-inner">
+                <div class="forecast__costs-body">
+                <p class="forecast__costs-lede">
+                  {f.costsLede}
+                </p>
+                <div class="forecast__fields forecast__fields--costs">
+                  <label class="forecast__field" for="costPerRework">
+                    <span class="forecast__field-top">
+                      <span
+                        class="forecast__field-name"
+                        tabindex="0"
+                        data-tip={f.fieldLaborTip}
+                      >{f.fieldLabor}</span>
+                      <span class="forecast__field-tag">{f.fieldLaborTag}</span>
+                    </span>
+                    <span class="forecast__money">
+                      <span class="forecast__money-prefix" aria-hidden="true">$</span>
+                      <input
+                        id="costPerRework"
+                        name="costPerRework"
+                        type="number"
+                        min="0"
+                        step="1"
+                        inputmode="decimal"
+                        aria-label={f.fieldLaborAria}
+                      />
+                      <span class="forecast__stepper" aria-hidden="true">
+                        <button type="button" class="forecast__stepper-btn forecast__stepper-btn--up" data-spin="up" tabindex="-1" aria-label={f.fieldLaborInc}><svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M6 3.2 10.2 8.4H1.8L6 3.2Z" fill="currentColor"/></svg></button>
+                        <button type="button" class="forecast__stepper-btn forecast__stepper-btn--down" data-spin="down" tabindex="-1" aria-label={f.fieldLaborDec}><svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M6 8.8 1.8 3.6h8.4L6 8.8Z" fill="currentColor"/></svg></button>
+                      </span>
+                    </span>
+                  </label>
+                  <label class="forecast__field" for="dyePerRework">
+                    <span class="forecast__field-top">
+                      <span
+                        class="forecast__field-name"
+                        tabindex="0"
+                        data-tip={f.fieldDyeTip}
+                      >{f.fieldDye}</span>
+                      <span class="forecast__field-tag">{f.fieldDyeTag}</span>
+                    </span>
+                    <span class="forecast__money">
+                      <span class="forecast__money-prefix" aria-hidden="true">$</span>
+                      <input
+                        id="dyePerRework"
+                        name="dyePerRework"
+                        type="number"
+                        min="0"
+                        step="1"
+                        inputmode="decimal"
+                        aria-label={f.fieldDyeAria}
+                      />
+                      <span class="forecast__stepper" aria-hidden="true">
+                        <button type="button" class="forecast__stepper-btn forecast__stepper-btn--up" data-spin="up" tabindex="-1" aria-label={f.fieldDyeInc}><svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M6 3.2 10.2 8.4H1.8L6 3.2Z" fill="currentColor"/></svg></button>
+                        <button type="button" class="forecast__stepper-btn forecast__stepper-btn--down" data-spin="down" tabindex="-1" aria-label={f.fieldDyeDec}><svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M6 8.8 1.8 3.6h8.4L6 8.8Z" fill="currentColor"/></svg></button>
+                      </span>
+                    </span>
+                  </label>
+                  <label class="forecast__field" for="waterPerRework">
+                    <span class="forecast__field-top">
+                      <span
+                        class="forecast__field-name"
+                        tabindex="0"
+                        data-tip={f.fieldWaterTip}
+                      >{f.fieldWater}</span>
+                      <span class="forecast__field-tag">{f.fieldWaterTag}</span>
+                    </span>
+                    <span class="forecast__money">
+                      <span class="forecast__money-prefix" aria-hidden="true">$</span>
+                      <input
+                        id="waterPerRework"
+                        name="waterPerRework"
+                        type="number"
+                        min="0"
+                        step="1"
+                        inputmode="decimal"
+                        aria-label={f.fieldWaterAria}
+                      />
+                      <span class="forecast__stepper" aria-hidden="true">
+                        <button type="button" class="forecast__stepper-btn forecast__stepper-btn--up" data-spin="up" tabindex="-1" aria-label={f.fieldWaterInc}><svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M6 3.2 10.2 8.4H1.8L6 3.2Z" fill="currentColor"/></svg></button>
+                        <button type="button" class="forecast__stepper-btn forecast__stepper-btn--down" data-spin="down" tabindex="-1" aria-label={f.fieldWaterDec}><svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M6 8.8 1.8 3.6h8.4L6 8.8Z" fill="currentColor"/></svg></button>
+                      </span>
+                    </span>
+                  </label>
+                  <label class="forecast__field" for="energyPerRework">
+                    <span class="forecast__field-top">
+                      <span
+                        class="forecast__field-name"
+                        tabindex="0"
+                        data-tip={f.fieldEnergyTip}
+                      >{f.fieldEnergy}</span>
+                      <span class="forecast__field-tag">{f.fieldEnergyTag}</span>
+                    </span>
+                    <span class="forecast__money">
+                      <span class="forecast__money-prefix" aria-hidden="true">$</span>
+                      <input
+                        id="energyPerRework"
+                        name="energyPerRework"
+                        type="number"
+                        min="0"
+                        step="1"
+                        inputmode="decimal"
+                        aria-label={f.fieldEnergyAria}
+                      />
+                      <span class="forecast__stepper" aria-hidden="true">
+                        <button type="button" class="forecast__stepper-btn forecast__stepper-btn--up" data-spin="up" tabindex="-1" aria-label={f.fieldEnergyInc}><svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M6 3.2 10.2 8.4H1.8L6 3.2Z" fill="currentColor"/></svg></button>
+                        <button type="button" class="forecast__stepper-btn forecast__stepper-btn--down" data-spin="down" tabindex="-1" aria-label={f.fieldEnergyDec}><svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M6 8.8 1.8 3.6h8.4L6 8.8Z" fill="currentColor"/></svg></button>
+                      </span>
+                    </span>
+                  </label>
+                  <label class="forecast__field" for="cycleMinutes">
+                    <span class="forecast__field-top">
+                      <span
+                        class="forecast__field-name"
+                        tabindex="0"
+                        data-tip={f.fieldTimeTip}
+                      >{f.fieldTime}</span>
+                      <span class="forecast__field-tag">{f.fieldTimeTag}</span>
+                    </span>
+                    <span class="forecast__number">
+                      <input
+                        id="cycleMinutes"
+                        name="cycleMinutes"
+                        type="number"
+                        min="0"
+                        step="5"
+                        inputmode="numeric"
+                      />
+                      <span class="forecast__stepper" aria-hidden="true">
+                        <button type="button" class="forecast__stepper-btn forecast__stepper-btn--up" data-spin="up" tabindex="-1" aria-label={f.fieldTimeInc}><svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M6 3.2 10.2 8.4H1.8L6 3.2Z" fill="currentColor"/></svg></button>
+                        <button type="button" class="forecast__stepper-btn forecast__stepper-btn--down" data-spin="down" tabindex="-1" aria-label={f.fieldTimeDec}><svg viewBox="0 0 12 12" aria-hidden="true" focusable="false"><path d="M6 8.8 1.8 3.6h8.4L6 8.8Z" fill="currentColor"/></svg></button>
+                      </span>
+                    </span>
+                  </label>
+                </div>
+                </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="forecast__actions">
+              <button type="button" class="btn btn--ghost" data-back-1>{f.back}</button>
+              <button type="button" class="btn btn--primary" data-goto-3>
+                {f.seeOutlook}
+              </button>
+            </div>
+          </section>
+
+          <!-- Step 3: Reveal -->
+          <section
+            class="forecast__panel"
+            data-step-panel="3"
+            hidden
+            aria-hidden="true"
+            aria-labelledby="step3-title"
+          >
+            <h2 id="step3-title" class="forecast__panel-title">{f.step3Title}</h2>
+            <p class="forecast__meta" data-out-meta aria-live="polite">
+              <span data-meta-batches>—</span>
+              <span class="forecast__meta-sep" aria-hidden="true">·</span>
+              <span data-meta-rft>—</span>
+              <span class="forecast__meta-sep" aria-hidden="true">·</span>
+              <span class="forecast__meta-avoided">{f.avoidedPrefix}<span data-meta-avoided>—</span>{f.avoidedSuffix}</span>
+            </p>
+
+            <div
+              class="forecast__range"
+              role="radiogroup"
+              aria-label={f.rangeAria}
+              data-scenario-group
+            >
+              <button
+                type="button"
+                class="forecast__range-card"
+                data-scenario="conservative"
+                role="radio"
+                aria-checked="false"
+                tabindex="-1"
+              >
+                <span class="forecast__range-label">{f.scenarioConservative}</span>
+                <span class="forecast__range-value" data-out-conservative>$0</span>
+              </button>
+              <button
+                type="button"
+                class="forecast__range-card is-selected"
+                data-scenario="expected"
+                role="radio"
+                aria-checked="true"
+                tabindex="0"
+              >
+                <span class="forecast__range-label">{f.scenarioExpected}</span>
+                <span class="forecast__range-value" data-out-expected>$0</span>
+              </button>
+              <button
+                type="button"
+                class="forecast__range-card"
+                data-scenario="optimistic"
+                role="radio"
+                aria-checked="false"
+                tabindex="-1"
+              >
+                <span class="forecast__range-label">{f.scenarioOptimistic}</span>
+                <span class="forecast__range-value" data-out-optimistic>$0</span>
+              </button>
+            </div>
+
+            <h3 class="forecast__subhead" data-breakdown-title>{f.breakdownTitle.replace("{label}", f.scenarioExpected)}</h3>
+            <div class="forecast__breakdown-wrap">
+              <div
+                class="forecast__breakdown-stack"
+                data-breakdown-stack
+                aria-hidden="true"
+                title={f.stackTitle}
+              >
+                <span class="forecast__breakdown-seg" data-stack="rework"></span>
+                <span class="forecast__breakdown-seg" data-stack="dye"></span>
+                <span class="forecast__breakdown-seg" data-stack="water"></span>
+                <span class="forecast__breakdown-seg" data-stack="energy"></span>
+                <span class="forecast__breakdown-seg" data-stack="time"></span>
+              </div>
+              <ul class="forecast__breakdown" aria-label={f.breakdownAria}>
+                <li data-cat="rework">
+                  <div class="forecast__breakdown-head">
+                    <span class="forecast__breakdown-label">
+                      <span class="forecast__breakdown-swatch" aria-hidden="true"></span>
+                      {f.catRework}
+                    </span>
+                    <span class="forecast__breakdown-val" data-out-cat="rework">$0</span>
+                  </div>
+                  <div class="forecast__breakdown-track" aria-hidden="true">
+                    <div class="forecast__breakdown-bar" data-bar="rework"></div>
+                  </div>
+                </li>
+                <li data-cat="dye">
+                  <div class="forecast__breakdown-head">
+                    <span class="forecast__breakdown-label">
+                      <span class="forecast__breakdown-swatch" aria-hidden="true"></span>
+                      {f.catDye}
+                    </span>
+                    <span class="forecast__breakdown-val" data-out-cat="dye">$0</span>
+                  </div>
+                  <div class="forecast__breakdown-track" aria-hidden="true">
+                    <div class="forecast__breakdown-bar" data-bar="dye"></div>
+                  </div>
+                </li>
+                <li data-cat="water">
+                  <div class="forecast__breakdown-head">
+                    <span class="forecast__breakdown-label">
+                      <span class="forecast__breakdown-swatch" aria-hidden="true"></span>
+                      {f.catWater}
+                    </span>
+                    <span class="forecast__breakdown-val" data-out-cat="water">$0</span>
+                  </div>
+                  <div class="forecast__breakdown-track" aria-hidden="true">
+                    <div class="forecast__breakdown-bar" data-bar="water"></div>
+                  </div>
+                </li>
+                <li data-cat="energy">
+                  <div class="forecast__breakdown-head">
+                    <span class="forecast__breakdown-label">
+                      <span class="forecast__breakdown-swatch" aria-hidden="true"></span>
+                      {f.catEnergy}
+                    </span>
+                    <span class="forecast__breakdown-val" data-out-cat="energy">$0</span>
+                  </div>
+                  <div class="forecast__breakdown-track" aria-hidden="true">
+                    <div class="forecast__breakdown-bar" data-bar="energy"></div>
+                  </div>
+                </li>
+                <li data-cat="time">
+                  <div class="forecast__breakdown-head">
+                    <span class="forecast__breakdown-label">
+                      <span class="forecast__breakdown-swatch" aria-hidden="true"></span>
+                      {f.catTime}
+                    </span>
+                    <span class="forecast__breakdown-val" data-out-cat="time">$0</span>
+                  </div>
+                  <div class="forecast__breakdown-track" aria-hidden="true">
+                    <div class="forecast__breakdown-bar" data-bar="time"></div>
+                  </div>
+                </li>
+              </ul>
+            </div>
+
+            <div class="forecast__method" data-method>
+              <button
+                type="button"
+                class="forecast__method-toggle"
+                data-method-toggle
+                aria-expanded="false"
+                aria-controls="forecast-method-panel"
+                id="forecast-method-toggle"
+              >
+                <span class="forecast__method-summary-label">{f.methodToggle}</span>
+                <span class="forecast__method-summary-hint">{f.methodHint}</span>
+              </button>
+              <div
+                class="forecast__method-panel"
+                id="forecast-method-panel"
+                role="region"
+                aria-labelledby="forecast-method-toggle"
+                data-method-panel
+              >
+                <div class="forecast__method-panel-inner">
+                  <div class="forecast__method-body">
+                    <p class="forecast__method-lede">
+                      {f.methodLede}
+                    </p>
+
+                    <p class="forecast__method-eq" data-method-rate>
+                      {f.methodEqAnnual}
+                      <span class="forecast__method-op">≈</span>
+                      {f.methodEqBatches}
+                      <span class="forecast__method-op">×</span>
+                      {f.methodEqLift}
+                      <span class="forecast__method-op">×</span>
+                      {f.methodEqCost}
+                    </p>
+
+                    <div class="forecast__method-band-wrap">
+                      <p class="forecast__method-band-caption">
+                        {f.methodBandCaption}
+                      </p>
+                      <div
+                        class="forecast__method-band"
+                        data-method-reduction
+                        role="list"
+                        aria-label={f.methodBandAria}
+                      >
+                        <div class="forecast__method-band-item" role="listitem">
+                          <span class="forecast__method-band-label">{f.scenarioConservative}</span>
+                          <span class="forecast__method-band-val"
+                            >{RFT_LIFT_REALIZATION.conservative}×</span
+                          >
+                          <span class="forecast__method-band-unit">{f.methodBandUnit}</span>
+                        </div>
+                        <div
+                          class="forecast__method-band-item forecast__method-band-item--mid"
+                          role="listitem"
+                        >
+                          <span class="forecast__method-band-label">{f.scenarioExpected}</span>
+                          <span class="forecast__method-band-val"
+                            >{RFT_LIFT_REALIZATION.expected}×</span
+                          >
+                          <span class="forecast__method-band-unit">{f.methodBandUnit}</span>
+                        </div>
+                        <div class="forecast__method-band-item" role="listitem">
+                          <span class="forecast__method-band-label">{f.scenarioOptimistic}</span>
+                          <span class="forecast__method-band-val"
+                            >{RFT_LIFT_REALIZATION.optimistic}×</span
+                          >
+                          <span class="forecast__method-band-unit">{f.methodBandUnit}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <p class="forecast__method-note">
+                      {f.methodNote}
+                      <span class="forecast__method-pill"
+                        >{f.methodRatePill.replace("{rate}", "$" + TIME_RATE_PER_MINUTE.toFixed(2))}</span
+                      >
+                    </p>
+
+                    <p class="forecast__method-foot">
+                      {f.methodFoot}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <p class="forecast__disclaimer">
+              {f.disclaimer}
+            </p>
+
+            <div class="forecast__actions forecast__actions--cta">
+              <a
+                class="btn btn--primary"
+                href={pilotHref}
+                data-cta-pilot
+              >{f.bookPilot}</a>
+              <button type="button" class="btn btn--ghost" data-cta-copy>
+                {f.copyLink}
+              </button>
+              <button type="button" class="btn btn--ghost" data-back-2>
+                {f.adjustNumbers}
+              </button>
+            </div>
+            <p class="forecast__tertiary">
+              <a href={homePath}>{f.backHome}</a>
+            </p>
+          </section>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    
+
+    
+<script is:inline id="forecast-i18n" type="application/json" set:html={JSON.stringify({ locale, messages: f })} />
+<script>
+  import { initForecastWizard } from "../lib/forecast/wizard";
+  import type { Locale } from "../i18n/locales";
+  import type { ForecastMessages } from "../i18n/messages/types";
+
+  const root = document.getElementById("forecast-wizard");
+  const cfgEl = document.getElementById("forecast-i18n");
+  if (root && cfgEl?.textContent) {
+    try {
+      const cfg = JSON.parse(cfgEl.textContent) as {
+        locale?: Locale;
+        messages?: ForecastMessages;
+      };
+      initForecastWizard(root, {
+        locale: cfg.locale ?? "en",
+        messages: cfg.messages,
+      });
+    } catch {
+      initForecastWizard(root);
+    }
+  } else if (root) {
+    initForecastWizard(root);
+  }
+</script>
+
+<style>
+  .forecast-page {
+    background:
+      radial-gradient(
+        circle at 18% 0%,
+        rgba(127, 216, 232, 0.07),
+        transparent 32rem
+      ),
+      radial-gradient(
+        circle at 82% 12%,
+        rgba(78, 82, 124, 0.1),
+        transparent 28rem
+      ),
+      var(--bg);
+  }
+
+  .forecast {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    /* Keep flex-start always — justify-content:center→start was the jumpy reverse. */
+    padding-block: clamp(2.5rem, 6vw, 4.5rem) var(--section-pad);
+    min-height: calc(100dvh - 5.5rem);
+    transition: padding 320ms cubic-bezier(0.25, 0.1, 0.25, 1);
+  }
+
+  /* Past Profile: tighter chrome; framing comes from scroll, not justify flips. */
+  .forecast[data-step="2"],
+  .forecast[data-step="3"] {
+    padding-block: clamp(1.15rem, 3vw, 2rem) clamp(2rem, 5vw, 3.5rem);
+  }
+
+  .forecast__shell {
+    max-width: 920px;
+    width: 100%;
+  }
+
+  /*
+   * Hero collapse via grid 0fr/1fr — expands/collapses true content height
+   * (max-height:22rem was approximate and felt jumpy on the way back).
+   */
+  .forecast__hero-slot {
+    display: grid;
+    grid-template-rows: 1fr;
+    opacity: 1;
+    margin-bottom: 0;
+    transition:
+      grid-template-rows 300ms cubic-bezier(0.25, 0.1, 0.25, 1),
+      opacity 200ms ease;
+  }
+
+  .forecast__hero-slot > .forecast__hero {
+    overflow: hidden;
+    min-height: 0;
+    margin-bottom: 2.5rem;
+  }
+
+  .forecast[data-step="2"] .forecast__hero-slot,
+  .forecast[data-step="3"] .forecast__hero-slot {
+    grid-template-rows: 0fr;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .forecast__title {
+    font-size: clamp(2rem, 4.2vw, 3.1rem);
+    margin-top: 1.1rem;
+    max-width: 18ch;
+    animation: forecast-hero-enter 560ms 80ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .forecast__lede {
+    max-width: 52ch;
+    animation: forecast-hero-enter 560ms 160ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .nowrap {
+    white-space: nowrap;
+  }
+
+  .forecast__hero-slot .eyebrow {
+    animation: forecast-hero-enter 560ms 20ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  @keyframes forecast-hero-enter {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+      filter: blur(3px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+      filter: none;
+    }
+  }
+
+  .forecast__wizard {
+    border: 1px solid color-mix(in srgb, var(--holo) 12%, var(--line));
+    border-radius: calc(var(--radius) + 4px);
+    background:
+      linear-gradient(
+        160deg,
+        color-mix(in srgb, var(--surface-raised) 88%, transparent),
+        color-mix(in srgb, var(--surface) 92%, transparent)
+      );
+    box-shadow:
+      0 24px 64px rgba(0, 0, 0, 0.35),
+      inset 0 1px 0 rgba(127, 216, 232, 0.06);
+    padding: clamp(1.4rem, 3vw, 2.25rem);
+    position: relative;
+    overflow: hidden;
+    scroll-margin-top: 5.5rem;
+    /* — AI futurism entrance: system boot, not generic fade-up — */
+    --forecast-enter: 640ms;
+  }
+
+  /* Initial page load: wizard assembles — border sweep + lift */
+  .forecast__wizard {
+    animation: forecast-wizard-enter var(--forecast-enter) cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .forecast__wizard::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 1px;
+    width: 100%;
+    background: linear-gradient(90deg, transparent, var(--holo) 50%, transparent);
+    opacity: 0;
+    transform: scaleX(0);
+    transform-origin: 14% 50%;
+    animation: forecast-wizard-sweep 820ms 180ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    pointer-events: none;
+  }
+
+  @keyframes forecast-wizard-enter {
+    from {
+      opacity: 0;
+      transform: translateY(14px) scale(0.985);
+      border-color: color-mix(in srgb, transparent 100%, var(--line));
+      box-shadow:
+        0 12px 32px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(127, 216, 232, 0);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+      border-color: color-mix(in srgb, var(--holo) 12%, var(--line));
+      box-shadow:
+        0 24px 64px rgba(0, 0, 0, 0.35),
+        inset 0 1px 0 rgba(127, 216, 232, 0.06);
+    }
+  }
+
+  @keyframes forecast-wizard-sweep {
+    0% {
+      opacity: 0;
+      transform: scaleX(0);
+    }
+    18% {
+      opacity: 0.9;
+    }
+    100% {
+      opacity: 0;
+      transform: scaleX(1);
+    }
+  }
+
+  .forecast__wizard::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(127, 216, 232, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(127, 216, 232, 0.03) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: radial-gradient(ellipse at 50% 0%, #000 20%, transparent 75%);
+    pointer-events: none;
+    animation: forecast-grid-enter 720ms 120ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  @keyframes forecast-grid-enter {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  .forecast__steps {
+    position: relative;
+    z-index: 1;
+    list-style: none;
+    display: flex;
+    gap: 0.75rem;
+    padding: 0;
+    margin: 0 0 2rem;
+    flex-wrap: wrap;
+  }
+
+  .forecast__steps > li {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .forecast__step {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.4rem 0.85rem;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    color: var(--ink-faint);
+    font: inherit;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    background: transparent;
+    cursor: pointer;
+    transition:
+      border-color 280ms ease,
+      color 280ms ease,
+      box-shadow 280ms ease,
+      background 280ms ease;
+    animation: forecast-step-enter 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .forecast__steps > li:nth-child(1) .forecast__step {
+    animation-delay: 320ms;
+  }
+  .forecast__steps > li:nth-child(2) .forecast__step {
+    animation-delay: 400ms;
+  }
+  .forecast__steps > li:nth-child(3) .forecast__step {
+    animation-delay: 480ms;
+  }
+
+  @keyframes forecast-step-enter {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .forecast__step:hover {
+    border-color: color-mix(in srgb, var(--ink-faint) 50%, var(--line));
+    color: var(--ink-dim);
+  }
+
+  .forecast__step:focus-visible {
+    outline: none;
+    border-color: color-mix(in srgb, var(--holo) 55%, var(--line));
+    box-shadow: 0 0 0 3px rgba(127, 216, 232, 0.14);
+  }
+
+  .forecast__step.is-active {
+    border-color: color-mix(in srgb, var(--holo) 55%, var(--line));
+    color: var(--holo);
+    box-shadow: 0 0 18px rgba(127, 216, 232, 0.12);
+    cursor: default;
+  }
+
+  .forecast__step.is-active:hover {
+    color: var(--holo);
+    border-color: color-mix(in srgb, var(--holo) 55%, var(--line));
+  }
+
+  .forecast__step.is-done {
+    color: var(--ink-dim);
+    border-color: var(--line);
+  }
+
+  .forecast__step-num {
+    opacity: 0.7;
+  }
+
+  /* Step stage — soft crossfade + light slide; height eases between panels. */
+  .forecast__stage {
+    position: relative;
+    overflow: hidden;
+    transition: height 320ms cubic-bezier(0.25, 0.1, 0.25, 1);
+  }
+
+  .forecast__panel {
+    position: relative;
+    z-index: 1;
+  }
+
+  .forecast__panel:not(.is-active):not(.is-exit):not(.is-enter) {
+    display: none;
+  }
+
+  .forecast__panel.is-exit {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  .forecast__panel.is-enter {
+    position: relative;
+    z-index: 2;
+  }
+
+  .forecast__panel.is-exit-forward {
+    animation: forecast-panel-exit-forward 280ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+
+  .forecast__panel.is-exit-back {
+    animation: forecast-panel-exit-back 280ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+
+  .forecast__panel.is-enter-forward {
+    animation: forecast-panel-enter-forward 320ms cubic-bezier(0.25, 0.1, 0.25, 1) both;
+  }
+
+  .forecast__panel.is-enter-back {
+    animation: forecast-panel-enter-back 320ms cubic-bezier(0.25, 0.1, 0.25, 1) both;
+  }
+
+  @keyframes forecast-panel-exit-forward {
+    from {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+    to {
+      opacity: 0;
+      transform: translate3d(-0.65rem, 0, 0);
+    }
+  }
+
+  @keyframes forecast-panel-exit-back {
+    from {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+    to {
+      opacity: 0;
+      transform: translate3d(0.65rem, 0, 0);
+    }
+  }
+
+  @keyframes forecast-panel-enter-forward {
+    from {
+      opacity: 0;
+      transform: translate3d(0.75rem, 0, 0);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  @keyframes forecast-panel-enter-back {
+    from {
+      opacity: 0;
+      transform: translate3d(-0.75rem, 0, 0);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .forecast,
+    .forecast__hero-slot,
+    .forecast__stage {
+      transition: none;
+    }
+
+    .forecast__panel.is-exit-forward,
+    .forecast__panel.is-exit-back,
+    .forecast__panel.is-enter-forward,
+    .forecast__panel.is-enter-back,
+    .forecast__wizard,
+    .forecast__wizard::before,
+    .forecast__wizard::after,
+    .forecast__title,
+    .forecast__lede,
+    .forecast__hero-slot .eyebrow,
+    .forecast__step {
+      animation: none !important;
+    }
+  }
+
+  .forecast__panel-title {
+    font-size: clamp(1.35rem, 2.4vw, 1.75rem);
+  }
+
+  .forecast__panel-lede {
+    margin-top: 0.65rem;
+    color: var(--ink-dim);
+    max-width: 48ch;
+  }
+
+  /* Outlook meta strip — single line, stable width while scenario switches. */
+  .forecast__meta {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: baseline;
+    gap: 0.55rem;
+    margin: 0.7rem 0 0;
+    max-width: none;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+    color: var(--ink-dim);
+    white-space: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .forecast__meta::-webkit-scrollbar {
+    display: none;
+  }
+
+  .forecast__meta-sep {
+    color: var(--ink-faint);
+    opacity: 0.7;
+    user-select: none;
+  }
+
+  .forecast__meta-avoided {
+    /* Reserve room so 3–4 digit avoided counts don't shift the strip. */
+    min-width: 11ch;
+  }
+
+  .forecast__panel-head {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.25rem;
+  }
+
+  .forecast__preview {
+    border: 1px solid color-mix(in srgb, var(--holo) 28%, var(--line));
+    border-radius: var(--radius);
+    padding: 0.7rem 1rem;
+    background: rgba(15, 17, 24, 0.55);
+    min-width: 10rem;
+  }
+
+  .forecast__preview-label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .forecast__preview-value {
+    display: block;
+    margin-top: 0.25rem;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 1.35rem;
+    color: var(--holo);
+    text-shadow: 0 0 18px rgba(127, 216, 232, 0.25);
+  }
+
+  .forecast__presets {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 0.9rem;
+    margin-top: 1.75rem;
+  }
+
+  .forecast__preset {
+    text-align: left;
+    padding: 1.15rem 1.1rem;
+    border-radius: var(--radius);
+    border: 1px solid var(--line);
+    background: rgba(15, 17, 24, 0.6);
+    transition:
+      border-color 160ms ease,
+      box-shadow 160ms ease,
+      background 160ms ease;
+  }
+
+  .forecast__preset:hover {
+    border-color: var(--ink-faint);
+  }
+
+  .forecast__preset.is-selected {
+    border-color: color-mix(in srgb, var(--holo) 60%, var(--line));
+    background: color-mix(in srgb, var(--holo) 8%, rgba(15, 17, 24, 0.75));
+    box-shadow: 0 0 24px rgba(127, 216, 232, 0.1);
+  }
+
+  .forecast__preset-label {
+    display: block;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.05rem;
+  }
+
+  .forecast__preset-hint {
+    display: block;
+    margin-top: 0.35rem;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--ink-faint);
+    letter-spacing: 0.04em;
+  }
+
+  .forecast__fields {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem 1.15rem;
+    margin-top: 1.75rem;
+    /* Equal-height cells so inputs can pin to one baseline. */
+    align-items: stretch;
+  }
+
+  @media (max-width: 720px) {
+    .forecast__fields {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 420px) {
+    .forecast__fields {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .forecast__fields--primary {
+    margin-top: 1.75rem;
+  }
+
+  .forecast__fields--costs {
+    margin-top: 0.85rem;
+  }
+
+  .forecast__costs {
+    margin-top: 1.35rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: rgba(15, 17, 24, 0.35);
+    transition:
+      border-color 280ms ease,
+      box-shadow 320ms ease,
+      background 280ms ease;
+  }
+
+  .forecast__costs.is-open {
+    border-color: color-mix(in srgb, var(--holo) 28%, var(--line));
+    box-shadow: 0 0 24px rgba(127, 216, 232, 0.06);
+    background: color-mix(in srgb, var(--holo) 3%, rgba(15, 17, 24, 0.4));
+  }
+
+  .forecast__costs-toggle {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.45rem 0.75rem;
+    width: 100%;
+    margin: 0;
+    padding: 0.85rem 1.05rem;
+    border: 0;
+    border-radius: inherit;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .forecast__costs-toggle:focus-visible {
+    outline: none;
+    box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--holo) 45%, transparent);
+  }
+
+  .forecast__costs-summary-label {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    transition: color 200ms ease;
+  }
+
+  .forecast__costs-summary-label::before {
+    content: "▸";
+    display: inline-block;
+    margin-right: 0.5rem;
+    color: var(--holo);
+    transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .forecast__costs.is-open .forecast__costs-summary-label::before {
+    transform: rotate(90deg);
+  }
+
+  .forecast__costs-summary-hint {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .forecast__costs-toggle:hover .forecast__costs-summary-label {
+    color: var(--ink);
+  }
+
+  /* Animated open/close — grid 0fr/1fr (same trick as the hero). */
+  .forecast__costs-panel {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    transition:
+      grid-template-rows 340ms cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 260ms ease;
+  }
+
+  .forecast__costs.is-open .forecast__costs-panel {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+
+  .forecast__costs-panel-inner {
+    overflow: hidden;
+    min-height: 0;
+  }
+
+  .forecast__costs-body {
+    padding: 0 1.05rem 1.15rem;
+    border-top: 1px solid transparent;
+    transition: border-color 280ms ease;
+  }
+
+  .forecast__costs.is-open .forecast__costs-body {
+    border-top-color: var(--line-soft);
+  }
+
+  .forecast__costs-lede {
+    margin: 0.85rem 0 0;
+    font-size: 0.84rem;
+    line-height: 1.5;
+    color: var(--ink-faint);
+    max-width: 52ch;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .forecast__costs,
+    .forecast__costs-panel,
+    .forecast__costs-summary-label::before,
+    .forecast__costs-body {
+      transition: none;
+    }
+  }
+
+  .forecast__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    font-size: 0.88rem;
+    color: var(--ink-dim);
+    min-width: 0;
+    height: 100%;
+    position: relative;
+    overflow: visible;
+  }
+
+  .forecast__field:hover,
+  .forecast__field:focus-within {
+    z-index: 5;
+  }
+
+  .forecast__field-top {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 0.2rem;
+    /* Always exactly two lines: name, then tag. */
+    height: 2.4rem;
+    flex: 0 0 2.4rem;
+    /* Must stay visible — overflow:hidden clipped the ::after tooltips. */
+    overflow: visible;
+  }
+
+  .forecast__field-name {
+    position: relative;
+    /* Inline so the dotted underline only covers the label text, not the column. */
+    display: inline-block;
+    width: fit-content;
+    max-width: 100%;
+    color: var(--ink);
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    cursor: help;
+    border-bottom: 1px dotted color-mix(in srgb, var(--ink-faint) 70%, transparent);
+    outline: none;
+    white-space: nowrap;
+    line-height: 1.2;
+    z-index: 1;
+  }
+
+  .forecast__field-name:hover,
+  .forecast__field-name:focus-visible {
+    color: color-mix(in srgb, var(--holo) 55%, var(--ink));
+    border-bottom-color: color-mix(in srgb, var(--holo) 50%, var(--ink-faint));
+    z-index: 8;
+  }
+
+  /* Hover/focus tip. Opens below the name (over the field) — parent
+     overflow:hidden was killing these when we used it for ellipsis. */
+  .forecast__field-name::after {
+    content: attr(data-tip);
+    position: absolute;
+    left: 0;
+    top: calc(100% + 0.35rem);
+    z-index: 20;
+    width: max-content;
+    max-width: min(16rem, 70vw);
+    padding: 0.55rem 0.7rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--line);
+    background: color-mix(in srgb, var(--surface) 96%, #0a0c12);
+    color: var(--ink-dim);
+    font-size: 0.75rem;
+    font-weight: 400;
+    line-height: 1.4;
+    letter-spacing: 0;
+    text-transform: none;
+    white-space: normal;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-0.12rem);
+    transition:
+      opacity 140ms ease,
+      transform 140ms ease,
+      visibility 140ms ease;
+    pointer-events: none;
+  }
+
+  .forecast__field-name:hover::after,
+  .forecast__field-name:focus-visible::after {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .forecast__field-name::after {
+      transition: none;
+    }
+  }
+
+  .forecast__field-tag {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.2;
+    max-width: 100%;
+  }
+
+  /* Hide native number spinners — we use the custom holo stepper everywhere. */
+  .forecast__field input[type="number"]::-webkit-outer-spin-button,
+  .forecast__field input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    appearance: none;
+    margin: 0;
+  }
+
+  .forecast__field input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+
+  .forecast__field input {
+    box-sizing: border-box;
+    font: inherit;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 0.92rem;
+    line-height: 1.25;
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 0 0.85em;
+    width: 100%;
+    min-width: 0;
+    height: 2.65rem;
+    flex: 0 0 2.65rem;
+    margin-top: auto; /* pin all inputs to the same baseline in the row */
+    transition: border-color 160ms ease, box-shadow 160ms ease;
+  }
+
+  .forecast__field input:focus-visible {
+    outline: none;
+    border-color: color-mix(in srgb, var(--holo) 55%, var(--line));
+    box-shadow: 0 0 0 3px rgba(127, 216, 232, 0.12);
+  }
+
+  /* Bare number inputs now wrapped like percent/money — same control chrome. */
+  .forecast__number {
+    display: flex;
+    align-items: stretch;
+    width: 100%;
+    min-width: 0;
+    height: 2.65rem;
+    flex: 0 0 2.65rem;
+    margin-top: auto;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    overflow: hidden;
+    transition: border-color 160ms ease, box-shadow 160ms ease;
+  }
+
+  .forecast__number:focus-within {
+    border-color: color-mix(in srgb, var(--holo) 55%, var(--line));
+    box-shadow: 0 0 0 3px rgba(127, 216, 232, 0.12);
+  }
+
+  .forecast__number input {
+    margin-top: 0;
+    flex: 1 1 auto;
+    height: 100%;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .forecast__number input:focus-visible {
+    border: 0;
+    box-shadow: none;
+  }
+
+  /* USD cost inputs — $ prefix inside the control. */
+  .forecast__money {
+    display: flex;
+    align-items: stretch;
+    width: 100%;
+    min-width: 0;
+    height: 2.65rem;
+    flex: 0 0 2.65rem;
+    margin-top: auto;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    overflow: hidden;
+    transition: border-color 160ms ease, box-shadow 160ms ease;
+  }
+
+  .forecast__money:focus-within {
+    border-color: color-mix(in srgb, var(--holo) 55%, var(--line));
+    box-shadow: 0 0 0 3px rgba(127, 216, 232, 0.12);
+  }
+
+  .forecast__money-prefix {
+    display: flex;
+    align-items: center;
+    flex: 0 0 auto;
+    padding: 0 0 0 0.75em;
+    font-family: var(--font-mono);
+    font-size: 0.92rem;
+    font-weight: 500;
+    color: var(--ink-faint);
+    user-select: none;
+    pointer-events: none;
+  }
+
+  .forecast__money input {
+    margin-top: 0;
+    flex: 1 1 auto;
+    height: 100%;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    padding-left: 0.35em;
+    box-shadow: none;
+  }
+
+  .forecast__money input:focus-visible {
+    border: 0;
+    box-shadow: none;
+  }
+
+  /* RFT percent inputs — % suffix inside the control. */
+  .forecast__percent {
+    display: flex;
+    align-items: stretch;
+    width: 100%;
+    min-width: 0;
+    height: 2.65rem;
+    flex: 0 0 2.65rem;
+    margin-top: auto;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    overflow: hidden;
+    transition: border-color 160ms ease, box-shadow 160ms ease;
+  }
+
+  .forecast__percent:focus-within {
+    border-color: color-mix(in srgb, var(--holo) 55%, var(--line));
+    box-shadow: 0 0 0 3px rgba(127, 216, 232, 0.12);
+  }
+
+  .forecast__percent input {
+    margin-top: 0;
+    flex: 1 1 auto;
+    height: 100%;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    padding-right: 0.85em;
+  }
+
+  .forecast__percent input:focus-visible {
+    border: 0;
+    box-shadow: none;
+  }
+
+  .forecast__stepper {
+    display: flex;
+    flex-direction: column;
+    flex: 0 0 2rem;
+    align-items: stretch;
+    border-left: 1px solid var(--line);
+    background: color-mix(in srgb, var(--surface-raised) 38%, var(--surface));
+    user-select: none;
+  }
+
+  .forecast__stepper-btn {
+    flex: 1 1 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    color: var(--ink-dim);
+    cursor: pointer;
+    transition:
+      background 120ms ease,
+      color 120ms ease,
+      filter 120ms ease;
+  }
+
+  .forecast__stepper-btn--up {
+    border-bottom: 1px solid var(--line);
+  }
+
+  .forecast__stepper-btn svg {
+    display: block;
+    width: 11px;
+    height: 11px;
+    filter: drop-shadow(0 0 6px rgba(127, 216, 232, 0.22));
+    opacity: 0.96;
+  }
+
+  .forecast__stepper-btn:hover {
+    background: color-mix(in srgb, var(--holo) 14%, transparent);
+    color: var(--holo);
+  }
+
+  .forecast__stepper-btn:hover svg {
+    opacity: 1;
+    filter: drop-shadow(0 0 9px rgba(127, 216, 232, 0.38));
+  }
+
+  .forecast__stepper-btn:active {
+    background: color-mix(in srgb, var(--holo) 22%, transparent);
+    color: var(--holo);
+  }
+
+  .forecast__stepper-btn:focus-visible {
+    outline: none;
+    background: color-mix(in srgb, var(--holo) 14%, transparent);
+    color: var(--holo);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--holo) 40%, transparent);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .forecast__stepper-btn {
+      transition: none;
+    }
+  }
+
+  .forecast__percent-suffix {
+    display: none;
+  }
+
+  .forecast__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 2rem;
+  }
+
+  .forecast__actions--cta {
+    margin-top: 1.75rem;
+  }
+
+  .forecast__range {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.85rem;
+    margin-top: 1.75rem;
+  }
+
+  @media (max-width: 640px) {
+    .forecast__range {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .forecast__range-card {
+    display: block;
+    width: 100%;
+    text-align: left;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 1.1rem 1rem;
+    background: rgba(15, 17, 24, 0.55);
+    transition:
+      border-color 160ms ease,
+      box-shadow 160ms ease,
+      background 160ms ease,
+      transform 160ms ease;
+  }
+
+  .forecast__range-card:hover {
+    border-color: color-mix(in srgb, var(--ink-faint) 55%, var(--line));
+    background: rgba(15, 17, 24, 0.72);
+  }
+
+  .forecast__range-card:focus-visible {
+    outline: none;
+    border-color: color-mix(in srgb, var(--holo) 55%, var(--line));
+    box-shadow: 0 0 0 3px rgba(127, 216, 232, 0.14);
+  }
+
+  .forecast__range-card.is-selected {
+    border-color: color-mix(in srgb, var(--holo) 50%, var(--line));
+    box-shadow: 0 0 28px rgba(127, 216, 232, 0.1);
+    background: color-mix(in srgb, var(--holo) 6%, rgba(15, 17, 24, 0.7));
+  }
+
+  .forecast__range-label {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 0;
+  }
+
+  .forecast__range-value {
+    display: block;
+    margin: 0.4rem 0 0;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-weight: 500;
+    font-size: clamp(1.4rem, 2.8vw, 1.9rem);
+    line-height: 1.15;
+    color: var(--ink);
+  }
+
+  .forecast__range-card.is-selected .forecast__range-value {
+    color: var(--holo);
+    text-shadow: 0 0 20px rgba(127, 216, 232, 0.28);
+  }
+
+  .forecast__subhead {
+    margin-top: 2rem;
+    font-size: 1rem;
+    font-family: var(--font-mono);
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+  }
+
+  .forecast__breakdown-wrap {
+    /* Distinct category hues (not holo-tints) so stack ↔ rows are mappable. */
+    --cat-rework: #7fd8e8;
+    --cat-dye: #e8b04a;
+    --cat-water: #5b9cf5;
+    --cat-energy: #b794f6;
+    --cat-time: #46c79a;
+
+    margin-top: 0.9rem;
+    border: 1px solid var(--line-soft);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: rgba(15, 17, 24, 0.35);
+  }
+
+  /* Composition strip — share of total savings by category. */
+  .forecast__breakdown-stack {
+    display: flex;
+    height: 0.55rem;
+    width: 100%;
+    gap: 2px;
+    background: var(--line-soft);
+  }
+
+  .forecast__breakdown-seg {
+    display: block;
+    flex: 0 0 0%;
+    min-width: 0;
+    height: 100%;
+    transition: flex-basis 420ms ease;
+  }
+
+  .forecast__breakdown-seg[data-stack="rework"] {
+    background: var(--cat-rework);
+  }
+  .forecast__breakdown-seg[data-stack="dye"] {
+    background: var(--cat-dye);
+  }
+  .forecast__breakdown-seg[data-stack="water"] {
+    background: var(--cat-water);
+  }
+  .forecast__breakdown-seg[data-stack="energy"] {
+    background: var(--cat-energy);
+  }
+  .forecast__breakdown-seg[data-stack="time"] {
+    background: var(--cat-time);
+  }
+
+  .forecast__breakdown {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .forecast__breakdown li {
+    --cat: var(--cat-rework);
+    padding: 0.8rem 1rem 0.75rem;
+    border-bottom: 1px solid var(--line-soft);
+  }
+
+  .forecast__breakdown li:last-child {
+    border-bottom: 0;
+  }
+
+  .forecast__breakdown li[data-cat="rework"] {
+    --cat: var(--cat-rework);
+  }
+  .forecast__breakdown li[data-cat="dye"] {
+    --cat: var(--cat-dye);
+  }
+  .forecast__breakdown li[data-cat="water"] {
+    --cat: var(--cat-water);
+  }
+  .forecast__breakdown li[data-cat="energy"] {
+    --cat: var(--cat-energy);
+  }
+  .forecast__breakdown li[data-cat="time"] {
+    --cat: var(--cat-time);
+  }
+
+  .forecast__breakdown-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    font-size: 0.92rem;
+    color: var(--ink-dim);
+  }
+
+  .forecast__breakdown-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+
+  .forecast__breakdown-swatch {
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 2px;
+    flex-shrink: 0;
+    background: var(--cat);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--cat) 35%, transparent);
+  }
+
+  .forecast__breakdown-val {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+    flex-shrink: 0;
+  }
+
+  .forecast__breakdown-track {
+    margin-top: 0.5rem;
+    height: 0.3rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--line-soft) 80%, transparent);
+    overflow: hidden;
+  }
+
+  .forecast__breakdown-bar {
+    height: 100%;
+    width: 0%;
+    border-radius: inherit;
+    background: var(--cat);
+    box-shadow: 0 0 10px color-mix(in srgb, var(--cat) 35%, transparent);
+    transition: width 420ms ease;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .forecast__breakdown-bar,
+    .forecast__breakdown-seg {
+      transition: none;
+    }
+  }
+
+  .forecast__method {
+    margin-top: 1.5rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: rgba(15, 17, 24, 0.4);
+    transition:
+      border-color 280ms ease,
+      box-shadow 320ms ease,
+      background 280ms ease;
+  }
+
+  .forecast__method.is-open {
+    border-color: color-mix(in srgb, var(--holo) 28%, var(--line));
+    box-shadow: 0 0 24px rgba(127, 216, 232, 0.06);
+    background: color-mix(in srgb, var(--holo) 3%, rgba(15, 17, 24, 0.45));
+  }
+
+  .forecast__method-toggle {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.45rem 0.75rem;
+    width: 100%;
+    margin: 0;
+    padding: 0.9rem 1.1rem;
+    border: 0;
+    border-radius: inherit;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .forecast__method-toggle:focus-visible {
+    outline: none;
+    box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--holo) 45%, transparent);
+  }
+
+  .forecast__method-summary-label {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    transition: color 200ms ease;
+  }
+
+  .forecast__method-summary-label::before {
+    content: "▸";
+    display: inline-block;
+    margin-right: 0.55rem;
+    color: var(--holo);
+    transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .forecast__method.is-open .forecast__method-summary-label::before {
+    transform: rotate(90deg);
+  }
+
+  .forecast__method-summary-hint {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .forecast__method-toggle:hover .forecast__method-summary-label {
+    color: var(--ink);
+  }
+
+  .forecast__method-panel {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    transition:
+      grid-template-rows 340ms cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 260ms ease;
+  }
+
+  .forecast__method.is-open .forecast__method-panel {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+
+  .forecast__method-panel-inner {
+    overflow: hidden;
+    min-height: 0;
+  }
+
+  .forecast__method-body {
+    padding: 0 1.1rem 1.15rem;
+    border-top: 1px solid transparent;
+    display: grid;
+    gap: 0.9rem;
+    transition: border-color 280ms ease;
+  }
+
+  .forecast__method.is-open .forecast__method-body {
+    border-top-color: var(--line-soft);
+  }
+
+  .forecast__method-lede {
+    margin: 0.9rem 0 0;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--ink-dim);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .forecast__method,
+    .forecast__method-panel,
+    .forecast__method-summary-label::before,
+    .forecast__method-body {
+      transition: none;
+    }
+  }
+
+  .forecast__method-eq {
+    margin: 0;
+    padding: 0.7rem 0.85rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--line-soft);
+    background: rgba(7, 8, 12, 0.4);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.5;
+    color: var(--ink-dim);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.3rem 0.4rem;
+  }
+
+  .forecast__method-op {
+    color: var(--holo);
+    opacity: 0.9;
+  }
+
+  .forecast__method-note {
+    margin: 0;
+    font-size: 0.8rem;
+    line-height: 1.45;
+    color: var(--ink-faint);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem 0.5rem;
+  }
+
+  .forecast__method-pill {
+    display: inline-flex;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--holo);
+    border: 1px solid color-mix(in srgb, var(--holo) 35%, var(--line));
+    border-radius: 999px;
+    padding: 0.12rem 0.5rem;
+    background: color-mix(in srgb, var(--holo) 8%, transparent);
+  }
+
+  .forecast__method-band-wrap {
+    display: grid;
+    gap: 0.55rem;
+  }
+
+  .forecast__method-band-caption {
+    margin: 0;
+    font-size: 0.8rem;
+    line-height: 1.45;
+    color: var(--ink-faint);
+  }
+
+  .forecast__method-band-caption em {
+    font-style: normal;
+    color: var(--ink-dim);
+  }
+
+  .forecast__method-band {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.4rem;
+  }
+
+  @media (max-width: 520px) {
+    .forecast__method-band {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .forecast__method-band-item {
+    display: grid;
+    gap: 0.15rem;
+    padding: 0.5rem 0.6rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--line-soft);
+    background: rgba(15, 17, 24, 0.5);
+  }
+
+  .forecast__method-band-item--mid {
+    border-color: color-mix(in srgb, var(--holo) 40%, var(--line));
+    background: color-mix(in srgb, var(--holo) 7%, rgba(15, 17, 24, 0.55));
+  }
+
+  .forecast__method-band-label {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  .forecast__method-band-val {
+    font-family: var(--font-mono);
+    font-size: 1.05rem;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+  }
+
+  .forecast__method-band-item--mid .forecast__method-band-val {
+    color: var(--holo);
+  }
+
+  .forecast__method-band-unit {
+    font-size: 0.68rem;
+    color: var(--ink-faint);
+  }
+
+  .forecast__method-foot {
+    margin: 0;
+    font-size: 0.76rem;
+    line-height: 1.45;
+    color: var(--ink-faint);
+  }
+
+  .forecast__disclaimer {
+    margin-top: 1.25rem;
+    font-size: 0.82rem;
+    color: var(--ink-faint);
+    line-height: 1.55;
+    max-width: 62ch;
+  }
+
+  .forecast__tertiary {
+    margin-top: 1.25rem;
+    font-size: 0.9rem;
+  }
+
+  .forecast__tertiary a {
+    color: var(--ink-dim);
+    text-decoration: none;
+  }
+
+  .forecast__tertiary a:hover {
+    color: var(--ink);
+  }
+
+</style>
