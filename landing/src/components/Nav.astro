@@ -3,7 +3,7 @@
  * Floating glass navigation pill. Middle links collapse on small screens;
  * language control stays far-right in nav__actions (visible on mobile).
  *
- * Dropdown lists live locales plus planned placeholders (繁 / VI) disabled
+ * Dropdown lists live locales plus planned placeholders (VI) disabled
  * until those catalogs and routes ship.
  */
 import type { Locale } from "../i18n/locales";
@@ -39,7 +39,11 @@ const forecastPath = forecastHref(locale);
 const currentLabel = LOCALE_LABELS[locale];
 const langMenuId = "nav-lang-menu";
 const comingSoon =
-  locale === "zh" ? "即将推出" : "Coming soon";
+  locale === "zh"
+    ? "即将推出"
+    : locale === "zh-tw"
+      ? "即將推出"
+      : "Coming soon";
 ---
 
 <header class="nav">

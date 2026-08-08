@@ -51,7 +51,8 @@ export function writePreferenceCookie(locale: Locale): void {
  * Keep locale list in sync with LOCALES (non-default only).
  */
 const COOKIE_PREFIX = `${PREFERENCE_COOKIE}=`;
-export const SOFT_ENTRY_INLINE_SCRIPT = `(function(){try{var c=document.cookie.split(";");var pref=null;var prefix=${JSON.stringify(COOKIE_PREFIX)};for(var i=0;i<c.length;i++){var p=c[i].trim();if(p.indexOf(prefix)===0){pref=decodeURIComponent(p.slice(prefix.length));break;}}var map={zh:"/zh/","zh-tw":"/zh-tw/",vi:"/vi/"};if(pref&&map[pref]&&location.pathname==="/"&&location.hash===""){location.replace(map[pref]);}}catch(e){}})();`;
+// Live non-default locales only — do not redirect for menu placeholders (e.g. vi).
+export const SOFT_ENTRY_INLINE_SCRIPT = `(function(){try{var c=document.cookie.split(";");var pref=null;var prefix=${JSON.stringify(COOKIE_PREFIX)};for(var i=0;i<c.length;i++){var p=c[i].trim();if(p.indexOf(prefix)===0){pref=decodeURIComponent(p.slice(prefix.length));break;}}var map={zh:"/zh/","zh-tw":"/zh-tw/"};if(pref&&map[pref]&&location.pathname==="/"&&location.hash===""){location.replace(map[pref]);}}catch(e){}})();`;
 
 /** Runtime helper for tests / non-inline callers. */
 export function softEntryTarget(pref: Locale | null): string | null {
