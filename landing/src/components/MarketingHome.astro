@@ -1,0 +1,74 @@
+---
+/**
+ * Shared marketing home shell (EN + ZH). Route files only set locale/softEntry.
+ */
+import Marketing from "../layouts/Marketing.astro";
+import Loader from "./Loader.astro";
+import Nav from "./Nav.astro";
+import StageLayer from "./StageLayer.astro";
+import Hero from "./Hero.astro";
+import Problem from "./Problem.astro";
+import HowItWorks from "./HowItWorks.astro";
+import Proof from "./Proof.astro";
+import CaseStudies from "./CaseStudies.astro";
+import WhoItsFor from "./WhoItsFor.astro";
+import Contact from "./Contact.astro";
+import Footer from "./Footer.astro";
+import type { Locale } from "../i18n/locales";
+import { homeHref } from "../i18n/paths";
+
+interface Props {
+  locale: Locale;
+  /** Soft-entry cookie redirect — English home only. */
+  softEntry?: boolean;
+}
+
+const { locale, softEntry = false } = Astro.props;
+const path = homeHref(locale);
+---
+
+<Marketing locale={locale} page="home" softEntry={softEntry}>
+  <Loader />
+  <Nav locale={locale} path={path} />
+  <main>
+    <div id="stage" data-scene-phase="index">
+      <StageLayer />
+      <Hero locale={locale} />
+      <HowItWorks locale={locale} />
+    </div>
+    <Problem locale={locale} />
+    <Proof locale={locale} />
+    <CaseStudies locale={locale} />
+    <WhoItsFor locale={locale} />
+    <Contact locale={locale} />
+  </main>
+  <Footer locale={locale} />
+  <script>
+    import { initMotion } from "../lib/motion";
+    import { initCaseBrowser } from "../lib/caseBrowser";
+
+    initMotion();
+    initCaseBrowser();
+
+    const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const webgl2 = (() => {
+      try {
+        return document.createElement("canvas").getContext("webgl2") !== null;
+      } catch {
+        return false;
+      }
+    })();
+    if (!reducedMotion && webgl2) {
+      const boot = () => {
+        setTimeout(async () => {
+          const { initBrain } = await import("../lib/brain/index");
+          const ambient =
+            matchMedia("(pointer: coarse)").matches || window.innerWidth < 768;
+          initBrain(ambient ? "ambient" : "full");
+        }, 150);
+      };
+      if (document.readyState === "complete") boot();
+      else window.addEventListener("load", boot, { once: true });
+    }
+  </script>
+</Marketing>

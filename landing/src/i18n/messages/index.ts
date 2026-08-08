@@ -9,7 +9,7 @@ const catalogs: Record<Locale, Messages> = {
 };
 
 export function getMessages(locale: Locale): Messages {
-  return catalogs[locale] ?? catalogs.en;
+  return catalogs[locale];
 }
 
 export function getForecastMessages(locale: Locale): ForecastMessages {

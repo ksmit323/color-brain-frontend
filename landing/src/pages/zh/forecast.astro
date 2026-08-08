@@ -2,19 +2,7 @@
 /**
  * Savings Forecast — Simplified Chinese (`/zh/forecast`).
  */
-import Marketing from "../../layouts/Marketing.astro";
-import Nav from "../../components/Nav.astro";
-import Footer from "../../components/Footer.astro";
-import ForecastPage from "../../components/ForecastPage.astro";
-import type { Locale } from "../../i18n/locales";
-import { forecastHref } from "../../i18n/paths";
-
-const locale: Locale = "zh";
-const path = forecastHref(locale);
+import MarketingForecast from "../../components/MarketingForecast.astro";
 ---
 
-<Marketing locale={locale} page="forecast">
-  <Nav locale={locale} path={path} />
-  <ForecastPage locale={locale} />
-  <Footer locale={locale} />
-</Marketing>
+<MarketingForecast locale="zh" />

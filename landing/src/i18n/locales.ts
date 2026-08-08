@@ -18,23 +18,17 @@ export const LOCALE_LABELS: Record<Locale, string> = {
   zh: "简体",
 };
 
-/** Full native names (aria / expanded control). */
-export const LOCALE_NATIVE_NAMES: Record<Locale, string> = {
-  en: "English",
-  zh: "简体中文",
-};
-
-/** BCP 47 tags for document language and Intl formatting. */
+/**
+ * BCP 47 tags for `html lang` and hreflang (EN `en`, ZH `zh-CN`).
+ * Same values serve both surfaces for v1.
+ */
 export const LOCALE_HTML_LANG: Record<Locale, string> = {
   en: "en",
   zh: "zh-CN",
 };
 
-/** hreflang attribute values (EN counterpart `en`, ZH `zh-CN`). */
-export const LOCALE_HREFLANG: Record<Locale, string> = {
-  en: "en",
-  zh: "zh-CN",
-};
+/** hreflang attribute values — same BCP 47 tags as html lang. */
+export const LOCALE_HREFLANG = LOCALE_HTML_LANG;
 
 /** Intl.NumberFormat / toLocaleString locale tags. */
 export const LOCALE_INTL: Record<Locale, string> = {
@@ -43,7 +37,7 @@ export const LOCALE_INTL: Record<Locale, string> = {
 };
 
 export function isLocale(value: string | undefined | null): value is Locale {
-  return value === "en" || value === "zh";
+  return value != null && (LOCALES as readonly string[]).includes(value);
 }
 
 export function otherLocale(locale: Locale): Locale {

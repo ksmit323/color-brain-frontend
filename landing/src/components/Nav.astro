@@ -4,9 +4,14 @@
  * language control stays in nav__actions so it remains visible on mobile (R6).
  */
 import type { Locale } from "../i18n/locales";
-import { otherLocale, LOCALE_LABELS } from "../i18n/locales";
+import {
+  otherLocale,
+  LOCALE_LABELS,
+  LOCALE_HREFLANG,
+} from "../i18n/locales";
 import { getMessages } from "../i18n/messages";
 import {
+  counterpartPath,
   forecastHref,
   homeHref,
   isForecastPath,
@@ -29,7 +34,7 @@ const brandHref = isHome ? "#top" : homeHref(locale);
 const pilotHref = section("#contact");
 const forecastPath = forecastHref(locale);
 const alt = otherLocale(locale);
-const langHref = isForecast ? forecastHref(alt) : homeHref(alt);
+const langHref = counterpartPath(path, locale);
 const langLabel = LOCALE_LABELS[alt];
 const langAria = alt === "zh" ? m.nav.switchToZh : m.nav.switchToEn;
 ---
@@ -58,7 +63,7 @@ const langAria = alt === "zh" ? m.nav.switchToZh : m.nav.switchToEn;
         href={langHref}
         data-locale-switch
         data-locale-target={alt}
-        hreflang={alt === "zh" ? "zh-CN" : "en"}
+        hreflang={LOCALE_HREFLANG[alt]}
         aria-label={langAria}
         title={langAria}
       >{langLabel}</a>
@@ -72,7 +77,6 @@ const langAria = alt === "zh" ? m.nav.switchToZh : m.nav.switchToEn;
   import { writePreferenceCookie } from "../i18n/preference";
   import { isLocale } from "../i18n/locales";
 
-  // Set preference cookie on language-control click before navigation.
   document.querySelectorAll("[data-locale-switch]").forEach((el) => {
     el.addEventListener("click", () => {
       const target = el.getAttribute("data-locale-target");

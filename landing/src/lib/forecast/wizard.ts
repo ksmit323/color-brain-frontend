@@ -175,6 +175,61 @@ function setText(el: HTMLElement | null, value: string): void {
   if (el && el.textContent !== value) el.textContent = value;
 }
 
+/** Shared hold-to-repeat spinner binding (one window blur handler per init). */
+const holdCleanups = new Set<() => void>();
+let holdBlurBound = false;
+
+function ensureHoldBlurListener(): void {
+  if (holdBlurBound) return;
+  holdBlurBound = true;
+  window.addEventListener("blur", () => {
+    for (const clear of holdCleanups) clear();
+  });
+}
+
+function bindHoldStepper(
+  btn: HTMLButtonElement | null | undefined,
+  step: (shiftKey: boolean) => void,
+  opts: { holdRepeatMs?: number } = {},
+): void {
+  if (!btn) return;
+  const holdRepeatMs = opts.holdRepeatMs ?? 75;
+  ensureHoldBlurListener();
+  // Keep focus on the input so focus/blur formatting stays predictable.
+  btn.addEventListener("mousedown", (e) => e.preventDefault());
+  btn.addEventListener("click", (e) => {
+    step((e as MouseEvent).shiftKey);
+  });
+  let holdTimer: number | null = null;
+  let repeatTimer: number | null = null;
+  const clearHold = (): void => {
+    if (holdTimer != null) {
+      window.clearTimeout(holdTimer);
+      holdTimer = null;
+    }
+    if (repeatTimer != null) {
+      window.clearInterval(repeatTimer);
+      repeatTimer = null;
+    }
+  };
+  holdCleanups.add(clearHold);
+  btn.addEventListener("pointerdown", (e) => {
+    const pe = e as PointerEvent;
+    if (pe.button !== 0) return;
+    btn.setPointerCapture(pe.pointerId);
+    holdTimer = window.setTimeout(() => {
+      repeatTimer = window.setInterval(
+        () => step(pe.shiftKey),
+        holdRepeatMs,
+      );
+    }, 380);
+  });
+  const stop = (): void => clearHold();
+  btn.addEventListener("pointerup", stop);
+  btn.addEventListener("pointercancel", stop);
+  btn.addEventListener("pointerleave", stop);
+}
+
 function isScenarioId(v: string | null): v is ScenarioId {
   return v === "conservative" || v === "expected" || v === "optimistic";
 }
@@ -448,12 +503,13 @@ function applyScenarioBreakdown(
 
     // Row bars + top stack both use share of total so lengths compose to 100%.
     const share = total > 0 ? (value / total) * 100 : 0;
+    const shareCss = `${share}%`;
 
     const bar = root.querySelector<HTMLElement>(`[data-bar="${key}"]`);
-    if (bar) bar.style.width = `${share}%`;
+    if (bar && bar.style.width !== shareCss) bar.style.width = shareCss;
 
     const seg = root.querySelector<HTMLElement>(`[data-stack="${key}"]`);
-    if (seg) seg.style.flexBasis = `${share}%`;
+    if (seg && seg.style.flexBasis !== shareCss) seg.style.flexBasis = shareCss;
   }
 
   const label = scenarioLabel(scenario);
@@ -520,7 +576,9 @@ export function initForecastWizard(
 ): void {
   activeLocale = options.locale ?? "en";
   activeMessages =
-    options.messages ?? getForecastMessages(activeLocale === "zh" ? "zh" : "en");
+    options.messages ?? getForecastMessages(activeLocale);
+  // Fresh hold-to-repeat cleanups for this init (avoids stacking on re-init).
+  holdCleanups.clear();
 
   let selectedPreset: PresetId = DEFAULT_PRESET_ID;
   let selectedScenario: ScenarioId = "expected";
@@ -544,35 +602,27 @@ export function initForecastWizard(
     selectedScenario = shared.scenario;
     hasHydratedScenario = true;
   }
-  // If URL carries custom inputs, don't pretend a preset is selected.
+  // Shared custom inputs keep an internal default preset id but no pill selected.
   if (hasSharedInputs && shared.preset) selectedPreset = shared.preset;
-  else if (hasSharedInputs) selectedPreset = "medium"; // keep internal, but UI shows no preset as selected until user picks
+  else if (hasSharedInputs) selectedPreset = DEFAULT_PRESET_ID;
   writeInputs(root, initialInputs);
   lastResult = renderResult(root, initialInputs, {
     animate: false,
     reduced: prefersReduced,
     scenario: selectedScenario,
   });
-  // Mark preset pills correctly when hydrating from a shared URL.
+  // Shared links land directly on Outlook so the recipient sees the same result.
   if (hasSharedInputs) {
-    // Clear all preset selection — inputs are custom, not a named preset.
-    for (const b of $all("[data-preset]", root)) {
-      b.classList.remove("is-selected");
-      b.setAttribute("aria-pressed", "false");
-    }
     track("forecast_share_hydrate", {
       ...initialInputs,
       scenario: selectedScenario,
     });
-  }
-  // Shared links land directly on Outlook so the recipient sees the same result.
-  if (hasSharedInputs) {
     void setStep(root, 3, { focus: false, instant: true });
   } else {
     void setStep(root, 1, { focus: false, instant: true });
   }
 
-  track("forecast_view", { path: "/forecast" });
+  track("forecast_view", { path: window.location.pathname });
 
   // Accordion panels — grid 0fr/1fr open/close (not native <details>).
   const bindAccordion = (
@@ -597,12 +647,18 @@ export function initForecastWizard(
     "forecast_method_toggle",
   );
 
+  // Initial preset UI: named pill when not a custom share hydrate; none when custom.
+  if (hasSharedInputs && !shared.preset) {
+    for (const b of $all("[data-preset]", root)) {
+      b.classList.remove("is-selected");
+      b.setAttribute("aria-pressed", "false");
+    }
+  } else {
+    markPresetSelected(root, selectedPreset);
+  }
+
   for (const btn of $all("[data-preset]", root)) {
     const id = btn.getAttribute("data-preset") as PresetId;
-    const on = id === DEFAULT_PRESET_ID;
-    btn.classList.toggle("is-selected", on);
-    btn.setAttribute("aria-pressed", on ? "true" : "false");
-
     btn.addEventListener("click", () => {
       selectedPreset = id;
       const preset = getPreset(id);
@@ -750,53 +806,8 @@ export function initForecastWizard(
       });
     };
 
-    const bindStepper = (
-      btn: HTMLButtonElement | null | undefined,
-      dir: 1 | -1,
-    ): void => {
-      if (!btn) return;
-      // Keep focus on the input so focus/blur formatting stays predictable.
-      btn.addEventListener("mousedown", (e) => e.preventDefault());
-      btn.addEventListener("click", (e) => {
-        const me = e as MouseEvent;
-        stepPercent(dir, me.shiftKey);
-      });
-      // Hold to repeat — like native spinner.
-      let holdTimer: number | null = null;
-      let repeatTimer: number | null = null;
-      const clearHold = (): void => {
-        if (holdTimer != null) {
-          window.clearTimeout(holdTimer);
-          holdTimer = null;
-        }
-        if (repeatTimer != null) {
-          window.clearInterval(repeatTimer);
-          repeatTimer = null;
-        }
-      };
-      btn.addEventListener("pointerdown", (e) => {
-        const pe = e as PointerEvent;
-        // Only primary button, and capture so pointerup fires even if dragged off.
-        if (pe.button !== 0) return;
-        btn.setPointerCapture(pe.pointerId);
-        // First repeat after a short hold, then faster — native-like.
-        holdTimer = window.setTimeout(() => {
-          repeatTimer = window.setInterval(
-            () => stepPercent(dir, (e as PointerEvent).shiftKey),
-            75,
-          );
-        }, 380);
-      });
-      const stop = (): void => clearHold();
-      btn.addEventListener("pointerup", stop);
-      btn.addEventListener("pointercancel", stop);
-      btn.addEventListener("pointerleave", stop);
-      // Also clear if window loses focus mid-hold.
-      window.addEventListener("blur", clearHold);
-    };
-
-    bindStepper(upBtn, 1);
-    bindStepper(downBtn, -1);
+    bindHoldStepper(upBtn, (shift) => stepPercent(1, shift));
+    bindHoldStepper(downBtn, (shift) => stepPercent(-1, shift));
   }
 
   // Generic numeric steppers — same holo chrome as percent, steps from input's step attr.
@@ -851,61 +862,15 @@ export function initForecastWizard(
       // Preserve integer formatting when step is integer.
       const decimals = String(step).split(".")[1]?.length ?? 0;
       el.value = decimals === 0 ? String(Math.round(next)) : String(next);
-      // Dispatch input so preview RAF and native listeners see the change.
-      el.dispatchEvent(new Event("input", { bubbles: true }));
+      // renderResult already updates preview — no synthetic input (avoids double calc).
       lastResult = renderResult(root, readInputs(root), {
         animate: false,
         reduced: prefersReduced,
         scenario: selectedScenario,
       });
-      // Keep focus on the input for repeated spins.
-      if (document.activeElement !== el) {
-        // Don't steal focus if user is on stepper — but keep el focusable for keyboard repeat.
-      }
     };
-    const bindNumericStepper = (
-      btn: HTMLButtonElement | null | undefined,
-      dir: 1 | -1,
-    ): void => {
-      if (!btn) return;
-      btn.addEventListener("mousedown", (e) => e.preventDefault());
-      btn.addEventListener("click", (e) => {
-        const me = e as MouseEvent;
-        // Shift accelerates 5× for large jumps, like native shift stepping.
-        const mult = me.shiftKey ? 5 : 1;
-        stepNumeric(dir, mult);
-      });
-      let holdTimer: number | null = null;
-      let repeatTimer: number | null = null;
-      const clearHold = (): void => {
-        if (holdTimer != null) {
-          window.clearTimeout(holdTimer);
-          holdTimer = null;
-        }
-        if (repeatTimer != null) {
-          window.clearInterval(repeatTimer);
-          repeatTimer = null;
-        }
-      };
-      btn.addEventListener("pointerdown", (e) => {
-        const pe = e as PointerEvent;
-        if (pe.button !== 0) return;
-        btn.setPointerCapture(pe.pointerId);
-        holdTimer = window.setTimeout(() => {
-          repeatTimer = window.setInterval(
-            () => stepNumeric(dir, pe.shiftKey ? 5 : 1),
-            70,
-          );
-        }, 380);
-      });
-      const stop = (): void => clearHold();
-      btn.addEventListener("pointerup", stop);
-      btn.addEventListener("pointercancel", stop);
-      btn.addEventListener("pointerleave", stop);
-      window.addEventListener("blur", clearHold);
-    };
-    bindNumericStepper(upBtn, 1);
-    bindNumericStepper(downBtn, -1);
+    bindHoldStepper(upBtn, (shift) => stepNumeric(1, shift ? 5 : 1));
+    bindHoldStepper(downBtn, (shift) => stepNumeric(-1, shift ? 5 : 1));
   }
 
   const goToStep = (

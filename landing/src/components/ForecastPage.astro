@@ -8,6 +8,7 @@ import {
   PRESETS,
   RFT_LIFT_REALIZATION,
   TIME_RATE_PER_MINUTE,
+  type PresetId,
 } from "../lib/forecast/model";
 import { homeHref, sectionHref } from "../i18n/paths";
 
@@ -19,21 +20,12 @@ const m = getMessages(locale);
 const f = m.forecast;
 const homePath = homeHref(locale);
 const pilotHref = sectionHref(locale, "#contact");
-const presets = PRESETS.map((p) => ({
-  id: p.id,
-  label:
-    p.id === "small"
-      ? f.presetSmall
-      : p.id === "medium"
-        ? f.presetMedium
-        : f.presetLarge,
-  hint:
-    p.id === "small"
-      ? f.presetSmallHint
-      : p.id === "medium"
-        ? f.presetMediumHint
-        : f.presetLargeHint,
-}));
+const PRESET_COPY: Record<PresetId, { label: string; hint: string }> = {
+  small: { label: f.presetSmall, hint: f.presetSmallHint },
+  medium: { label: f.presetMedium, hint: f.presetMediumHint },
+  large: { label: f.presetLarge, hint: f.presetLargeHint },
+};
+const presets = PRESETS.map((p) => ({ id: p.id, ...PRESET_COPY[p.id] }));
 ---
 
 <main class="forecast" data-step="1">
@@ -251,8 +243,6 @@ const presets = PRESETS.map((p) => ({
                 <div class="forecast__fields forecast__fields--costs">
                   <label class="forecast__field" for="costPerRework">
                     <span class="forecast__field-top">
-                      <!-- Fix the tooltip over the numerical text box and 0 to 10 values -->
-                      <!-- fix the arrows in the text box -->
                       <span
                         class="forecast__field-name"
                         tabindex="0"
@@ -589,14 +579,14 @@ const presets = PRESETS.map((p) => ({
                           <span class="forecast__method-band-val"
                             >{RFT_LIFT_REALIZATION.expected}×</span
                           >
-                          <span class="forecast__method-band-unit">of your lift</span>
+                          <span class="forecast__method-band-unit">{f.methodBandUnit}</span>
                         </div>
                         <div class="forecast__method-band-item" role="listitem">
                           <span class="forecast__method-band-label">{f.scenarioOptimistic}</span>
                           <span class="forecast__method-band-val"
                             >{RFT_LIFT_REALIZATION.optimistic}×</span
                           >
-                          <span class="forecast__method-band-unit">of your lift</span>
+                          <span class="forecast__method-band-unit">{f.methodBandUnit}</span>
                         </div>
                       </div>
                     </div>
@@ -648,6 +638,7 @@ const presets = PRESETS.map((p) => ({
 <script is:inline id="forecast-i18n" type="application/json" set:html={JSON.stringify({ locale, messages: f })} />
 <script>
   import { initForecastWizard } from "../lib/forecast/wizard";
+  import type { Locale } from "../i18n/locales";
   import type { ForecastMessages } from "../i18n/messages/types";
 
   const root = document.getElementById("forecast-wizard");
@@ -655,7 +646,7 @@ const presets = PRESETS.map((p) => ({
   if (root && cfgEl?.textContent) {
     try {
       const cfg = JSON.parse(cfgEl.textContent) as {
-        locale?: "en" | "zh";
+        locale?: Locale;
         messages?: ForecastMessages;
       };
       initForecastWizard(root, {

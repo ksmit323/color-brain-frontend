@@ -39,7 +39,9 @@ export function writePreferenceCookie(locale: Locale): void {
 }
 
 /**
- * Minimal cookie-read for the soft-entry inline head script.
- * Duplicated as a string in index.astro so it runs before paint without modules.
+ * Soft-entry pre-paint redirect (English home only).
+ * Built from PREFERENCE_COOKIE so the name cannot drift; must stay a static
+ * string for `is:inline` (no module imports before first paint).
  */
-export const SOFT_ENTRY_INLINE_SCRIPT = `(function(){try{var c=document.cookie.split(";");var pref=null;for(var i=0;i<c.length;i++){var p=c[i].trim();if(p.indexOf("cb_locale=")===0){pref=decodeURIComponent(p.slice(10));break;}}if(pref==="zh"&&location.pathname==="/"&&location.hash===""){location.replace("/zh/");}}catch(e){}})();`;
+const COOKIE_PREFIX = `${PREFERENCE_COOKIE}=`;
+export const SOFT_ENTRY_INLINE_SCRIPT = `(function(){try{var c=document.cookie.split(";");var pref=null;var prefix=${JSON.stringify(COOKIE_PREFIX)};for(var i=0;i<c.length;i++){var p=c[i].trim();if(p.indexOf(prefix)===0){pref=decodeURIComponent(p.slice(prefix.length));break;}}if(pref==="zh"&&location.pathname==="/"&&location.hash===""){location.replace("/zh/");}}catch(e){}})();`;

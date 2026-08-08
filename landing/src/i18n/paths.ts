@@ -4,7 +4,12 @@
  */
 
 import { getRelativeLocaleUrl } from "astro:i18n";
-import { DEFAULT_LOCALE, type Locale } from "./locales";
+import { DEFAULT_LOCALE, otherLocale, type Locale } from "./locales";
+
+/** Strip a trailing slash; empty or bare `/` normalizes to `/`. */
+function stripTrailingSlash(path: string): string {
+  return path.replace(/\/$/, "") || "/";
+}
 
 /** Home path for a locale (`/` or `/zh/`). */
 export function homeHref(locale: Locale = DEFAULT_LOCALE): string {
@@ -27,7 +32,7 @@ export function sectionHref(
 ): string {
   const normalized = hash.startsWith("#") ? hash : `#${hash}`;
   if (opts.onHome) return normalized;
-  // Strip trailing slash: `/` → ``, `/zh/` → `/zh`.
+  // English home is `/` → strip leaves empty; Chinese `/zh/` → `/zh`.
   const path = homeHref(locale).replace(/\/$/, "");
   // English: `/#section`. Chinese: `/zh/#section` (works from any route).
   if (!path) return `/${normalized}`;
@@ -36,16 +41,12 @@ export function sectionHref(
 
 /** True when path is the locale's home (with or without trailing slash). */
 export function isHomePath(path: string, locale: Locale): boolean {
-  const home = homeHref(locale).replace(/\/$/, "") || "/";
-  const p = path.replace(/\/$/, "") || "/";
-  return p === home;
+  return stripTrailingSlash(path) === stripTrailingSlash(homeHref(locale));
 }
 
 /** True when path is the locale's forecast page. */
 export function isForecastPath(path: string, locale: Locale): boolean {
-  const fc = forecastHref(locale).replace(/\/$/, "");
-  const p = path.replace(/\/$/, "");
-  return p === fc;
+  return stripTrailingSlash(path) === stripTrailingSlash(forecastHref(locale));
 }
 
 /** Absolute site URL for a path (uses site origin from config). */
@@ -57,13 +58,13 @@ export function absoluteUrl(path: string, site = "https://colorbrain.co"): strin
 
 /** Counterpart path in the other locale (home ↔ home, forecast ↔ forecast). */
 export function counterpartPath(path: string, from: Locale): string {
-  if (isForecastPath(path, from) || path.includes("forecast")) {
-    return forecastHref(from === "en" ? "zh" : "en");
+  const to = otherLocale(from);
+  if (isForecastPath(path, "en") || isForecastPath(path, "zh")) {
+    return forecastHref(to);
   }
   // Preserve hash for best-effort section landing when switching language.
   const hashIdx = path.indexOf("#");
   const hash = hashIdx >= 0 ? path.slice(hashIdx) : "";
-  const to = from === "en" ? "zh" : "en";
   if (!hash) return homeHref(to);
   return sectionHref(to, hash, { onHome: false });
 }
