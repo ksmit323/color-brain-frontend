@@ -1,14 +1,14 @@
 import { defineConfig } from "astro/config";
+import { DEFAULT_LOCALE, LOCALES } from "./src/i18n/locales.ts";
 
 export default defineConfig({
   site: "https://colorbrain.co",
   i18n: {
-    defaultLocale: "en",
-    // Live routes only. Planned locales (zh-tw, vi) are menu placeholders —
-    // add them here when catalogs + pages ship.
-    locales: ["en", "zh"],
+    defaultLocale: DEFAULT_LOCALE,
+    // Live routes only — derived from LOCALES. Menu placeholders (vi) stay out.
+    locales: [...LOCALES],
     routing: {
-      // English unprefixed; Simplified Chinese under /zh/.
+      // English unprefixed; other live locales use /{locale}/.
       // Do not enable preferred-locale / Accept-Language redirects.
       prefixDefaultLocale: false,
     },

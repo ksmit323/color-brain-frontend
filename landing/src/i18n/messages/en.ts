@@ -14,6 +14,7 @@ export const en = {
     whoItsFor: "Who It's For",
     forecast: "Forecast",
     langAria: "Language",
+    comingSoon: "Coming soon",
   },
   footer: {
     tagline:

@@ -1,13 +1,13 @@
 /**
  * Marketing-site locale constants.
  *
- * Live routes: `en` (unprefixed) / `zh`
- * Menu also lists planned locales (Traditional Chinese, Vietnamese) as
- * disabled placeholders — no routes or catalogs until those ship.
+ * Live routes: `en` (unprefixed) / `zh` / `zh-tw`
+ * Menu also lists Vietnamese as a disabled placeholder — no routes or
+ * catalogs until that locale ships.
  */
 
 /** Locales with real pages + message catalogs. */
-export const LOCALES = ["en", "zh"] as const;
+export const LOCALES = ["en", "zh", "zh-tw"] as const;
 
 export type Locale = (typeof LOCALES)[number];
 
@@ -17,12 +17,14 @@ export const DEFAULT_LOCALE: Locale = "en";
 export const LOCALE_LABELS: Record<Locale, string> = {
   en: "EN",
   zh: "简",
+  "zh-tw": "繁",
 };
 
 /** Full names for live locales (native orthography). */
 export const LOCALE_NATIVE_NAMES: Record<Locale, string> = {
   en: "English",
   zh: "简体中文",
+  "zh-tw": "繁體中文",
 };
 
 /**
@@ -39,12 +41,21 @@ export type LocaleMenuEntry = {
   live: boolean;
 };
 
-export const LOCALE_MENU: readonly LocaleMenuEntry[] = [
-  { id: "en", label: "EN", name: "English", live: true },
-  { id: "zh", label: "简", name: "简体中文", live: true },
-  { id: "zh-tw", label: "繁", name: "繁體中文", live: false },
+/** Planned locales shown disabled until catalogs + routes ship. */
+const LOCALE_MENU_PLACEHOLDERS: readonly LocaleMenuEntry[] = [
   { id: "vi", label: "VI", name: "Tiếng Việt", live: false },
-] as const;
+];
+
+/** Live rows derived from LOCALE_LABELS / LOCALE_NATIVE_NAMES; placeholders appended. */
+export const LOCALE_MENU: readonly LocaleMenuEntry[] = [
+  ...LOCALES.map((id) => ({
+    id,
+    label: LOCALE_LABELS[id],
+    name: LOCALE_NATIVE_NAMES[id],
+    live: true as const,
+  })),
+  ...LOCALE_MENU_PLACEHOLDERS,
+];
 
 /**
  * BCP 47 tags for `html lang` and hreflang (live locales only).
@@ -52,6 +63,7 @@ export const LOCALE_MENU: readonly LocaleMenuEntry[] = [
 export const LOCALE_HTML_LANG: Record<Locale, string> = {
   en: "en",
   zh: "zh-CN",
+  "zh-tw": "zh-TW",
 };
 
 /** hreflang attribute values — same BCP 47 tags as html lang. */
@@ -61,6 +73,7 @@ export const LOCALE_HREFLANG = LOCALE_HTML_LANG;
 export const LOCALE_INTL: Record<Locale, string> = {
   en: "en-US",
   zh: "zh-CN",
+  "zh-tw": "zh-TW",
 };
 
 /** Prefixed locale path segment (empty for default English). */
@@ -76,7 +89,7 @@ export function parseLocale(value: string | undefined | null): Locale {
   return isLocale(value) ? value : DEFAULT_LOCALE;
 }
 
-/** Home path for soft-entry redirect (`/` or `/zh/`). */
+/** Home path for soft-entry redirect (`/` or `/zh/` or `/zh-tw/`). */
 export function softEntryHomePath(locale: Locale): string {
   if (locale === DEFAULT_LOCALE) return "/";
   return `/${locale}/`;
