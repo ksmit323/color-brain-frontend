@@ -17,7 +17,7 @@ export const vi = {
     proof: "Bằng chứng",
     caseStudies: "Case study",
     whoItsFor: "Đối tượng",
-    forecast: "Dự báo tiết kiệm",
+    forecast: "Máy tính",
     langAria: "Ngôn ngữ",
     comingSoon: "Sắp ra mắt",
   },

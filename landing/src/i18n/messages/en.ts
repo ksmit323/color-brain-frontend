@@ -12,7 +12,7 @@ export const en = {
     proof: "Proof",
     caseStudies: "Case Studies",
     whoItsFor: "Who It's For",
-    forecast: "Forecast",
+    forecast: "Calculator",
     langAria: "Language",
     comingSoon: "Coming soon",
   },

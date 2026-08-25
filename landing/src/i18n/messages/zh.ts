@@ -16,7 +16,7 @@ export const zh = {
     proof: "验证结果",
     caseStudies: "案例",
     whoItsFor: "适用对象",
-    forecast: "收益预测",
+    forecast: "计算器",
     langAria: "语言",
     comingSoon: "即将推出",
   },

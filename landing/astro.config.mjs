@@ -13,4 +13,11 @@ export default defineConfig({
       prefixDefaultLocale: false,
     },
   },
+  // Temporary: emailed /forecast links should not 404 after the rename.
+  redirects: {
+    "/forecast": "/calculator",
+    "/zh/forecast": "/zh/calculator",
+    "/zh-tw/forecast": "/zh-tw/calculator",
+    "/vi/forecast": "/vi/calculator",
+  },
 });

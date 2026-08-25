@@ -16,9 +16,9 @@ export function homeHref(locale: Locale = DEFAULT_LOCALE): string {
   return getRelativeLocaleUrl(locale, "/");
 }
 
-/** Forecast path for a locale. */
+/** Calculator path for a locale. */
 export function forecastHref(locale: Locale = DEFAULT_LOCALE): string {
-  return getRelativeLocaleUrl(locale, "forecast");
+  return getRelativeLocaleUrl(locale, "calculator");
 }
 
 /**
@@ -42,7 +42,7 @@ export function isHomePath(path: string, locale: Locale): boolean {
   return stripTrailingSlash(path) === stripTrailingSlash(homeHref(locale));
 }
 
-/** True when path is the locale's forecast page. */
+/** True when path is the locale's calculator page. */
 export function isForecastPath(path: string, locale: Locale): boolean {
   return stripTrailingSlash(path) === stripTrailingSlash(forecastHref(locale));
 }
@@ -58,7 +58,7 @@ export function absoluteUrl(
 }
 
 /**
- * Counterpart path for a target locale (home ↔ home, forecast ↔ forecast).
+ * Counterpart path for a target locale (home ↔ home, calculator ↔ calculator).
  * Preserves hash best-effort for section landing when switching language.
  */
 export function counterpartPath(

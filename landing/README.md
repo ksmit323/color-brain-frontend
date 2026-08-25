@@ -52,23 +52,23 @@ One long scroll composed in `src/pages/index.astro` (English) and `src/pages/zh/
 | Contact | Pilot request form (Formspree) |
 | Footer | Site links and founders |
 
-There is also a savings **Forecast** wizard at `/forecast`, `/zh/forecast`, `/zh-tw/forecast`, and `/vi/forecast`.
+There is also a savings **Calculator** wizard at `/calculator`, `/zh/calculator`, `/zh-tw/calculator`, and `/vi/calculator`. Legacy `/forecast` URLs redirect to the calculator.
 
 ---
 
 ## Locales (EN + 简体 + 繁體 + VI)
 
-| Locale | Home | Forecast | `html lang` |
+| Locale | Home | Calculator | `html lang` |
 | --- | --- | --- | --- |
-| English (default) | `/` | `/forecast` | `en` |
-| Simplified Chinese | `/zh/` | `/zh/forecast` | `zh-CN` |
-| Traditional Chinese | `/zh-tw/` | `/zh-tw/forecast` | `zh-TW` |
-| Vietnamese | `/vi/` | `/vi/forecast` | `vi` |
+| English (default) | `/` | `/calculator` | `en` |
+| Simplified Chinese | `/zh/` | `/zh/calculator` | `zh-CN` |
+| Traditional Chinese | `/zh-tw/` | `/zh-tw/calculator` | `zh-TW` |
+| Vietnamese | `/vi/` | `/vi/calculator` | `vi` |
 
 - **Default first visit:** English. No `Accept-Language` or geo auto-detect.
 - **Remembered preference:** cookie `cb_locale` (`Path=/; SameSite=Lax; Secure` on HTTPS; host-only, no `Domain=`). Set when the visitor uses the language control.
-- **Soft entry only:** if `cb_locale` is a live non-English locale (`zh`, `zh-tw`, or `vi`) and the visitor opens bare `/` with an **empty hash**, a small inline head script navigates to that locale home. Deep English URLs (`/forecast`, `/#contact`, etc.) always stay English.
-- **Language control:** always in primary nav actions (visible on mobile; not only in collapsed middle links). Switching language on forecast navigates to the counterpart URL and resets the wizard to step 1 (no state carry-over).
+- **Soft entry only:** if `cb_locale` is a live non-English locale (`zh`, `zh-tw`, or `vi`) and the visitor opens bare `/` with an **empty hash**, a small inline head script navigates to that locale home. Deep English URLs (`/calculator`, `/#contact`, etc.) always stay English.
+- **Language control:** always in primary nav actions (visible on mobile; not only in collapsed middle links). Switching language on the calculator navigates to the counterpart URL and resets the wizard to step 1 (no state carry-over).
 - **App handoff:** “Open the App” still goes to `https://app.colorbrain.co` (English app) from all marketing locales.
 - **Copy catalogs:** `src/i18n/messages/en.ts` + `zh.ts` + `zh-tw.ts` + `vi.ts` (typed parity via `Messages`). Path helpers: `src/i18n/paths.ts`. SEO helpers: `src/i18n/seo.ts`. Sitemap: `public/sitemap.xml` (all eight routes).
 

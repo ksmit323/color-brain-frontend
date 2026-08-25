@@ -17,7 +17,7 @@ export const zhTw = {
     proof: "驗證結果",
     caseStudies: "案例",
     whoItsFor: "適用對象",
-    forecast: "收益預測",
+    forecast: "計算器",
     langAria: "語言",
     comingSoon: "即將推出",
   },
