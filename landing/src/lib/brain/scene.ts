@@ -34,6 +34,8 @@ export interface BrainParams {
   pulse: number;
   /** abstention darkening, 0 → 1 */
   dim: number;
+  /** continuous inward learning feedback pulse, 0 → 1 */
+  loop: number;
   /** target color flight, 0 (offscreen) → 1 (landed on match) */
   targetProgress: number;
   parallaxX: number;
@@ -50,6 +52,7 @@ export const defaultParams = (): BrainParams => ({
   reveal: 0,
   pulse: 0,
   dim: 0,
+  loop: 0,
   targetProgress: 0,
   parallaxX: 0,
   parallaxY: 0,
@@ -124,7 +127,7 @@ const NODE_VERT = `
 
 const NODE_FRAG = `
   precision highp float;
-  uniform float uDim, uPulse, uTime, uAspect, uPointerStrength;
+  uniform float uDim, uPulse, uLoop, uTime, uAspect, uPointerStrength;
   uniform vec2 uPointer;
   varying vec3 vColor;
   varying float vDepth;
@@ -135,6 +138,11 @@ const NODE_FRAG = `
     float alpha = smoothstep(0.5, 0.1, d);
     float flare = uPulse * smoothstep(0.09, 0.0, vDepth);
     vec3 rgb = vColor * (0.95 + 2.6 * flare) + vec3(0.045) + vec3(1.3) * flare * smoothstep(0.3, 0.0, d);
+    if (uLoop > 0.001) {
+      float ring = fract(vDepth + uTime * 0.34);
+      float band = exp(-pow((ring - 0.18) * 9.0, 2.0)) * uLoop * step(vDepth, 0.98);
+      rgb += (vColor * 0.75 + vec3(0.12)) * band;
+    }
     // Faint holographic scanline sweep.
     rgb *= 0.94 + 0.06 * sin(gl_FragCoord.y * 0.9 + uTime * 2.2);
     // Pointer proximity: nodes near the cursor take a --holo glow (#7fd8e8).
@@ -168,7 +176,7 @@ const EDGE_VERT = `
 
 const EDGE_FRAG = `
   precision highp float;
-  uniform float uReveal, uDim;
+  uniform float uReveal, uDim, uTime, uLoop;
   varying vec3 vColor;
   varying float vOrder;
   varying float vFog;
@@ -177,6 +185,11 @@ const EDGE_FRAG = `
     float lit = step(0.0, dt);
     float front = lit * exp(-dt * 7.0);
     float intensity = 0.055 + lit * (0.12 + 0.6 * front);
+    if (uLoop > 0.001) {
+      float ring = fract(vOrder + uTime * 0.34);
+      float pulseIn = exp(-pow((ring - 0.18) * 10.0, 2.0));
+      intensity += pulseIn * 0.38 * uLoop;
+    }
     gl_FragColor = vec4(
       (vColor + vec3(0.12)) * intensity * (0.35 + 0.65 * vFog) * (1.0 - uDim * 0.9),
       1.0
@@ -239,6 +252,7 @@ export function createScene(
     uTime: { value: 0 },
     uDrift: { value: params.drift },
     uDim: { value: params.dim },
+    uLoop: { value: params.loop },
     uPointScale: { value: 1 },
     uAspect: { value: 1 },
   };
@@ -255,6 +269,7 @@ export function createScene(
       uTime: sharedUniforms.uTime,
       uDrift: sharedUniforms.uDrift,
       uDim: sharedUniforms.uDim,
+      uLoop: sharedUniforms.uLoop,
       uPointScale: sharedUniforms.uPointScale,
       uAspect: sharedUniforms.uAspect,
       uPulse: { value: 0 },
@@ -281,6 +296,7 @@ export function createScene(
       uTime: sharedUniforms.uTime,
       uDrift: sharedUniforms.uDrift,
       uDim: sharedUniforms.uDim,
+      uLoop: sharedUniforms.uLoop,
       uReveal: { value: 0 },
     },
     transparent: true,
@@ -387,6 +403,7 @@ export function createScene(
     sharedUniforms.uTime.value = now / 1000;
     sharedUniforms.uDrift.value = params.drift;
     sharedUniforms.uDim.value = params.dim;
+    sharedUniforms.uLoop.value = params.loop;
     nodeMaterial.uniforms.uPulse!.value = params.pulse;
     edgeMaterial.uniforms.uReveal!.value = params.reveal;
     targetMaterial.uniforms.uProgress!.value = params.targetProgress;

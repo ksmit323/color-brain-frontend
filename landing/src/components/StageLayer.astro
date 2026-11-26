@@ -83,12 +83,16 @@ for (let i = 0; i < BLOB_COUNT; i++) {
         Searching substrate-compatible history
       </p>
       <p class="scene-status__match">
-        <span>Evidence retrieved</span>
-        Proven production recipe · confidence 0.867
+        <span>Best starting recipe</span>
+        From your own production history
       </p>
-      <p class="scene-status__abstain">
-        <span>Confidence gate active</span>
-        Below threshold · recommendation withheld
+      <p class="scene-status__adjust">
+        <span>Recipe adjustment</span>
+        Next recipe change from your lab history
+      </p>
+      <p class="scene-status__learn">
+        <span>Learning loop</span>
+        Lab and production results feed the next recipe
       </p>
     </div>
 
@@ -315,6 +319,7 @@ for (let i = 0; i < BLOB_COUNT; i++) {
     border: 1px dashed rgba(127, 216, 232, 0.14);
     border-radius: 50%;
     animation: reticle-spin 18s linear infinite;
+    transition: border-color 400ms ease;
   }
 
   @keyframes reticle-spin {
@@ -326,7 +331,7 @@ for (let i = 0; i < BLOB_COUNT; i++) {
     z-index: 4;
     left: 1rem;
     bottom: 4.25rem;
-    width: min(20rem, calc(100% - 2rem));
+    width: min(22rem, calc(100% - 2rem));
     min-height: 3rem;
   }
 
@@ -354,7 +359,8 @@ for (let i = 0; i < BLOB_COUNT; i++) {
   :global(#stage[data-scene-phase="index"]) .scene-status__index,
   :global(#stage[data-scene-phase="search"]) .scene-status__search,
   :global(#stage[data-scene-phase="match"]) .scene-status__match,
-  :global(#stage[data-scene-phase="abstain"]) .scene-status__abstain {
+  :global(#stage[data-scene-phase="adjust"]) .scene-status__adjust,
+  :global(#stage[data-scene-phase="learn"]) .scene-status__learn {
     opacity: 1;
     transform: none;
   }
@@ -362,6 +368,19 @@ for (let i = 0; i < BLOB_COUNT; i++) {
   :global(#stage[data-scene-phase="match"]) .stage-layer__reticle {
     border-color: rgba(70, 199, 154, 0.55);
     box-shadow: 0 0 36px rgba(70, 199, 154, 0.13);
+  }
+
+  :global(#stage[data-scene-phase="adjust"]) .stage-layer__reticle {
+    border-color: rgba(139, 148, 161, 0.42);
+  }
+
+  :global(#stage[data-scene-phase="learn"]) .stage-layer__reticle {
+    border-color: rgba(127, 216, 232, 0.62);
+    box-shadow: 0 0 38px rgba(127, 216, 232, 0.18);
+  }
+
+  :global(#stage[data-scene-phase="learn"]) .stage-layer__reticle i {
+    border-color: rgba(127, 216, 232, 0.45);
   }
 
   .stage-layer__telemetry {
@@ -428,7 +447,10 @@ for (let i = 0; i < BLOB_COUNT; i++) {
     height: 100%;
     background: var(--abstain);
     box-shadow: 0 0 10px rgba(139, 148, 161, 0.35);
-    transition: width 500ms ease, background-color 500ms ease;
+    transition:
+      width 500ms ease,
+      background-color 500ms ease,
+      box-shadow 500ms ease;
   }
 
   :global(#stage[data-scene-phase="search"]) .stage-layer__confidence b {
@@ -440,8 +462,15 @@ for (let i = 0; i < BLOB_COUNT; i++) {
     background: var(--win);
   }
 
-  :global(#stage[data-scene-phase="abstain"]) .stage-layer__confidence b {
-    width: 34%;
+  :global(#stage[data-scene-phase="adjust"]) .stage-layer__confidence b {
+    width: 44%;
+    background: var(--abstain);
+  }
+
+  :global(#stage[data-scene-phase="learn"]) .stage-layer__confidence b {
+    width: 89%;
+    background: linear-gradient(90deg, var(--win) 0%, var(--holo) 100%);
+    box-shadow: 0 0 12px rgba(127, 216, 232, 0.45);
   }
 
   .stage-layer__corner {
