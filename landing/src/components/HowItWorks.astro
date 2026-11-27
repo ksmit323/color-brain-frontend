@@ -1,9 +1,21 @@
 ---
 /**
- * How it works — four steps timed to the constellation scroll narrative.
+ * How it works: five steps timed to the constellation scroll narrative.
  */
 import type { Locale } from "../i18n/locales";
 import { getMessages } from "../i18n/messages";
+
+type StepTone = "neutral" | "win" | "loop";
+type StepBeat = "connect" | "search" | "match" | "adjust" | "learn";
+
+interface StepItem {
+  beat: StepBeat;
+  num: string;
+  state: string;
+  title: string;
+  body: string;
+  tone: StepTone;
+}
 
 interface Props {
   locale?: Locale;
@@ -11,15 +23,14 @@ interface Props {
 const { locale = "en" } = Astro.props;
 const m = getMessages(locale);
 
-const steps = [
+const steps: StepItem[] = [
   {
     beat: "connect",
     num: "01",
     state: m.how.step1State,
     title: m.how.step1Title,
     body: m.how.step1Body,
-    win: false,
-    silence: false,
+    tone: "neutral",
   },
   {
     beat: "search",
@@ -27,8 +38,7 @@ const steps = [
     state: m.how.step2State,
     title: m.how.step2Title,
     body: m.how.step2Body,
-    win: false,
-    silence: false,
+    tone: "neutral",
   },
   {
     beat: "match",
@@ -36,17 +46,23 @@ const steps = [
     state: m.how.step3State,
     title: m.how.step3Title,
     body: m.how.step3Body,
-    win: true,
-    silence: false,
+    tone: "win",
   },
   {
-    beat: "abstain",
+    beat: "adjust",
     num: "04",
     state: m.how.step4State,
     title: m.how.step4Title,
     body: m.how.step4Body,
-    win: false,
-    silence: true,
+    tone: "neutral",
+  },
+  {
+    beat: "learn",
+    num: "05",
+    state: m.how.step5State,
+    title: m.how.step5Title,
+    body: m.how.step5Body,
+    tone: "loop",
   },
 ];
 ---
@@ -64,13 +80,18 @@ const steps = [
     <ol class="how__steps">
       {
         steps.map((s) => (
-          <li
-            class:list={["how__step", "reveal", { "how__step--silence": s.silence }]}
-            data-beat={s.beat}
-          >
+          <li class="how__step reveal" data-beat={s.beat}>
             <div class="how__step-top">
               <span class="how__num">{s.num}</span>
-              <span class:list={["how__state", { "how__state--win": s.win }]}>
+              <span
+                class:list={[
+                  "how__state",
+                  {
+                    "how__state--win": s.tone === "win",
+                    "how__state--loop": s.tone === "loop",
+                  },
+                ]}
+              >
                 {s.state}
               </span>
             </div>
@@ -177,6 +198,11 @@ const steps = [
     color: var(--win);
   }
 
+  .how__state--loop {
+    border-color: rgba(127, 216, 232, 0.4);
+    color: var(--holo);
+  }
+
   .how__step h3 {
     max-width: 14ch;
     margin-top: 1rem;
@@ -187,10 +213,6 @@ const steps = [
     max-width: 29rem;
     color: var(--ink-dim);
     margin-top: 1rem;
-  }
-
-  .how__step--silence h3 {
-    color: var(--abstain);
   }
 
   @media (max-width: 720px) {

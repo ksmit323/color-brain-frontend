@@ -161,7 +161,8 @@ export interface Messages {
     metricsAria: string;
     metricPrecision: string;
     metricHoldout: string;
-    metricInvented: string;
+    metricSavings: string;
+    metricSavingsValue: string;
     scrollCue: string;
   };
   problem: {
@@ -191,6 +192,9 @@ export interface Messages {
     step4State: string;
     step4Title: string;
     step4Body: string;
+    step5State: string;
+    step5Title: string;
+    step5Body: string;
   };
   proof: {
     eyebrow: string;

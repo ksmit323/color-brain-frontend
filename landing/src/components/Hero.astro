@@ -40,8 +40,8 @@ const contactHref = sectionHref(locale, "#contact", { onHome: true });
         <dd class="hero__metric-value">2,043</dd>
       </div>
       <div class="hero__metric">
-        <dt class="hero__metric-label">{m.hero.metricInvented}</dt>
-        <dd class="hero__metric-value">0</dd>
+        <dt class="hero__metric-label">{m.hero.metricSavings}</dt>
+        <dd class="hero__metric-value">{m.hero.metricSavingsValue}</dd>
       </div>
     </dl>
   </div>
@@ -78,8 +78,8 @@ const contactHref = sectionHref(locale, "#contact", { onHome: true });
   }
 
   .hero__headline {
-    font-size: var(--text-hero);
-    max-width: 8.8em;
+    font-size: clamp(2.1rem, 4.35vw, 3.95rem);
+    max-width: 8.6em;
     margin-top: 1.35rem;
   }
 
@@ -88,8 +88,8 @@ const contactHref = sectionHref(locale, "#contact", { onHome: true });
   }
 
   .hero__answer {
-    width: max-content;
-    max-width: 100%;
+    width: auto;
+    max-width: 7.2em;
     color: #ffd580;
     text-shadow: 0 0 32px rgba(255, 213, 128, 0.12);
   }
@@ -110,7 +110,8 @@ const contactHref = sectionHref(locale, "#contact", { onHome: true });
 
   .hero__metrics {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 9.5rem));
+    grid-template-columns:
+      minmax(0, 7.6rem) minmax(0, 7.2rem) minmax(12rem, auto);
     width: max-content;
     max-width: 100%;
     margin-top: 3rem;
@@ -118,11 +119,11 @@ const contactHref = sectionHref(locale, "#contact", { onHome: true });
   }
 
   .hero__metric {
-    padding: 0.8rem 1.25rem 0.9rem 0;
+    padding: 0.8rem 1rem 0.9rem 0;
   }
 
   .hero__metric + .hero__metric {
-    padding-left: 1.25rem;
+    padding-left: 1rem;
     border-left: 1px solid var(--line-soft);
   }
 
@@ -139,8 +140,9 @@ const contactHref = sectionHref(locale, "#contact", { onHome: true });
     margin: 0;
     margin-top: 0.3rem;
     font-family: var(--font-mono);
-    font-size: 1.1rem;
-    line-height: 1;
+    font-size: clamp(0.96rem, 1.2vw, 1.1rem);
+    line-height: 1.2;
+    white-space: nowrap;
     color: var(--ink);
     font-variant-numeric: tabular-nums;
   }
@@ -189,11 +191,6 @@ const contactHref = sectionHref(locale, "#contact", { onHome: true });
       padding-block: 7.5rem 6rem;
     }
 
-    .hero__metrics {
-      grid-template-columns: repeat(3, 1fr);
-      width: 100%;
-    }
-
     .hero__metric {
       padding-right: 0.65rem;
     }
@@ -204,6 +201,25 @@ const contactHref = sectionHref(locale, "#contact", { onHome: true });
 
     .hero__metric-label {
       font-size: 0.56rem;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .hero__metrics {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      width: 100%;
+    }
+
+    .hero__metric:nth-child(3) {
+      grid-column: 1 / -1;
+      padding-left: 0;
+      padding-right: 0;
+      border-left: 0;
+      border-top: 1px solid var(--line-soft);
+    }
+
+    .hero__metric-value {
+      font-size: 1.02rem;
     }
   }
 </style>

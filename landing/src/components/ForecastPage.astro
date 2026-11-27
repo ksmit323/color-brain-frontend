@@ -396,11 +396,11 @@ const presets = PRESETS.map((p) => ({ id: p.id, ...PRESET_COPY[p.id] }));
           >
             <h2 id="step3-title" class="forecast__panel-title">{f.step3Title}</h2>
             <p class="forecast__meta" data-out-meta aria-live="polite">
-              <span data-meta-batches>—</span>
+              <span data-meta-batches>--</span>
               <span class="forecast__meta-sep" aria-hidden="true">·</span>
-              <span data-meta-rft>—</span>
+              <span data-meta-rft>--</span>
               <span class="forecast__meta-sep" aria-hidden="true">·</span>
-              <span class="forecast__meta-avoided">{f.avoidedPrefix}<span data-meta-avoided>—</span>{f.avoidedSuffix}</span>
+              <span class="forecast__meta-avoided">{f.avoidedPrefix}<span data-meta-avoided>--</span>{f.avoidedSuffix}</span>
             </p>
 
             <div

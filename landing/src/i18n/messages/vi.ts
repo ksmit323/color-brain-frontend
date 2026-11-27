@@ -22,8 +22,7 @@ export const vi = {
     comingSoon: "Sắp ra mắt",
   },
   footer: {
-    tagline:
-      "Hỗ trợ quyết định cho nhuộm dệt — đề xuất lịch sử đã chứng minh, im lặng khi bằng chứng chưa đủ.",
+    tagline: "Trí tuệ màu sắc liên tục",
     site: "Trang web",
     founders: "Đội ngũ sáng lập",
     roleCeo: "CEO & Đồng sáng lập",
@@ -32,21 +31,22 @@ export const vi = {
     copyright: "© 2026 Color Brain",
   },
   hero: {
-    eyebrow: "Trí tuệ sản xuất · Model 01",
-    headline1: "Công thức đã có sẵn.",
-    headline2: "Chúng tôi tìm ra nó.",
+    eyebrow: "Trí tuệ màu sắc liên tục",
+    headline1: "Bắt đầu từ công thức tốt nhất.",
+    headline2: "Tốt hơn sau mỗi lần chạy.",
     subhead:
-      "Color Brain biến lịch sử nhuộm của nhà máy thành bộ nhớ có thể tra cứu: một mục tiêu màu mới vào, một công thức đã chứng minh ra — hoặc im lặng khi chưa đủ tin cậy.",
+      "Color Brain bắt đầu mỗi màu từ công thức tốt nhất trong chính lịch sử của bạn. Hệ thống học từ dữ liệu lab và sản xuất để liên tục cải thiện công thức theo thời gian.",
     metricsAria: "Kết quả mô hình đã xác thực",
     metricPrecision: "Độ chính xác đề xuất",
     metricHoldout: "Tập holdout đã xác thực",
-    metricInvented: "Công thức bịa đặt",
+    metricSavings: "Tiết kiệm dự kiến/năm",
+    metricSavingsValue: "$50K đến $100K/năm",
     scrollCue: "Cuộn để xem suy luận",
   },
   problem: {
     eyebrow: "Cái giá của đoán mò",
     title: "Đoán mò rất đắt. Lặp lại còn đắt hơn.",
-    lede: "Hầu hết công cụ phối màu bắt đầu từ mô hình chung và mất nhiều tháng để chỉnh về nhà máy của bạn — sau khi bạn đã đầu tư phần cứng mới. Color Brain bắt đầu từ những công thức nhà máy bạn đã chứng minh, ngay từ ngày đầu.",
+    lede: "Phần mềm phối màu đã tồn tại từ những năm 1990, nhưng phần lớn đòi hỏi thiết bị đắt tiền và dừng lại ở phòng lab. Color Brain là phần mềm hoạt động với chính thiết bị và hồ sơ bạn đã có, từ lab đến sản xuất.",
     indexAttempts: "01 / Số lần thử",
     labelAttempts: "số lần thử trung bình để duyệt một màu mới",
     indexFailure: "02 / Thất bại",
@@ -56,29 +56,33 @@ export const vi = {
   },
   how: {
     eyebrow: "Suy luận trực tiếp · một mục tiêu",
-    title: "Xem lịch sử trở thành quyết định.",
-    lede: "Không công thức sinh ra. Không đoán hộp đen. Color Brain tìm trong những gì nhà máy bạn đã chứng minh.",
+    title: "Xem lịch sử trở thành công thức tốt hơn.",
+    lede: "Color Brain bắt đầu từ những gì xưởng nhuộm của bạn đã chứng minh, rồi học từ mọi lần lab-dip và mẻ sản xuất.",
     step1State: "Lập chỉ mục",
     step1Title: "Bộ nhớ sản xuất của bạn, được ánh xạ.",
     step1Body:
       "Hồ sơ mẻ lịch sử trở thành bản đồ CIELAB sống. Chất nền, quy trình, công thức và kết quả đo vẫn gắn kết như bằng chứng.",
-    step2State: "Tìm kiếm",
+    step2State: "Đối khớp",
     step2Title: "Mục tiêu mới đi vào bản đồ.",
     step2Body:
-      "Truy xuất chỉ lan qua lịch sử tương thích, tìm công thức đã chứng minh gần nhất trên cùng chất nền và ngữ cảnh sản xuất.",
-    step3State: "Đề xuất",
+      "Mục tiêu được đối khớp với lịch sử tương thích: cùng chất nền, cùng ngữ cảnh sản xuất.",
+    step3State: "Đề xuất hoặc im lặng",
     step3Title: "Bằng chứng vượt cổng tin cậy.",
     step3Body:
-      "Bạn nhận công thức nhà máy thực sự đã chạy, kèm số mẻ, kết quả đo, bằng chứng lân cận và xác suất thắng.",
-    step4State: "Im lặng",
-    step4Title: "Chưa đủ bằng chứng? Hệ thống im lặng.",
+      "Bạn nhận được công thức khởi đầu tốt nhất mà xưởng nhuộm thực sự đã chạy, kèm số mẻ, kết quả đo và xác suất thắng. Nếu bằng chứng yếu, Color Brain không đoán mò.",
+    step4State: "Điều chỉnh",
+    step4Title: "Lab-dip không đạt? Nhận ngay bước điều chỉnh tiếp theo.",
     step4Body:
-      "Cùng cổng tin cậy giúp đề xuất hữu ích cũng biết khi nào không nên đề xuất. Im lặng có kiểm soát là một phần của sản phẩm.",
+      "Khi mẫu thử lệch mục tiêu, Color Brain gợi ý thay đổi tiếp theo dựa trên các lần thử và lịch sử của chính bạn.",
+    step5State: "Học hỏi",
+    step5Title: "Mỗi lần chạy giúp lần tiếp theo tốt hơn.",
+    step5Body:
+      "Kết quả từ lab và sản xuất được phản hồi ngược về điểm bắt đầu để cải thiện lần chạy tiếp theo.",
   },
   proof: {
-    eyebrow: "Holdout đã xác thực · first_attempt_v1",
+    eyebrow: "Holdout đã xác thực · chuẩn công thức khởi đầu",
     title: "Thử trên các job chưa từng thấy.",
-    lede: "Huấn luyện trên 12.398 bản ghi sản xuất thật, rồi đánh giá trên 2.043 job holdout tương lai. Color Brain không bao giờ bịa công thức — chỉ truy xuất công thức nhà máy bạn đã chạy, cùng chất nền, và chỉ khi đủ tin cậy.",
+    lede: "Được huấn luyện trên 12,398 bản ghi sản xuất thật, rồi kiểm thử trên 2,043 job tương lai chưa từng thấy. Mọi đề xuất đều bắt đầu từ một công thức xưởng nhuộm của bạn thực sự đã chạy trên cùng chất nền, và chỉ hiển thị khi đủ tin cậy.",
     kicker: "Chất lượng đề xuất",
     primaryTitle: "đề xuất vượt lần thử đầu của kỹ thuật viên.",
     signalLabel: "Thắng đã xác thực",
@@ -92,12 +96,12 @@ export const vi = {
     cellSilence: "Im lặng có kiểm soát",
     cellSilenceSub: "giữ lại khi dưới ngưỡng tin cậy",
     footnote:
-      "Trên ~80% job Color Brain im lặng, nghĩa là bằng chứng chưa đủ mạnh để vượt lần thử đầu của kỹ thuật viên. Tính chọn lọc là trọng tâm — một đề xuất bạn có thể tin.",
+      "Trên ~80% job Color Brain im lặng, nghĩa là bằng chứng chưa đủ mạnh để vượt lần thử đầu của kỹ thuật viên. Tính chọn lọc chính là trọng tâm, mang lại đề xuất bạn có thể tin. Khi Color Brain học thêm từ dữ liệu lab và sản xuất của bạn, hệ thống đưa ra nhiều đề xuất hơn.",
   },
   cases: {
     eyebrow: "Case study · holdout đã xác thực",
     title: "Năm job thật. Năm lần thắng.",
-    lede: "Tấm màu là màu mục tiêu thực của job. Các vòng đo khoảng cách ΔE so với khớp hoàn hảo — ngưỡng đặc tả ở 1.0. Xem lần thử đầu của kỹ thuật viên và công thức Color Brain nằm ở đâu.",
+    lede: "Tấm màu là màu mục tiêu thực của job. Các vòng đo khoảng cách ΔE so với khớp hoàn hảo. Ngưỡng đặc tả ở 1.0. Xem lần thử đầu của kỹ thuật viên và công thức Color Brain nằm ở đâu.",
     tabsAria: "Case study",
     prevAria: "Case study trước",
     nextAria: "Case study sau",
@@ -122,21 +126,21 @@ export const vi = {
     brandsTag: "Thương hiệu",
     brandsTagline: "Ít lô bị từ chối hơn. Duyệt màu nhanh hơn.",
     brandsBody:
-      "Bạn đặt chuẩn. Color Brain giúp chuỗi cung ứng đạt đặc tả màu ngay lần đầu — ít vòng lab-dip hơn, duyệt cuối nhanh hơn.",
+      "Bạn đặt chuẩn. Color Brain giúp chuỗi cung ứng đạt đặc tả màu ngay lần đầu, với ít vòng lab-dip hơn và duyệt cuối nhanh hơn.",
     suppliersTag: "Nhà cung ứng",
     suppliersTagline: "Đạt đặc tả thương hiệu. Không còn đoán mò.",
     suppliersBody:
-      "Bạn thắng hay thua hợp đồng nhờ tính ổn định. Color Brain dựa trên lịch sử sản xuất của chính bạn để đề xuất công thức có khả năng đạt ngay lần đầu cao hơn, giảm từ chối trước khi tốn kém.",
+      "Bạn thắng hay thua hợp đồng nhờ tính ổn định. Color Brain bắt đầu từ những công thức tốt nhất của chính bạn và học từ kết quả của bạn, để nhiều màu đạt ngay lần đầu hơn và chấm dứt việc bị từ chối trước khi gây tốn kém.",
     factoriesTag: "Nhà máy",
     factoriesTagline: "Ít làm lại. Đầu ra ổn định hơn ở quy mô lớn.",
     factoriesBody:
-      "Ở quy mô lớn, mỗi lần thất bại đầu tiên nhân lên. Color Brain hoạt động trên toàn bộ khối lượng job, cắt giảm làm lại ăn mòn biên lợi nhuận.",
+      "Mỗi lần nhuộm lại đều chiếm dụng máy móc vốn dành cho đơn hàng mới. Color Brain kết nối dữ liệu lab và sản xuất của bạn, để sai lệch được phát hiện và khắc phục thay vì lặp lại.",
   },
   contact: {
     eyebrow: "Đăng ký thử nghiệm",
-    title: "Lịch sử của bạn đã chứa câu trả lời.",
-    lede: "Color Brain tìm ra giúp bạn. Hãy cho chúng tôi biết về hoạt động của bạn — chúng tôi sẽ liên hệ để định phạm vi thử nghiệm.",
-    subject: "Yêu cầu thử nghiệm — colorbrain.co",
+    title: "Lịch sử của bạn là điểm khởi đầu.",
+    lede: "Mỗi lần chạy đều giúp hệ thống tốt hơn. Hãy cho chúng tôi biết về hoạt động của bạn để chúng tôi xây dựng phạm vi thử nghiệm miễn phí.",
+    subject: "Yêu cầu thử nghiệm: colorbrain.co",
     name: "Họ tên",
     company: "Công ty",
     email: "Email",
@@ -146,12 +150,12 @@ export const vi = {
     submit: "Đăng ký thử nghiệm",
   },
   seo: {
-    homeTitle: "Color Brain — Trí tuệ công thức nhuộm",
+    homeTitle: "Color Brain | Trí tuệ màu sắc liên tục",
     homeDescription:
-      "Color Brain giúp xưởng nhuộm nâng độ chính xác màu lần đầu nhờ dữ liệu sản xuất lịch sử — không phần cứng mới, không quy trình mới. Tỷ lệ thắng 86,7% trên bản ghi holdout đã xác thực.",
-    forecastTitle: "Dự báo tiết kiệm — Color Brain",
+      "Color Brain bắt đầu mỗi màu từ công thức lịch sử tốt nhất của bạn và học từ dữ liệu lab và sản xuất để cải thiện mọi lần chạy. Tỷ lệ thắng 86.7% trên chuẩn holdout đã xác thực.",
+    forecastTitle: "Dự báo tiết kiệm | Color Brain",
     forecastDescription:
-      "Ước lượng khoảng tiết kiệm hàng năm Color Brain có thể mở ra cho nhà máy bằng cách nâng right-first-time (RFT) — làm lại, thuốc nhuộm, nước, năng lượng và thời gian — rồi đặt lịch thử nghiệm.",
+      "Ước lượng khoảng tiết kiệm hàng năm Color Brain có thể mở ra cho nhà máy bằng cách nâng right-first-time (RFT) trên các hạng mục làm lại, thuốc nhuộm, nước, năng lượng và thời gian, rồi đặt lịch thử nghiệm.",
     siteName: "Color Brain",
   },
   forecast: {
@@ -172,7 +176,7 @@ export const vi = {
     continue: "Tiếp tục",
     step2Title: "Điều chỉnh hoạt động",
     step2Lede:
-      "Giá trị điền sẵn là ước lượng cho nhà máy quy mô tương tự. Đổi những gì bạn biết — giữ phần còn lại. Tiền tệ là USD.",
+      "Giá trị điền sẵn là ước lượng cho nhà máy quy mô tương tự. Đổi những gì bạn biết, giữ phần còn lại. Tiền tệ là USD.",
     previewLabel: "Hàng năm kỳ vọng",
     fieldBatches: "Mẻ / tháng",
     fieldBatchesTip: "Số lô nhuộm sản xuất bạn chạy mỗi tháng",
@@ -187,7 +191,7 @@ export const vi = {
     fieldCurrentRftDec: "Giảm RFT hiện tại",
     fieldTargetRft: "RFT mục tiêu",
     fieldTargetRftTip:
-      "Nơi tỷ lệ đạt lần đầu có thể đạt tới — tiết kiệm tỷ lệ với mức nâng này",
+      "Nơi tỷ lệ đạt lần đầu có thể đạt tới, tiết kiệm tỷ lệ với mức nâng này",
     fieldTargetRftTag: "% · với Color Brain",
     fieldTargetRftAria: "RFT mục tiêu theo phần trăm",
     fieldTargetRftInc: "Tăng RFT mục tiêu",
@@ -195,7 +199,7 @@ export const vi = {
     costsToggle: "Giả định chi phí",
     costsHint: "tùy chọn · ước lượng preset",
     costsLede:
-      "Mặc định là chi phí đầy đủ điển hình cho hồ sơ của bạn — chỉ thay số thật nếu bạn có.",
+      "Mặc định là chi phí đầy đủ điển hình cho hồ sơ của bạn, chỉ thay số thật nếu bạn có.",
     fieldLabor: "Chi phí nhân công",
     fieldLaborTip:
       "Nhân công và chi phí chung mỗi lần sửa (USD), chưa gồm thuốc nhuộm, nước và năng lượng",
@@ -232,7 +236,7 @@ export const vi = {
     step3Title: "Triển vọng tiết kiệm hàng năm",
     avoidedPrefix: "Tránh ~",
     avoidedSuffix: " mẻ lãng phí",
-    rangeAria: "Khoảng tiết kiệm hàng năm — chọn kịch bản",
+    rangeAria: "Khoảng tiết kiệm hàng năm: chọn kịch bản",
     scenarioConservative: "Thận trọng",
     scenarioExpected: "Kỳ vọng",
     scenarioOptimistic: "Lạc quan",
@@ -253,15 +257,15 @@ export const vi = {
     methodEqLift: "nâng RFT",
     methodEqCost: "chi phí / lần làm lại",
     methodBandCaption:
-      "Các kịch bản điều chỉnh mức nâng RFT được tính — không phải mọi lần trượt đều là làm lại full-cost, và một số mức nâng có thể vượt.",
+      "Các kịch bản điều chỉnh mức nâng RFT được tính: không phải mọi lần trượt đều là làm lại full-cost, và một số mức nâng có thể vượt.",
     methodBandUnit: "của mức nâng của bạn",
     methodBandAria: "Mỗi kịch bản tính bao nhiêu phần mức nâng RFT đã nêu",
     methodNote: "Chi phí / lần làm lại = nhân công + thuốc nhuộm + nước + năng lượng + thời gian",
     methodRatePill: "{rate}/phút",
     methodFoot:
-      "Ước lượng lập kế hoạch — không phải báo giá. Hệ số mang tính tạm thời.",
+      "Ước lượng lập kế hoạch, không phải báo giá. Hệ số mang tính tạm thời.",
     disclaimer:
-      "Chủ yếu phụ thuộc mẻ × mức nâng RFT. Các dòng chi phí là ước lượng preset trừ khi bạn đã chỉnh. Kết quả thực tế thay đổi theo mix sản phẩm và điều kiện nhà máy — triển vọng lập kế hoạch, không phải cam kết thương mại.",
+      "Chủ yếu phụ thuộc mẻ × mức nâng RFT. Các dòng chi phí là ước lượng preset trừ khi bạn đã chỉnh. Kết quả thực tế thay đổi theo mix sản phẩm và điều kiện nhà máy; đây là triển vọng lập kế hoạch, không phải cam kết thương mại.",
     bookPilot: "Đặt lịch thử nghiệm",
     copyLink: "Sao chép liên kết",
     linkCopied: "Đã sao chép liên kết",
